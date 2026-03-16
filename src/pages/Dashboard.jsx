@@ -59,14 +59,13 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   };
 
   const fetchReports = async () => {
-    if (!userId) return;
     setLoadingReports(true);
-    const { data, error } = await supabase.from("reports").select("*");
+    const { data, error } = await supabase
+      .from("reports")
+      .select("*")
+      .order("created_at", { ascending: false });
     console.log("reports:", data, "error:", error);
-    const filteredReports = (data || [])
-      .filter((report) => report.user_id === userId)
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-    setReports(filteredReports);
+    setReports(data || []);
     setLoadingReports(false);
   };
 
