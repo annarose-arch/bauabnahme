@@ -52,7 +52,7 @@ const dashboardCopy = {
   }
 };
 
-export default function Dashboard({ lang = "en", onNavigate }) {
+export default function Dashboard({ lang = "en", onNavigate, onLogout }) {
   const t = dashboardCopy[lang] || dashboardCopy.en;
   const navItems = [
     { key: "new", label: t.nav.new, icon: FilePlus2 },
@@ -115,7 +115,13 @@ export default function Dashboard({ lang = "en", onNavigate }) {
               <p style={{ marginTop: 6, marginBottom: 0, color: colors.muted }}>{t.welcome}</p>
             </div>
             <button
-              onClick={() => onNavigate("/")}
+              onClick={() => {
+                if (onLogout) {
+                  onLogout();
+                  return;
+                }
+                onNavigate("/");
+              }}
               style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, padding: "0 14px", fontWeight: 600 }}
             >
               <LogOut size={16} color={colors.gold} />
