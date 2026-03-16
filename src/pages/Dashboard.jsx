@@ -54,6 +54,8 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
 
   const userId = session?.user?.id;
   const userEmail = session?.user?.email || "";
+  const activeReports = reports.filter((report) => (report.status || "").toLowerCase() !== "geloescht");
+  const trashedReports = reports.filter((report) => (report.status || "").toLowerCase() === "geloescht");
 
   const inputStyle = {
     minHeight: 42,
@@ -217,7 +219,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   }, [userId]);
 
   useEffect(() => {
-    if (currentView !== "reports") return;
+    if (currentView !== "reports" && currentView !== "trash") return;
     const run = async () => {
       setLoadingReports(true);
       await loadReports();
@@ -357,18 +359,47 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     setOpenedReport(report);
   };
 
-  const handleDeleteReport = async (report) => {
+  const handleMoveToTrash = async (report) => {
     const confirmed = window.confirm("Sicher löschen?");
     if (!confirmed) return;
-    const { error } = await supabase.from("reports").delete().eq("id", report.id);
+    const { error } = await supabase
+      .from("reports")
+      .update({ status: "geloescht" })
+      .eq("id", report.id);
     if (error) {
       setNotice("Rapport konnte nicht geloscht werden.");
       return;
     }
-    setNotice("Rapport geloscht.");
+    setNotice("Rapport in Papierkorb verschoben.");
     if (openedReport?.id === report.id) {
       setOpenedReport(null);
     }
+    await loadReports();
+  };
+
+  const handleRestoreReport = async (report) => {
+    const { error } = await supabase
+      .from("reports")
+      .update({ status: "open" })
+      .eq("id", report.id);
+    if (error) {
+      setNotice("Rapport konnte nicht wiederhergestellt werden.");
+      return;
+    }
+    setNotice("Rapport wiederhergestellt.");
+    await loadReports();
+  };
+
+  const handleHardDeleteReport = async (report) => {
+    const confirmed = window.confirm("Endgultig loschen?");
+    if (!confirmed) return;
+    const { error } = await supabase.from("reports").delete().eq("id", report.id);
+    if (error) {
+      setNotice("Rapport konnte nicht endgultig geloscht werden.");
+      return;
+    }
+    setNotice("Rapport endgultig geloscht.");
+    if (openedReport?.id === report.id) setOpenedReport(null);
     await loadReports();
   };
 
@@ -377,8 +408,15 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     const workData = payload.workRows || [];
     const materialData = payload.materialRows || [];
     const total = payload?.totals?.grandTotal ?? report.total ?? 0;
+    const subtotalValue = payload?.totals?.subtotal ?? 0;
+    const vatValue = payload?.totals?.vat ?? 0;
     const auftragNr = report.auftrag_nr || payload.orderNo || "-";
     const description = payload?.costs?.notes || payload.description || report.description || "-";
+    const beforePhoto = payload?.photos?.before || "";
+    const afterPhoto = payload?.photos?.after || "";
+    const signatureImage = payload?.signature?.imageBase64 || "";
+    const signatureName = payload?.signature?.customerName || "-";
+    const expenses = payload?.costs?.expenses ?? 0;
 
     const esc = (value) =>
       String(value ?? "-")
@@ -421,7 +459,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     <meta charset="utf-8" />
     <title>Rapport ${esc(report.id)}</title>
     <style>
-      body { font-family: Arial, sans-serif; color: #222; margin: 24px; }
+      body { font-family: Arial, sans-serif; color: #222; margin: 24px; background: #fff; }
       .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
       .brand { font-size: 28px; font-weight: 700; color: #d4a853; }
       .print-btn { background: #d4a853; border: none; color: #111; padding: 10px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
@@ -431,6 +469,10 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; }
       th { background: #f6f3eb; text-align: left; }
       .total { font-size: 22px; font-weight: 800; color: #d4a853; text-align: right; margin-top: 10px; }
+      .muted { color: #666; }
+      .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .photos img { width: 100%; max-height: 220px; object-fit: cover; border: 1px solid rgba(212,168,83,0.4); border-radius: 8px; }
+      .signature img { width: 280px; max-width: 100%; border: 1px solid rgba(212,168,83,0.4); border-radius: 8px; }
       @media print { .print-btn { display: none; } body { margin: 10mm; } }
     </style>
   </head>
@@ -439,14 +481,31 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       <div class="brand">BauAbnahme</div>
       <button class="print-btn" onclick="window.print()">Drucken</button>
     </div>
+    <div class="muted" style="margin-bottom: 14px;">Rapport Nr: ${esc(report.id)} · Datum: ${esc(report.date || payload.date)}</div>
 
     <div class="card">
-      <h2>Rapport Details</h2>
+      <h2>Kundeninformationen</h2>
       <div><strong>Kunde:</strong> ${esc(report.customer || payload.customer)}</div>
       <div><strong>Datum:</strong> ${esc(report.date || payload.date)}</div>
       <div><strong>Auftrag-Nr:</strong> ${esc(auftragNr)}</div>
       <div><strong>Beschreibung:</strong> ${esc(description)}</div>
     </div>
+
+    ${beforePhoto || afterPhoto ? `
+    <div class="card">
+      <h2>Fotos</h2>
+      <div class="photos">
+        <div>
+          <div class="muted" style="margin-bottom:6px;">Vorher</div>
+          ${beforePhoto ? `<img src="${beforePhoto}" alt="Vorher Foto" />` : "<div class='muted'>Kein Vorher Foto</div>"}
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px;">Nachher</div>
+          ${afterPhoto ? `<img src="${afterPhoto}" alt="Nachher Foto" />` : "<div class='muted'>Kein Nachher Foto</div>"}
+        </div>
+      </div>
+    </div>
+    ` : ""}
 
     <div class="card">
       <h2>Arbeitsstunden</h2>
@@ -464,7 +523,26 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       </table>
     </div>
 
-    <div class="total">TOTAL CHF ${Number(total || 0).toFixed(2)}</div>
+    <div class="card">
+      <h2>Kosten</h2>
+      <div><strong>Spesen:</strong> CHF ${Number(expenses || 0).toFixed(2)}</div>
+      <div><strong>Notizen:</strong> ${esc(payload?.costs?.notes || "-")}</div>
+    </div>
+
+    <div class="card">
+      <h2>Totals</h2>
+      <div><strong>Zwischensumme:</strong> CHF ${Number(subtotalValue || 0).toFixed(2)}</div>
+      <div><strong>MwSt 8.1%:</strong> CHF ${Number(vatValue || 0).toFixed(2)}</div>
+      <div class="total">TOTAL CHF ${Number(total || 0).toFixed(2)}</div>
+    </div>
+
+    ${signatureImage ? `
+    <div class="card signature">
+      <h2>Unterschrift</h2>
+      <div><strong>Name:</strong> ${esc(signatureName)}</div>
+      <div style="margin-top:8px;"><img src="${signatureImage}" alt="Unterschrift" /></div>
+    </div>
+    ` : ""}
   </body>
 </html>`);
     win.document.close();
@@ -600,11 +678,11 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
           <h2 style={{ marginTop: 0 }}>Alle Rapporte</h2>
           {loadingReports ? (
             <p style={{ color: colors.muted }}>Lade Rapporte...</p>
-          ) : reports.length === 0 ? (
+          ) : activeReports.length === 0 ? (
             <p style={{ color: colors.muted }}>Keine Rapporte gefunden.</p>
           ) : (
             <div style={{ display: "grid", gap: 8 }}>
-              {reports.map((report) => (
+              {activeReports.map((report) => (
                 <div
                   key={report.id}
                   style={{
@@ -634,7 +712,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                     <button type="button" onClick={() => handleOpenReport(report)} style={{ ...buttonPrimary, minHeight: 34 }}>Öffnen</button>
-                    <button type="button" onClick={() => handleDeleteReport(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>Löschen</button>
+                    <button type="button" onClick={() => handleMoveToTrash(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>🗑️ Löschen</button>
                     <button type="button" onClick={() => handleDownloadPdf(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>PDF</button>
                   </div>
                 </div>
@@ -654,6 +732,32 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
               </pre>
             </div>
           ) : null}
+        </section>
+      );
+    }
+
+    if (currentView === "trash") {
+      return (
+        <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18 }}>
+          <h2 style={{ marginTop: 0 }}>Papierkorb</h2>
+          {loadingReports ? (
+            <p style={{ color: colors.muted }}>Lade Papierkorb...</p>
+          ) : trashedReports.length === 0 ? (
+            <p style={{ color: colors.muted }}>Papierkorb ist leer.</p>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }}>
+              {trashedReports.map((report) => (
+                <div key={report.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(212,168,83,0.2)", borderRadius: 10, padding: "12px 14px", display: "grid", gap: 6 }}>
+                  <strong style={{ color: "#f0ece4" }}>{report.customer || "-"}</strong>
+                  <div style={{ color: "#f0ece4", opacity: 0.9 }}>{report.date || "-"}</div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => handleRestoreReport(report)} style={{ ...buttonPrimary, minHeight: 34 }}>Wiederherstellen</button>
+                    <button type="button" onClick={() => handleHardDeleteReport(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>Endgültig löschen</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       );
     }
@@ -763,6 +867,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
             <button type="button" onClick={() => setCurrentView("home")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "home" ? colors.gold : colors.border}`, background: currentView === "home" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Start</button>
             <button type="button" onClick={() => setCurrentView("new-report")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "new-report" ? colors.gold : colors.border}`, background: currentView === "new-report" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Neuer Rapport</button>
             <button type="button" onClick={() => setCurrentView("reports")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "reports" ? colors.gold : colors.border}`, background: currentView === "reports" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Alle Rapporte</button>
+            <button type="button" onClick={() => setCurrentView("trash")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "trash" ? colors.gold : colors.border}`, background: currentView === "trash" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Papierkorb</button>
             <button type="button" onClick={() => setCurrentView("customers")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "customers" ? colors.gold : colors.border}`, background: currentView === "customers" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Kunden</button>
             <button type="button" onClick={() => setCurrentView("settings")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "settings" ? colors.gold : colors.border}`, background: currentView === "settings" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Einstellungen</button>
           </nav>
