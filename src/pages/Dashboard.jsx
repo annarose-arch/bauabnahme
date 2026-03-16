@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { jsPDF } from "jspdf";
 import { supabase } from "../supabase";
 
 export default function Dashboard({ session, onLogout, onNavigate }) {
@@ -374,7 +373,6 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   };
 
   const handleDownloadPdf = (report) => {
-    const doc = new jsPDF();
     const payload = parseReportPayload(report) || {};
 
     const workData = payload.workRows || [];
@@ -382,75 +380,87 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     const totals = payload.totals || {};
     const signature = payload.signature || {};
 
-    let y = 16;
-    const addLine = (label, value) => {
-      doc.setFont("helvetica", "bold");
-      doc.text(`${label}:`, 14, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(String(value ?? "-"), 60, y);
-      y += 6;
-    };
-    const ensureSpace = (needed = 8) => {
-      if (y + needed > 280) {
-        doc.addPage();
-        y = 16;
-      }
-    };
+    const lines = [
+      "BauAbnahme",
+      "",
+      `Kunde: ${report.customer || payload.customer || "-"}`,
+      `Datum: ${report.date || payload.date || "-"}`,
+      `Status: ${(report.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen"}`,
+      "",
+      "Arbeitsstunden:"
+    ];
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("BauAbnahme", 14, y);
-    y += 10;
-
-    doc.setFontSize(11);
-    addLine("Kunde", report.customer || payload.customer || "-");
-    addLine("Datum", report.date || payload.date || "-");
-    addLine("Status", (report.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen");
-    y += 4;
-
-    doc.setFont("helvetica", "bold");
-    doc.text("Arbeitsstunden", 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
     workData.forEach((row, idx) => {
-      ensureSpace();
-      const line = `${idx + 1}. ${row.employee || "-"} | ${row.from || "-"}-${row.to || "-"} | ${Number(row.hours || 0).toFixed(2)} h | CHF ${Number(row.total || 0).toFixed(2)}`;
-      doc.text(line, 14, y);
-      y += 6;
+      lines.push(
+        `${idx + 1}. ${row.employee || "-"} | ${row.from || "-"}-${row.to || "-"} | ${Number(row.hours || 0).toFixed(2)} h | CHF ${Number(row.total || 0).toFixed(2)}`
+      );
     });
 
-    ensureSpace(10);
-    y += 2;
-    doc.setFont("helvetica", "bold");
-    doc.text("Material", 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    lines.push("", "Material:");
     materialData.forEach((row, idx) => {
-      ensureSpace();
-      const line = `${idx + 1}. ${row.name || "-"} | ${row.quantity || 0} ${row.unit || ""} | CHF ${Number(row.total || 0).toFixed(2)}`;
-      doc.text(line, 14, y);
-      y += 6;
+      lines.push(
+        `${idx + 1}. ${row.name || "-"} | ${row.quantity || 0} ${row.unit || ""} | CHF ${Number(row.total || 0).toFixed(2)}`
+      );
     });
 
-    ensureSpace(14);
-    y += 2;
-    doc.setFont("helvetica", "bold");
-    doc.text(`TOTAL CHF ${Number(totals.grandTotal || 0).toFixed(2)}`, 14, y);
-    y += 10;
+    lines.push(
+      "",
+      `TOTAL CHF ${Number(totals.grandTotal || 0).toFixed(2)}`,
+      `Unterschrift: ${signature.customerName || "-"}`
+    );
 
-    if (signature.customerName) {
-      ensureSpace();
-      doc.setFont("helvetica", "normal");
-      doc.text(`Unterschrift: ${signature.customerName}`, 14, y);
-      y += 6;
+    const escapePdfText = (text) =>
+      String(text)
+        .replace(/\\/g, "\\\\")
+        .replace(/\(/g, "\\(")
+        .replace(/\)/g, "\\)");
+
+    const contentStream = [
+      "BT",
+      "/F1 11 Tf",
+      "40 800 Td",
+      ...lines.map((line, index) => (index === 0 ? `(${escapePdfText(line)}) Tj` : `T* (${escapePdfText(line)}) Tj`)),
+      "ET"
+    ].join("\n");
+
+    const obj1 = "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n";
+    const obj2 = "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n";
+    const obj3 = "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >> endobj\n";
+    const obj4 = `4 0 obj << /Length ${contentStream.length} >> stream\n${contentStream}\nendstream endobj\n`;
+    const obj5 = "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n";
+    const header = "%PDF-1.4\n";
+    const objects = [obj1, obj2, obj3, obj4, obj5];
+
+    let body = "";
+    const offsets = [0];
+    objects.forEach((obj) => {
+      offsets.push(header.length + body.length);
+      body += obj;
+    });
+
+    const xrefStart = header.length + body.length;
+    const xrefLines = ["xref", `0 ${offsets.length}`, "0000000000 65535 f "];
+    for (let i = 1; i < offsets.length; i += 1) {
+      xrefLines.push(`${String(offsets[i]).padStart(10, "0")} 00000 n `);
     }
+    const trailer = [
+      "trailer",
+      `<< /Size ${offsets.length} /Root 1 0 R >>`,
+      "startxref",
+      String(xrefStart),
+      "%%EOF"
+    ].join("\n");
 
-    if (typeof signature.imageBase64 === "string" && signature.imageBase64.startsWith("data:image")) {
-      ensureSpace(30);
-      doc.addImage(signature.imageBase64, "PNG", 14, y, 80, 25);
-    }
-
-    doc.save(`rapport-${report.id}.pdf`);
+    const pdfString = `${header}${body}${xrefLines.join("\n")}\n${trailer}`;
+    const blob = new Blob([pdfString], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `rapport-${report.id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const renderView = () => {
