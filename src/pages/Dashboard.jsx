@@ -358,7 +358,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   };
 
   const handleDeleteReport = async (report) => {
-    const confirmed = window.confirm(`Rapport von ${report.customer || "-"} wirklich loschen?`);
+    const confirmed = window.confirm("Sicher löschen?");
     if (!confirmed) return;
     const { error } = await supabase.from("reports").delete().eq("id", report.id);
     if (error) {
@@ -374,93 +374,100 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
 
   const handleDownloadPdf = (report) => {
     const payload = parseReportPayload(report) || {};
-
     const workData = payload.workRows || [];
     const materialData = payload.materialRows || [];
-    const totals = payload.totals || {};
-    const signature = payload.signature || {};
+    const total = payload?.totals?.grandTotal ?? report.total ?? 0;
+    const auftragNr = report.auftrag_nr || payload.orderNo || "-";
+    const description = payload?.costs?.notes || payload.description || report.description || "-";
 
-    const lines = [
-      "BauAbnahme",
-      "",
-      `Kunde: ${report.customer || payload.customer || "-"}`,
-      `Datum: ${report.date || payload.date || "-"}`,
-      `Status: ${(report.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen"}`,
-      "",
-      "Arbeitsstunden:"
-    ];
+    const esc = (value) =>
+      String(value ?? "-")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
-    workData.forEach((row, idx) => {
-      lines.push(
-        `${idx + 1}. ${row.employee || "-"} | ${row.from || "-"}-${row.to || "-"} | ${Number(row.hours || 0).toFixed(2)} h | CHF ${Number(row.total || 0).toFixed(2)}`
-      );
-    });
-
-    lines.push("", "Material:");
-    materialData.forEach((row, idx) => {
-      lines.push(
-        `${idx + 1}. ${row.name || "-"} | ${row.quantity || 0} ${row.unit || ""} | CHF ${Number(row.total || 0).toFixed(2)}`
-      );
-    });
-
-    lines.push(
-      "",
-      `TOTAL CHF ${Number(totals.grandTotal || 0).toFixed(2)}`,
-      `Unterschrift: ${signature.customerName || "-"}`
-    );
-
-    const escapePdfText = (text) =>
-      String(text)
-        .replace(/\\/g, "\\\\")
-        .replace(/\(/g, "\\(")
-        .replace(/\)/g, "\\)");
-
-    const contentStream = [
-      "BT",
-      "/F1 11 Tf",
-      "40 800 Td",
-      ...lines.map((line, index) => (index === 0 ? `(${escapePdfText(line)}) Tj` : `T* (${escapePdfText(line)}) Tj`)),
-      "ET"
-    ].join("\n");
-
-    const obj1 = "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n";
-    const obj2 = "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n";
-    const obj3 = "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >> endobj\n";
-    const obj4 = `4 0 obj << /Length ${contentStream.length} >> stream\n${contentStream}\nendstream endobj\n`;
-    const obj5 = "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n";
-    const header = "%PDF-1.4\n";
-    const objects = [obj1, obj2, obj3, obj4, obj5];
-
-    let body = "";
-    const offsets = [0];
-    objects.forEach((obj) => {
-      offsets.push(header.length + body.length);
-      body += obj;
-    });
-
-    const xrefStart = header.length + body.length;
-    const xrefLines = ["xref", `0 ${offsets.length}`, "0000000000 65535 f "];
-    for (let i = 1; i < offsets.length; i += 1) {
-      xrefLines.push(`${String(offsets[i]).padStart(10, "0")} 00000 n `);
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (!win) {
+      setNotice("Popup blockiert. Bitte Popups erlauben.");
+      return;
     }
-    const trailer = [
-      "trailer",
-      `<< /Size ${offsets.length} /Root 1 0 R >>`,
-      "startxref",
-      String(xrefStart),
-      "%%EOF"
-    ].join("\n");
 
-    const pdfString = `${header}${body}${xrefLines.join("\n")}\n${trailer}`;
-    const blob = new Blob([pdfString], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `rapport-${report.id}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const workRowsHtml = workData
+      .map(
+        (row, idx) => `<tr>
+          <td>${idx + 1}</td>
+          <td>${esc(row.employee)}</td>
+          <td>${esc(row.from)} - ${esc(row.to)}</td>
+          <td style="text-align:right">${Number(row.hours || 0).toFixed(2)}</td>
+          <td style="text-align:right">CHF ${Number(row.total || 0).toFixed(2)}</td>
+        </tr>`
+      )
+      .join("");
+
+    const materialRowsHtml = materialData
+      .map(
+        (row, idx) => `<tr>
+          <td>${idx + 1}</td>
+          <td>${esc(row.name)}</td>
+          <td>${esc(row.quantity)} ${esc(row.unit)}</td>
+          <td style="text-align:right">CHF ${Number(row.total || 0).toFixed(2)}</td>
+        </tr>`
+      )
+      .join("");
+
+    win.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Rapport ${esc(report.id)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #222; margin: 24px; }
+      .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+      .brand { font-size: 28px; font-weight: 700; color: #d4a853; }
+      .print-btn { background: #d4a853; border: none; color: #111; padding: 10px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+      .card { border: 1px solid rgba(212,168,83,0.4); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+      h2 { margin: 0 0 8px 0; font-size: 18px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+      th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; }
+      th { background: #f6f3eb; text-align: left; }
+      .total { font-size: 22px; font-weight: 800; color: #d4a853; text-align: right; margin-top: 10px; }
+      @media print { .print-btn { display: none; } body { margin: 10mm; } }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div class="brand">BauAbnahme</div>
+      <button class="print-btn" onclick="window.print()">Drucken</button>
+    </div>
+
+    <div class="card">
+      <h2>Rapport Details</h2>
+      <div><strong>Kunde:</strong> ${esc(report.customer || payload.customer)}</div>
+      <div><strong>Datum:</strong> ${esc(report.date || payload.date)}</div>
+      <div><strong>Auftrag-Nr:</strong> ${esc(auftragNr)}</div>
+      <div><strong>Beschreibung:</strong> ${esc(description)}</div>
+    </div>
+
+    <div class="card">
+      <h2>Arbeitsstunden</h2>
+      <table>
+        <thead><tr><th>#</th><th>Mitarbeiter</th><th>Zeit</th><th>Stunden</th><th>Total</th></tr></thead>
+        <tbody>${workRowsHtml || "<tr><td colspan='5'>Keine Daten</td></tr>"}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Material</h2>
+      <table>
+        <thead><tr><th>#</th><th>Bezeichnung</th><th>Menge</th><th>Total</th></tr></thead>
+        <tbody>${materialRowsHtml || "<tr><td colspan='4'>Keine Daten</td></tr>"}</tbody>
+      </table>
+    </div>
+
+    <div class="total">TOTAL CHF ${Number(total || 0).toFixed(2)}</div>
+  </body>
+</html>`);
+    win.document.close();
   };
 
   const renderView = () => {
@@ -610,6 +617,9 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
                   }}
                 >
                   <strong style={{ color: "#f0ece4" }}>{report.customer || "-"}</strong>
+                  <div style={{ color: "#f0ece4", opacity: 0.9, fontSize: 13 }}>
+                    Auftrag-Nr: {report.auftrag_nr || parseReportPayload(report)?.orderNo || "-"}
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span
                       style={{
@@ -623,8 +633,8 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
                     <span style={{ color: "#f0ece4" }}>{report.date || "-"}</span>
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                    <button type="button" onClick={() => handleOpenReport(report)} style={{ ...buttonPrimary, minHeight: 34 }}>Offnen</button>
-                    <button type="button" onClick={() => handleDeleteReport(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>Loschen</button>
+                    <button type="button" onClick={() => handleOpenReport(report)} style={{ ...buttonPrimary, minHeight: 34 }}>Öffnen</button>
+                    <button type="button" onClick={() => handleDeleteReport(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>Löschen</button>
                     <button type="button" onClick={() => handleDownloadPdf(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>PDF</button>
                   </div>
                 </div>
