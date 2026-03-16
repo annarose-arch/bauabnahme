@@ -184,12 +184,12 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     setReportForm((prev) => ({ ...prev, signatureData: "" }));
   };
 
-  const fetchActiveReports = async () => {
+  const fetchReports = async () => {
     const { data, error } = await supabase
       .from("reports")
       .select("*")
       .neq("status", "geloescht")
-      .order("date", { ascending: false });
+      .order("created_at", { ascending: false });
     if (error) {
       console.error("Error:", error);
       setReports([]);
@@ -202,8 +202,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     const { data, error } = await supabase
       .from("reports")
       .select("*")
-      .eq("status", "geloescht")
-      .order("date", { ascending: false });
+      .eq("status", "geloescht");
     if (error) {
       console.error("Error:", error);
       setTrashReports([]);
@@ -238,18 +237,28 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   }, [userId]);
 
   useEffect(() => {
-    if (currentView !== "reports" && currentView !== "trash") return;
-    const run = async () => {
-      setLoadingReports(true);
-      if (currentView === "reports") {
-        await fetchActiveReports();
-      } else {
+    if (currentView === "reports") {
+      if (!userId) return;
+      const run = async () => {
+        setLoadingReports(true);
+        await fetchReports();
+        setLoadingReports(false);
+      };
+      run();
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    if (currentView === "trash") {
+      if (!userId) return;
+      const run = async () => {
+        setLoadingReports(true);
         await fetchTrashReports();
-      }
-      setLoadingReports(false);
-    };
-    run();
-  }, [currentView, userId]);
+        setLoadingReports(false);
+      };
+      run();
+    }
+  }, [currentView]);
 
   const handleSaveReport = async () => {
     if (!userId || !reportForm.customer.trim()) {
@@ -328,7 +337,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     clearSignature();
     setNotice("Rapport gespeichert.");
     setCurrentView("reports");
-    await fetchActiveReports();
+    await fetchReports();
   };
 
   const handleSaveCustomer = async () => {
@@ -930,10 +939,10 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
 
           <nav style={{ display: "grid", gap: 8 }}>
             <button type="button" onClick={() => setCurrentView("home")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "home" ? colors.gold : colors.border}`, background: currentView === "home" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Start</button>
+            <button type="button" onClick={() => setCurrentView("customers")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "customers" ? colors.gold : colors.border}`, background: currentView === "customers" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Kunden</button>
             <button type="button" onClick={() => setCurrentView("new-report")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "new-report" ? colors.gold : colors.border}`, background: currentView === "new-report" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Neuer Rapport</button>
             <button type="button" onClick={() => setCurrentView("reports")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "reports" ? colors.gold : colors.border}`, background: currentView === "reports" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Alle Rapporte</button>
             <button type="button" onClick={() => setCurrentView("trash")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "trash" ? colors.gold : colors.border}`, background: currentView === "trash" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Papierkorb</button>
-            <button type="button" onClick={() => setCurrentView("customers")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "customers" ? colors.gold : colors.border}`, background: currentView === "customers" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Kunden</button>
             <button type="button" onClick={() => setCurrentView("settings")} style={{ minHeight: 42, borderRadius: 10, border: `1px solid ${currentView === "settings" ? colors.gold : colors.border}`, background: currentView === "settings" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, textAlign: "left", padding: "0 12px", cursor: "pointer" }}>Einstellungen</button>
           </nav>
         </aside>
