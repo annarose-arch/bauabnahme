@@ -301,7 +301,7 @@ export default function App() {
 
   if (route === "/login") {
     if (session) {
-      return <Dashboard lang={lang} onNavigate={navigate} onLogout={handleLogout} />;
+      return <Dashboard lang={lang} onNavigate={navigate} onLogout={handleLogout} session={session} />;
     }
     return <Login lang={lang} setLang={setLang} onNavigate={navigate} />;
   }
@@ -310,7 +310,7 @@ export default function App() {
     if (!session) {
       return <Login lang={lang} setLang={setLang} onNavigate={navigate} />;
     }
-    return <Dashboard lang={lang} onNavigate={navigate} onLogout={handleLogout} />;
+    return <Dashboard lang={lang} onNavigate={navigate} onLogout={handleLogout} session={session} />;
   }
 
   return <Landing lang={lang} setLang={setLang} onNavigate={navigate} />;
