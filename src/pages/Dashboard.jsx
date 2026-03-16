@@ -133,7 +133,7 @@ const dashboardCopy = {
 export default function Dashboard({ lang = "en", onNavigate, onLogout, session }) {
   const t = dashboardCopy[lang] || dashboardCopy.en;
   const userId = session?.user?.id;
-  const [activeTab, setActiveTab] = useState("all");
+  const [view, setView] = useState("all");
   const [reports, setReports] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
@@ -221,11 +221,11 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
     setReports((prev) => [data, ...prev]);
     setReportForm((prev) => ({ ...prev, customer: "", description: "" }));
     setMessage(t.reportSaved);
-    setActiveTab("all");
+    setView("all");
   };
 
   const renderMainView = () => {
-    if (activeTab === "new") {
+    if (view === "new") {
       return (
         <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>{t.form.title}</h2>
@@ -280,7 +280,7 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
       );
     }
 
-    if (activeTab === "customers") {
+    if (view === "customers") {
       return (
         <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>{t.nav.customers}</h2>
@@ -303,7 +303,7 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
       );
     }
 
-    if (activeTab === "settings") {
+    if (view === "settings") {
       return (
         <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>{t.settings.title}</h2>
@@ -368,11 +368,13 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
           <nav style={{ display: "grid", gap: 8 }}>
             {navItems.map((item) => {
               const Icon = item.icon;
-              const selected = activeTab === item.key;
+              const selected = view === item.key;
               return (
                 <button
+                  type="button"
                   key={item.key}
-                  onClick={() => setActiveTab(item.key)}
+                  onClick={() => setView(item.key)}
+                  aria-pressed={selected}
                   style={{ border: `1px solid ${selected ? colors.gold : colors.border}`, background: selected ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}
                 >
                   <Icon size={16} color={colors.gold} />
