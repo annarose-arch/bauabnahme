@@ -11,7 +11,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [notice, setNotice] = useState("");
   const [openedReport, setOpenedReport] = useState(null);
-  const [trashedLocal, setTrashedLocal] = useState([]);
+  const [trashReports, setTrashReports] = useState([]);
   const signatureCanvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
 
@@ -56,8 +56,8 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
 
   const userId = session?.user?.id;
   const userEmail = session?.user?.email || "";
-  const activeReports = reports.filter((report) => (report.status || "").toLowerCase() !== "geloescht");
-  const trashedReports = [...reports, ...trashedLocal].filter((report) => (report.status || "").toLowerCase() === "geloescht");
+  const activeReports = reports;
+  const trashedReports = trashReports;
 
   const inputStyle = {
     minHeight: 42,
@@ -184,17 +184,33 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     setReportForm((prev) => ({ ...prev, signatureData: "" }));
   };
 
-  async function loadReports() {
+  const fetchActiveReports = async () => {
     const { data, error } = await supabase
-      .from('reports')
-      .select('*')
+      .from("reports")
+      .select("*")
+      .neq("status", "geloescht")
+      .order("date", { ascending: false });
     if (error) {
-      console.error('Error:', error)
-      setReports([])
-    } else {
-      setReports(data || [])
+      console.error("Error:", error);
+      setReports([]);
+      return;
     }
-  }
+    setReports(data || []);
+  };
+
+  const fetchTrashReports = async () => {
+    const { data, error } = await supabase
+      .from("reports")
+      .select("*")
+      .eq("status", "geloescht")
+      .order("date", { ascending: false });
+    if (error) {
+      console.error("Error:", error);
+      setTrashReports([]);
+      return;
+    }
+    setTrashReports(data || []);
+  };
 
   const fetchCustomers = async () => {
     if (!userId) return;
@@ -211,6 +227,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   useEffect(() => {
     if (!userId) {
       setReports([]);
+      setTrashReports([]);
       setCustomers([]);
       return;
     }
@@ -224,7 +241,11 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     if (currentView !== "reports" && currentView !== "trash") return;
     const run = async () => {
       setLoadingReports(true);
-      await loadReports();
+      if (currentView === "reports") {
+        await fetchActiveReports();
+      } else {
+        await fetchTrashReports();
+      }
       setLoadingReports(false);
     };
     run();
@@ -306,8 +327,8 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     setMaterialRows([{ name: "", quantity: "", unit: "", price: "" }]);
     clearSignature();
     setNotice("Rapport gespeichert.");
-    await loadReports();
     setCurrentView("reports");
+    await fetchActiveReports();
   };
 
   const handleSaveCustomer = async () => {
@@ -379,7 +400,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       setOpenedReport(null);
     }
     setReports((prev) => prev.filter((r) => r.id !== report.id));
-    setTrashedLocal((prev) => [{ ...report, status: "geloescht" }, ...prev.filter((r) => r.id !== report.id)]);
+    setTrashReports((prev) => [{ ...report, status: "geloescht" }, ...prev.filter((r) => r.id !== report.id)]);
   };
 
   const handleRestoreReport = async (report) => {
@@ -392,7 +413,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       return;
     }
     setNotice("Rapport wiederhergestellt.");
-    setTrashedLocal((prev) => prev.filter((r) => r.id !== report.id));
+    setTrashReports((prev) => prev.filter((r) => r.id !== report.id));
     setReports((prev) => [{ ...report, status: "offen" }, ...prev.filter((r) => r.id !== report.id)]);
   };
 
@@ -407,7 +428,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     }
     setNotice("Rapport endgultig geloscht.");
     if (openedReport?.id === report.id) setOpenedReport(null);
-    setTrashedLocal((prev) => prev.filter((r) => r.id !== report.id));
+    setTrashReports((prev) => prev.filter((r) => r.id !== report.id));
     setReports((prev) => prev.filter((r) => r.id !== report.id));
   };
 
@@ -421,6 +442,10 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     const auftragNr = report.auftrag_nr || payload.orderNo || "-";
     const description = payload?.costs?.notes || payload.description || report.description || "-";
     const expenses = payload?.costs?.expenses ?? 0;
+    const beforePhoto = payload?.photos?.before || "";
+    const afterPhoto = payload?.photos?.after || "";
+    const signatureImage = payload?.signature?.imageBase64 || "";
+    const signatureName = payload?.signature?.customerName || "-";
     const customerMail = report.customer_email || payload.customerEmail || "";
     const ccMail = userEmail || "";
     const workLines = workData
@@ -451,8 +476,140 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       `TOTAL CHF: ${Number(total || 0).toFixed(2)}`
     ].join("\n");
 
+    const esc = (value) =>
+      String(value ?? "-")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    const win = window.open("", "_blank", "width=980,height=760");
+    if (!win) {
+      setNotice("Popup blockiert. Bitte Popups erlauben.");
+      return;
+    }
+
     const mailto = `mailto:${encodeURIComponent(customerMail)}?cc=${encodeURIComponent(ccMail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
+
+    const workRowsHtml = workData
+      .map(
+        (row, idx) => `<tr>
+          <td>${idx + 1}</td>
+          <td>${esc(row.employee)}</td>
+          <td>${esc(row.from)} - ${esc(row.to)}</td>
+          <td style="text-align:right">${Number(row.hours || 0).toFixed(2)}</td>
+          <td style="text-align:right">CHF ${Number(row.total || 0).toFixed(2)}</td>
+        </tr>`
+      )
+      .join("");
+
+    const materialRowsHtml = materialData
+      .map(
+        (row, idx) => `<tr>
+          <td>${idx + 1}</td>
+          <td>${esc(row.name)}</td>
+          <td>${esc(row.quantity)} ${esc(row.unit)}</td>
+          <td style="text-align:right">CHF ${Number(row.total || 0).toFixed(2)}</td>
+        </tr>`
+      )
+      .join("");
+
+    win.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Rapport ${esc(report.id)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #222; margin: 24px; background: #fff; }
+      .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 10px; flex-wrap: wrap; }
+      .brand { font-size: 28px; font-weight: 700; color: #d4a853; }
+      .actions { display: flex; gap: 8px; }
+      .mail-btn, .print-btn { background: #d4a853; border: none; color: #111; padding: 10px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; }
+      .card { border: 1px solid rgba(212,168,83,0.4); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+      h2 { margin: 0 0 8px 0; font-size: 18px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+      th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 13px; }
+      th { background: #f6f3eb; text-align: left; }
+      .total { font-size: 24px; font-weight: 800; color: #d4a853; text-align: right; margin-top: 10px; }
+      .muted { color: #666; }
+      .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .photos img { width: 100%; max-height: 220px; object-fit: cover; border: 1px solid rgba(212,168,83,0.4); border-radius: 8px; }
+      .signature img { width: 280px; max-width: 100%; border: 1px solid rgba(212,168,83,0.4); border-radius: 8px; }
+      @media print { .actions { display: none; } body { margin: 10mm; } }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div class="brand">BauAbnahme</div>
+      <div class="actions">
+        <a class="mail-btn" href="${mailto}">Per E-Mail senden</a>
+        <button class="print-btn" onclick="window.print()">Drucken</button>
+      </div>
+    </div>
+    <div class="muted" style="margin-bottom: 14px;">Rapport Nr: ${esc(report.id)} · Datum: ${esc(report.date || payload.date)}</div>
+
+    <div class="card">
+      <h2>Kundeninformationen</h2>
+      <div><strong>Kunde:</strong> ${esc(report.customer || payload.customer)}</div>
+      <div><strong>Datum:</strong> ${esc(report.date || payload.date)}</div>
+      <div><strong>Auftrag-Nr:</strong> ${esc(auftragNr)}</div>
+      <div><strong>Beschreibung:</strong> ${esc(description)}</div>
+    </div>
+
+    ${beforePhoto || afterPhoto ? `
+    <div class="card">
+      <h2>Fotos</h2>
+      <div class="photos">
+        <div>
+          <div class="muted" style="margin-bottom:6px;">Vorher</div>
+          ${beforePhoto ? `<img src="${beforePhoto}" alt="Vorher Foto" />` : "<div class='muted'>Kein Vorher Foto</div>"}
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px;">Nachher</div>
+          ${afterPhoto ? `<img src="${afterPhoto}" alt="Nachher Foto" />` : "<div class='muted'>Kein Nachher Foto</div>"}
+        </div>
+      </div>
+    </div>
+    ` : ""}
+
+    <div class="card">
+      <h2>Arbeitsstunden</h2>
+      <table>
+        <thead><tr><th>#</th><th>Mitarbeiter</th><th>Zeit</th><th>Stunden</th><th>Total</th></tr></thead>
+        <tbody>${workRowsHtml || "<tr><td colspan='5'>Keine Daten</td></tr>"}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Material</h2>
+      <table>
+        <thead><tr><th>#</th><th>Bezeichnung</th><th>Menge</th><th>Total</th></tr></thead>
+        <tbody>${materialRowsHtml || "<tr><td colspan='4'>Keine Daten</td></tr>"}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Kosten</h2>
+      <div><strong>Spesen:</strong> CHF ${Number(expenses || 0).toFixed(2)}</div>
+      <div><strong>Notizen:</strong> ${esc(payload?.costs?.notes || "-")}</div>
+    </div>
+
+    <div class="card">
+      <h2>Totals</h2>
+      <div><strong>Zwischensumme:</strong> CHF ${Number(subtotalValue || 0).toFixed(2)}</div>
+      <div><strong>MwSt 8.1%:</strong> CHF ${Number(vatValue || 0).toFixed(2)}</div>
+      <div class="total">TOTAL CHF ${Number(total || 0).toFixed(2)}</div>
+    </div>
+
+    ${signatureImage ? `
+    <div class="card signature">
+      <h2>Unterschrift</h2>
+      <div><strong>Name:</strong> ${esc(signatureName)}</div>
+      <div style="margin-top:8px;"><img src="${signatureImage}" alt="Unterschrift" /></div>
+    </div>
+    ` : ""}
+  </body>
+</html>`);
+    win.document.close();
   };
 
   const renderView = () => {
