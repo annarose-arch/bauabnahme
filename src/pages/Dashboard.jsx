@@ -478,11 +478,29 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
           ) : (
             <div style={{ display: "grid", gap: 8 }}>
               {reports.map((report) => (
-                <div key={report.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: "10px 12px", display: "grid", gap: 4 }}>
-                  <strong>R-{report.id} · {report.customer || "-"}</strong>
-                  <div style={{ color: colors.muted }}>{report.description || "-"}</div>
-                  <div style={{ color: colors.muted, fontSize: 13 }}>
-                    {report.date || "-"} · {(report.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen"}
+                <div
+                  key={report.id}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(212,168,83,0.2)",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    display: "grid",
+                    gap: 6
+                  }}
+                >
+                  <strong style={{ color: "#f0ece4" }}>{report.customer || "-"}</strong>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        color: (report.status || "").toLowerCase() === "done" ? "#80c783" : "#d4a853",
+                        fontWeight: 700
+                      }}
+                    >
+                      {(report.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen"}
+                    </span>
+                    <span style={{ color: "#f0ece4", opacity: 0.9 }}>•</span>
+                    <span style={{ color: "#f0ece4" }}>{report.date || "-"}</span>
                   </div>
                 </div>
               ))}
