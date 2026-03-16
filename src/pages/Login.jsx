@@ -33,6 +33,17 @@ const labels = {
     phone: "Continua con numero di telefono",
     register: "Registrati",
     noAccount: "Non hai ancora un account?"
+  },
+  en: {
+    title: "Welcome back",
+    subtitle: "Sign in to BauAbnahme",
+    email: "Email",
+    password: "Password",
+    login: "Log in",
+    google: "Continue with Google",
+    phone: "Continue with phone number",
+    register: "Register",
+    noAccount: "No account yet?"
   }
 };
 
@@ -60,7 +71,7 @@ export default function Login({ lang, setLang, onNavigate }) {
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Globe size={14} color={colors.gold} />
-            {["de", "fr", "it"].map((code) => (
+            {["de", "fr", "it", "en"].map((code) => (
               <button
                 key={code}
                 onClick={() => setLang(code)}

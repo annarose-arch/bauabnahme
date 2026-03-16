@@ -60,6 +60,25 @@ const copy = {
       { key: "pdf", title: "PDF", text: "Genera rapporti di consegna puliti con un solo clic." },
       { key: "hours", title: "Ore di lavoro", text: "Traccia le ore lavorative per una fatturazione chiara." }
     ]
+  },
+  en: {
+    navFeatures: "Features",
+    navPricing: "Pricing",
+    navLogin: "Login",
+    navStart: "Get Started",
+    heroTitle: "BauAbnahme for modern Swiss businesses",
+    heroSubtitle: "Photos, signatures, PDF reports, and work hours in one app.",
+    heroCta: "Try for Free",
+    featuresTitle: "Everything in one app",
+    pricingTitle: "Simple pricing",
+    month: "/month",
+    footer: "Swiss Made",
+    featureCards: [
+      { key: "photos", title: "Photos", text: "Capture before and after photos directly on site." },
+      { key: "signature", title: "Digital Signature", text: "Collect customer signatures instantly on mobile." },
+      { key: "pdf", title: "PDF", text: "Generate clean handover reports with one click." },
+      { key: "hours", title: "Work Hours", text: "Track labor hours clearly for transparent billing." }
+    ]
   }
 };
 
@@ -115,7 +134,7 @@ function Landing({ lang, setLang, onNavigate }) {
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Globe size={14} color={colors.gold} />
-            {["de", "fr", "it"].map((code) => (
+            {["de", "fr", "it", "en"].map((code) => (
               <button key={code} onClick={() => setLang(code)} style={{ border: "none", background: "transparent", color: code === lang ? colors.gold : colors.muted, cursor: "pointer", fontWeight: code === lang ? 700 : 500, minHeight: 40, padding: "0 6px" }}>
                 {code.toUpperCase()}
               </button>
@@ -138,7 +157,7 @@ function Landing({ lang, setLang, onNavigate }) {
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 4 }}>
               <Globe size={14} color={colors.gold} />
-              {["de", "fr", "it"].map((code) => (
+              {["de", "fr", "it", "en"].map((code) => (
                 <button key={code} onClick={() => setLang(code)} style={{ border: "none", background: "transparent", color: code === lang ? colors.gold : colors.muted, cursor: "pointer", fontWeight: code === lang ? 700 : 500, minHeight: 40, padding: "0 8px" }}>
                   {code.toUpperCase()}
                 </button>
@@ -231,7 +250,7 @@ export default function App() {
   }
 
   if (route === "/dashboard") {
-    return <Dashboard onNavigate={navigate} />;
+    return <Dashboard lang={lang} onNavigate={navigate} />;
   }
 
   return <Landing lang={lang} setLang={setLang} onNavigate={navigate} />;

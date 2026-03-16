@@ -9,28 +9,72 @@ import {
   LogOut
 } from "lucide-react";
 
-const navItems = [
-  { key: "new", label: "New Report", icon: FilePlus2 },
-  { key: "all", label: "All Reports", icon: FileText },
-  { key: "customers", label: "Customers", icon: Users },
-  { key: "settings", label: "Settings", icon: Settings }
-];
+const dashboardCopy = {
+  de: {
+    title: "Dashboard",
+    welcome: "Willkommen zuruck, Anna",
+    logout: "Abmelden",
+    nav: { new: "Neuer Rapport", all: "Alle Rapporte", customers: "Kunden", settings: "Einstellungen" },
+    stats: { total: "Total Rapporte", open: "Offene Rapporte", customers: "Kunden", month: "Dieser Monat" },
+    recent: "Letzte Rapporte",
+    open: "Offen",
+    done: "Erledigt"
+  },
+  fr: {
+    title: "Tableau de bord",
+    welcome: "Bon retour, Anna",
+    logout: "Deconnexion",
+    nav: { new: "Nouveau rapport", all: "Tous les rapports", customers: "Clients", settings: "Parametres" },
+    stats: { total: "Rapports totaux", open: "Rapports ouverts", customers: "Clients", month: "Ce mois-ci" },
+    recent: "Rapports recents",
+    open: "Ouvert",
+    done: "Termine"
+  },
+  it: {
+    title: "Dashboard",
+    welcome: "Bentornata, Anna",
+    logout: "Esci",
+    nav: { new: "Nuovo rapporto", all: "Tutti i rapporti", customers: "Clienti", settings: "Impostazioni" },
+    stats: { total: "Rapporti totali", open: "Rapporti aperti", customers: "Clienti", month: "Questo mese" },
+    recent: "Rapporti recenti",
+    open: "Aperto",
+    done: "Completato"
+  },
+  en: {
+    title: "Dashboard",
+    welcome: "Welcome back, Anna",
+    logout: "Logout",
+    nav: { new: "New Report", all: "All Reports", customers: "Customers", settings: "Settings" },
+    stats: { total: "Total Reports", open: "Open Reports", customers: "Customers", month: "This Month" },
+    recent: "Recent Reports",
+    open: "Open",
+    done: "Done"
+  }
+};
 
-const stats = [
-  { label: "Total Reports", value: "126", icon: ClipboardList },
-  { label: "Open Reports", value: "18", icon: AlertCircle },
-  { label: "Customers", value: "43", icon: Users },
-  { label: "This Month", value: "24", icon: CalendarDays }
-];
+export default function Dashboard({ lang = "en", onNavigate }) {
+  const t = dashboardCopy[lang] || dashboardCopy.en;
+  const navItems = [
+    { key: "new", label: t.nav.new, icon: FilePlus2 },
+    { key: "all", label: t.nav.all, icon: FileText },
+    { key: "customers", label: t.nav.customers, icon: Users },
+    { key: "settings", label: t.nav.settings, icon: Settings }
+  ];
 
-const recentReports = [
-  { id: "R-1021", customer: "Muller AG", status: "Open", date: "2026-03-15" },
-  { id: "R-1019", customer: "Dupont SA", status: "Done", date: "2026-03-14" },
-  { id: "R-1018", customer: "Rossi Costruzioni", status: "Open", date: "2026-03-13" },
-  { id: "R-1015", customer: "Schmid Bau", status: "Done", date: "2026-03-11" }
-];
+  const stats = [
+    { label: t.stats.total, value: "126", icon: ClipboardList },
+    { label: t.stats.open, value: "18", icon: AlertCircle },
+    { label: t.stats.customers, value: "43", icon: Users },
+    { label: t.stats.month, value: "24", icon: CalendarDays }
+  ];
 
-export default function Dashboard({ onNavigate }) {
+  const recentReports = [
+    { id: "R-1021", customer: "Muller AG", status: t.open, date: "2026-03-15" },
+    { id: "R-1019", customer: "Dupont SA", status: t.done, date: "2026-03-14" },
+    { id: "R-1018", customer: "Rossi Costruzioni", status: t.open, date: "2026-03-13" },
+    { id: "R-1015", customer: "Schmid Bau", status: t.done, date: "2026-03-11" }
+  ];
+
   const colors = {
     bg: "#0a0a0a",
     panel: "#141414",
@@ -67,15 +111,15 @@ export default function Dashboard({ onNavigate }) {
         <main style={{ padding: 20 }}>
           <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>Dashboard</h1>
-              <p style={{ marginTop: 6, marginBottom: 0, color: colors.muted }}>Welcome back, Anna</p>
+              <h1 style={{ margin: 0, fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>{t.title}</h1>
+              <p style={{ marginTop: 6, marginBottom: 0, color: colors.muted }}>{t.welcome}</p>
             </div>
             <button
               onClick={() => onNavigate("/")}
               style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, padding: "0 14px", fontWeight: 600 }}
             >
               <LogOut size={16} color={colors.gold} />
-              Logout
+              {t.logout}
             </button>
           </header>
 
@@ -95,7 +139,7 @@ export default function Dashboard({ onNavigate }) {
           </section>
 
           <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
-            <h2 style={{ marginTop: 0, marginBottom: 12 }}>Recent Reports</h2>
+            <h2 style={{ marginTop: 0, marginBottom: 12 }}>{t.recent}</h2>
             <div style={{ display: "grid", gap: 10 }}>
               {recentReports.map((report) => (
                 <div
@@ -104,7 +148,7 @@ export default function Dashboard({ onNavigate }) {
                 >
                   <strong>{report.id}</strong>
                   <span style={{ color: colors.muted }}>{report.customer}</span>
-                  <span style={{ color: report.status === "Open" ? colors.gold : "#80c783", fontWeight: 600 }}>{report.status}</span>
+                  <span style={{ color: report.status === t.open ? colors.gold : "#80c783", fontWeight: 600 }}>{report.status}</span>
                   <span style={{ color: colors.muted }}>{report.date}</span>
                 </div>
               ))}
