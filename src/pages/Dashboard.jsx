@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { jsPDF } from "jspdf";
 import { supabase } from "../supabase";
 
 export default function Dashboard({ session, onLogout, onNavigate }) {
@@ -10,6 +11,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   const [savingReport, setSavingReport] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [notice, setNotice] = useState("");
+  const [openedReport, setOpenedReport] = useState(null);
   const signatureCanvasRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
 
@@ -86,7 +88,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     const fromMinutes = fromH * 60 + fromM;
     const toMinutes = toH * 60 + toM;
     if (toMinutes <= fromMinutes) return 0;
-    return (toMinutes - fromMinutes) / 60;
+    return Math.round((((toMinutes - fromMinutes) / 60) + Number.EPSILON) * 100) / 100;
   };
 
   const getWorkRowHours = (row) => calculateHours(row.from, row.to);
@@ -343,6 +345,114 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     setNotice("Passwort-Reset E-Mail wurde gesendet.");
   };
 
+  const parseReportPayload = (report) => {
+    if (!report?.description) return null;
+    try {
+      return JSON.parse(report.description);
+    } catch (_error) {
+      return null;
+    }
+  };
+
+  const handleOpenReport = (report) => {
+    setOpenedReport(report);
+  };
+
+  const handleDeleteReport = async (report) => {
+    const confirmed = window.confirm(`Rapport von ${report.customer || "-"} wirklich loschen?`);
+    if (!confirmed) return;
+    const { error } = await supabase.from("reports").delete().eq("id", report.id);
+    if (error) {
+      setNotice("Rapport konnte nicht geloscht werden.");
+      return;
+    }
+    setNotice("Rapport geloscht.");
+    if (openedReport?.id === report.id) {
+      setOpenedReport(null);
+    }
+    await loadReports();
+  };
+
+  const handleDownloadPdf = (report) => {
+    const doc = new jsPDF();
+    const payload = parseReportPayload(report) || {};
+
+    const workData = payload.workRows || [];
+    const materialData = payload.materialRows || [];
+    const totals = payload.totals || {};
+    const signature = payload.signature || {};
+
+    let y = 16;
+    const addLine = (label, value) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, 14, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(value ?? "-"), 60, y);
+      y += 6;
+    };
+    const ensureSpace = (needed = 8) => {
+      if (y + needed > 280) {
+        doc.addPage();
+        y = 16;
+      }
+    };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("BauAbnahme", 14, y);
+    y += 10;
+
+    doc.setFontSize(11);
+    addLine("Kunde", report.customer || payload.customer || "-");
+    addLine("Datum", report.date || payload.date || "-");
+    addLine("Status", (report.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen");
+    y += 4;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Arbeitsstunden", 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    workData.forEach((row, idx) => {
+      ensureSpace();
+      const line = `${idx + 1}. ${row.employee || "-"} | ${row.from || "-"}-${row.to || "-"} | ${Number(row.hours || 0).toFixed(2)} h | CHF ${Number(row.total || 0).toFixed(2)}`;
+      doc.text(line, 14, y);
+      y += 6;
+    });
+
+    ensureSpace(10);
+    y += 2;
+    doc.setFont("helvetica", "bold");
+    doc.text("Material", 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    materialData.forEach((row, idx) => {
+      ensureSpace();
+      const line = `${idx + 1}. ${row.name || "-"} | ${row.quantity || 0} ${row.unit || ""} | CHF ${Number(row.total || 0).toFixed(2)}`;
+      doc.text(line, 14, y);
+      y += 6;
+    });
+
+    ensureSpace(14);
+    y += 2;
+    doc.setFont("helvetica", "bold");
+    doc.text(`TOTAL CHF ${Number(totals.grandTotal || 0).toFixed(2)}`, 14, y);
+    y += 10;
+
+    if (signature.customerName) {
+      ensureSpace();
+      doc.setFont("helvetica", "normal");
+      doc.text(`Unterschrift: ${signature.customerName}`, 14, y);
+      y += 6;
+    }
+
+    if (typeof signature.imageBase64 === "string" && signature.imageBase64.startsWith("data:image")) {
+      ensureSpace(30);
+      doc.addImage(signature.imageBase64, "PNG", 14, y, 80, 25);
+    }
+
+    doc.save(`rapport-${report.id}.pdf`);
+  };
+
   const renderView = () => {
     if (currentView === "new-report") {
       return (
@@ -391,7 +501,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
                       <input type="text" placeholder="Mitarbeiter" value={row.employee} onChange={(e) => updateWorkRow(index, "employee", e.target.value)} style={inputStyle} />
                       <input type="time" value={row.from} onChange={(e) => updateWorkRow(index, "from", e.target.value)} style={inputStyle} />
                       <input type="time" value={row.to} onChange={(e) => updateWorkRow(index, "to", e.target.value)} style={inputStyle} />
-                      <input type="text" value={hours.toFixed(2)} readOnly style={{ ...inputStyle, color: colors.gold }} />
+                      <input type="text" value={hours.toString()} readOnly style={{ ...inputStyle, color: colors.gold }} />
                       <input type="number" placeholder="Ansatz CHF" value={row.rate} onChange={(e) => updateWorkRow(index, "rate", e.target.value)} style={inputStyle} />
                       <input type="text" value={total.toFixed(2)} readOnly style={{ ...inputStyle, color: colors.gold }} />
                     </div>
@@ -502,10 +612,28 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
                     <span style={{ color: "#f0ece4", opacity: 0.9 }}>•</span>
                     <span style={{ color: "#f0ece4" }}>{report.date || "-"}</span>
                   </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                    <button type="button" onClick={() => handleOpenReport(report)} style={{ ...buttonPrimary, minHeight: 34 }}>Offnen</button>
+                    <button type="button" onClick={() => handleDeleteReport(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>Loschen</button>
+                    <button type="button" onClick={() => handleDownloadPdf(report)} style={{ minHeight: 34, borderRadius: 8, border: `1px solid ${colors.border}`, background: "transparent", color: "#f0ece4", padding: "0 12px", cursor: "pointer" }}>PDF</button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
+          {openedReport ? (
+            <div style={{ marginTop: 14, border: "1px solid rgba(212,168,83,0.2)", background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0, color: "#f0ece4" }}>Rapport Details</h3>
+              <div style={{ color: "#f0ece4", display: "grid", gap: 4 }}>
+                <div><strong>Kunde:</strong> {openedReport.customer || "-"}</div>
+                <div><strong>Datum:</strong> {openedReport.date || "-"}</div>
+                <div><strong>Status:</strong> {(openedReport.status || "").toLowerCase() === "done" ? "Erledigt" : "Offen"}</div>
+              </div>
+              <pre style={{ whiteSpace: "pre-wrap", marginTop: 10, color: colors.muted, fontSize: 12 }}>
+                {JSON.stringify(parseReportPayload(openedReport) || {}, null, 2)}
+              </pre>
+            </div>
+          ) : null}
         </section>
       );
     }
