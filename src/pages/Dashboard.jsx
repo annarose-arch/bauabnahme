@@ -58,16 +58,17 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     padding: "0 14px"
   };
 
-  const fetchReports = async () => {
-    setLoadingReports(true);
+  async function loadReports() {
     const { data, error } = await supabase
-      .from("reports")
-      .select("*")
-      .order("created_at", { ascending: false });
-    console.log("reports:", data, "error:", error);
-    setReports(data || []);
-    setLoadingReports(false);
-  };
+      .from('reports')
+      .select('*')
+    if (error) {
+      console.error('Error:', error)
+      setReports([])
+    } else {
+      setReports(data || [])
+    }
+  }
 
   const fetchCustomers = async () => {
     if (!userId) return;
@@ -88,10 +89,20 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       return;
     }
     const loadData = async () => {
-      await Promise.all([fetchReports(), fetchCustomers()]);
+      await fetchCustomers();
     };
     loadData();
   }, [userId]);
+
+  useEffect(() => {
+    if (currentView !== "reports") return;
+    const run = async () => {
+      setLoadingReports(true);
+      await loadReports();
+      setLoadingReports(false);
+    };
+    run();
+  }, [currentView, userId]);
 
   const handleSaveReport = async () => {
     if (!userId || !reportForm.customer.trim()) {
@@ -116,7 +127,7 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
 
     setReportForm((prev) => ({ ...prev, customer: "", description: "" }));
     setNotice("Rapport gespeichert.");
-    await fetchReports();
+    await loadReports();
     setCurrentView("reports");
   };
 
