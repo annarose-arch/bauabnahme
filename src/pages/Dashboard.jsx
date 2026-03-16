@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase";
 
 export default function Dashboard({ session, onLogout, onNavigate }) {
@@ -10,13 +10,29 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
   const [savingReport, setSavingReport] = useState(false);
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [notice, setNotice] = useState("");
+  const signatureCanvasRef = useRef(null);
+  const [isSigning, setIsSigning] = useState(false);
 
   const [reportForm, setReportForm] = useState({
     customer: "",
-    description: "",
+    address: "",
+    orderNo: "",
     date: new Date().toISOString().slice(0, 10),
-    status: "open"
+    status: "open",
+    beforePhoto: "",
+    afterPhoto: "",
+    expenses: "",
+    notes: "",
+    signerName: "",
+    signatureData: ""
   });
+
+  const [workRows, setWorkRows] = useState([
+    { employee: "", from: "", to: "", rate: "" }
+  ]);
+  const [materialRows, setMaterialRows] = useState([
+    { name: "", quantity: "", unit: "", price: "" }
+  ]);
 
   const [customerForm, setCustomerForm] = useState({
     name: "",
@@ -56,6 +72,111 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     fontWeight: 700,
     cursor: "pointer",
     padding: "0 14px"
+  };
+
+  const toNumber = (value) => {
+    const num = Number.parseFloat(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const calculateHours = (fromTime, toTime) => {
+    if (!fromTime || !toTime) return 0;
+    const [fromH, fromM] = fromTime.split(":").map(Number);
+    const [toH, toM] = toTime.split(":").map(Number);
+    const fromMinutes = fromH * 60 + fromM;
+    const toMinutes = toH * 60 + toM;
+    if (toMinutes <= fromMinutes) return 0;
+    return (toMinutes - fromMinutes) / 60;
+  };
+
+  const getWorkRowHours = (row) => calculateHours(row.from, row.to);
+  const getWorkRowTotal = (row) => getWorkRowHours(row) * toNumber(row.rate);
+  const getMaterialRowTotal = (row) => toNumber(row.quantity) * toNumber(row.price);
+
+  const workSubtotal = workRows.reduce((sum, row) => sum + getWorkRowTotal(row), 0);
+  const materialSubtotal = materialRows.reduce((sum, row) => sum + getMaterialRowTotal(row), 0);
+  const expenseTotal = toNumber(reportForm.expenses);
+  const subtotal = workSubtotal + materialSubtotal + expenseTotal;
+  const vat = subtotal * 0.081;
+  const grandTotal = subtotal + vat;
+
+  const updateWorkRow = (index, key, value) => {
+    setWorkRows((prev) => prev.map((row, i) => (i === index ? { ...row, [key]: value } : row)));
+  };
+
+  const updateMaterialRow = (index, key, value) => {
+    setMaterialRows((prev) => prev.map((row, i) => (i === index ? { ...row, [key]: value } : row)));
+  };
+
+  const readFileAsBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handlePhotoUpload = async (type, file) => {
+    if (!file) return;
+    try {
+      const base64 = await readFileAsBase64(file);
+      setReportForm((prev) => ({ ...prev, [type]: base64 }));
+    } catch (_err) {
+      setNotice("Foto konnte nicht geladen werden.");
+    }
+  };
+
+  const getCanvasPoint = (event) => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if ("touches" in event && event.touches.length > 0) {
+      return { x: event.touches[0].clientX - rect.left, y: event.touches[0].clientY - rect.top };
+    }
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+
+  const startSign = (event) => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const point = getCanvasPoint(event);
+    if (!ctx || !point) return;
+    ctx.strokeStyle = colors.gold;
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(point.x, point.y);
+    setIsSigning(true);
+  };
+
+  const moveSign = (event) => {
+    if (!isSigning) return;
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const point = getCanvasPoint(event);
+    if (!ctx || !point) return;
+    if ("touches" in event) event.preventDefault();
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+  };
+
+  const endSign = () => {
+    const canvas = signatureCanvasRef.current;
+    if (canvas) {
+      setReportForm((prev) => ({ ...prev, signatureData: canvas.toDataURL("image/png") }));
+    }
+    setIsSigning(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setReportForm((prev) => ({ ...prev, signatureData: "" }));
   };
 
   async function loadReports() {
@@ -111,10 +232,46 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     }
     setSavingReport(true);
     setNotice("");
+    const fullReportPayload = {
+      customer: reportForm.customer.trim(),
+      address: reportForm.address.trim(),
+      orderNo: reportForm.orderNo.trim(),
+      date: reportForm.date,
+      status: reportForm.status,
+      photos: {
+        before: reportForm.beforePhoto,
+        after: reportForm.afterPhoto
+      },
+      workRows: workRows.map((row) => ({
+        ...row,
+        hours: getWorkRowHours(row),
+        total: getWorkRowTotal(row)
+      })),
+      materialRows: materialRows.map((row) => ({
+        ...row,
+        total: getMaterialRowTotal(row)
+      })),
+      costs: {
+        expenses: expenseTotal,
+        notes: reportForm.notes
+      },
+      totals: {
+        workSubtotal,
+        materialSubtotal,
+        subtotal,
+        vat,
+        grandTotal
+      },
+      signature: {
+        customerName: reportForm.signerName.trim(),
+        imageBase64: reportForm.signatureData
+      }
+    };
+
     const { error } = await supabase.from("reports").insert({
       user_id: userId,
       customer: reportForm.customer.trim(),
-      description: reportForm.description.trim(),
+      description: JSON.stringify(fullReportPayload),
       date: reportForm.date,
       status: reportForm.status
     });
@@ -125,7 +282,22 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
       return;
     }
 
-    setReportForm((prev) => ({ ...prev, customer: "", description: "" }));
+    setReportForm({
+      customer: "",
+      address: "",
+      orderNo: "",
+      date: new Date().toISOString().slice(0, 10),
+      status: "open",
+      beforePhoto: "",
+      afterPhoto: "",
+      expenses: "",
+      notes: "",
+      signerName: "",
+      signatureData: ""
+    });
+    setWorkRows([{ employee: "", from: "", to: "", rate: "" }]);
+    setMaterialRows([{ name: "", quantity: "", unit: "", price: "" }]);
+    clearSignature();
     setNotice("Rapport gespeichert.");
     await loadReports();
     setCurrentView("reports");
@@ -175,38 +347,118 @@ export default function Dashboard({ session, onLogout, onNavigate }) {
     if (currentView === "new-report") {
       return (
         <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 18 }}>
-          <h2 style={{ marginTop: 0 }}>Neuer Rapport</h2>
-          <div style={{ display: "grid", gap: 12 }}>
-            <input
-              type="text"
-              placeholder="Kundenname"
-              value={reportForm.customer}
-              onChange={(e) => setReportForm((prev) => ({ ...prev, customer: e.target.value }))}
-              style={inputStyle}
-            />
-            <textarea
-              placeholder="Beschreibung"
-              value={reportForm.description}
-              onChange={(e) => setReportForm((prev) => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              style={{ ...inputStyle, minHeight: 110, padding: 12 }}
-            />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <input
-                type="date"
-                value={reportForm.date}
-                onChange={(e) => setReportForm((prev) => ({ ...prev, date: e.target.value }))}
-                style={inputStyle}
+          <h2 style={{ marginTop: 0, marginBottom: 14 }}>Swiss Regierapport</h2>
+          <div style={{ display: "grid", gap: 16 }}>
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Header</h3>
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+                <input type="text" placeholder="Kundenname" value={reportForm.customer} onChange={(e) => setReportForm((prev) => ({ ...prev, customer: e.target.value }))} style={inputStyle} />
+                <input type="text" placeholder="Adresse" value={reportForm.address} onChange={(e) => setReportForm((prev) => ({ ...prev, address: e.target.value }))} style={inputStyle} />
+                <input type="date" value={reportForm.date} onChange={(e) => setReportForm((prev) => ({ ...prev, date: e.target.value }))} style={inputStyle} />
+                <input type="text" placeholder="Auftrag-Nr" value={reportForm.orderNo} onChange={(e) => setReportForm((prev) => ({ ...prev, orderNo: e.target.value }))} style={inputStyle} />
+                <select value={reportForm.status} onChange={(e) => setReportForm((prev) => ({ ...prev, status: e.target.value }))} style={inputStyle}>
+                  <option value="open">Offen</option>
+                  <option value="done">Erledigt</option>
+                </select>
+              </div>
+            </section>
+
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Fotos</h3>
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, color: colors.muted }}>Vorher Foto</label>
+                  <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload("beforePhoto", e.target.files?.[0])} style={{ color: colors.muted }} />
+                  {reportForm.beforePhoto ? <img src={reportForm.beforePhoto} alt="Vorher" style={{ marginTop: 8, width: 120, height: 80, objectFit: "cover", borderRadius: 8, border: `1px solid ${colors.border}` }} /> : null}
+                </div>
+                <div>
+                  <label style={{ display: "block", marginBottom: 6, color: colors.muted }}>Nachher Foto</label>
+                  <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload("afterPhoto", e.target.files?.[0])} style={{ color: colors.muted }} />
+                  {reportForm.afterPhoto ? <img src={reportForm.afterPhoto} alt="Nachher" style={{ marginTop: 8, width: 120, height: 80, objectFit: "cover", borderRadius: 8, border: `1px solid ${colors.border}` }} /> : null}
+                </div>
+              </div>
+            </section>
+
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Arbeitsstunden</h3>
+              <button type="button" onClick={() => setWorkRows((prev) => [...prev, { employee: "", from: "", to: "", rate: "" }])} style={{ ...buttonPrimary, minHeight: 36, marginBottom: 10 }}>Zeile hinzufugen</button>
+              <div style={{ display: "grid", gap: 8 }}>
+                {workRows.map((row, index) => {
+                  const hours = getWorkRowHours(row);
+                  const total = getWorkRowTotal(row);
+                  return (
+                    <div key={`work-${index}`} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+                      <input type="text" placeholder="Mitarbeiter" value={row.employee} onChange={(e) => updateWorkRow(index, "employee", e.target.value)} style={inputStyle} />
+                      <input type="time" value={row.from} onChange={(e) => updateWorkRow(index, "from", e.target.value)} style={inputStyle} />
+                      <input type="time" value={row.to} onChange={(e) => updateWorkRow(index, "to", e.target.value)} style={inputStyle} />
+                      <input type="text" value={hours.toFixed(2)} readOnly style={{ ...inputStyle, color: colors.gold }} />
+                      <input type="number" placeholder="Ansatz CHF" value={row.rate} onChange={(e) => updateWorkRow(index, "rate", e.target.value)} style={inputStyle} />
+                      <input type="text" value={total.toFixed(2)} readOnly style={{ ...inputStyle, color: colors.gold }} />
+                    </div>
+                  );
+                })}
+                <div style={{ textAlign: "right", color: colors.gold, fontWeight: 700 }}>Subtotal Arbeitsstunden: CHF {workSubtotal.toFixed(2)}</div>
+              </div>
+            </section>
+
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Material</h3>
+              <button type="button" onClick={() => setMaterialRows((prev) => [...prev, { name: "", quantity: "", unit: "", price: "" }])} style={{ ...buttonPrimary, minHeight: 36, marginBottom: 10 }}>Zeile hinzufugen</button>
+              <div style={{ display: "grid", gap: 8 }}>
+                {materialRows.map((row, index) => {
+                  const total = getMaterialRowTotal(row);
+                  return (
+                    <div key={`mat-${index}`} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+                      <input type="text" placeholder="Bezeichnung" value={row.name} onChange={(e) => updateMaterialRow(index, "name", e.target.value)} style={inputStyle} />
+                      <input type="number" placeholder="Menge" value={row.quantity} onChange={(e) => updateMaterialRow(index, "quantity", e.target.value)} style={inputStyle} />
+                      <input type="text" placeholder="Einheit" value={row.unit} onChange={(e) => updateMaterialRow(index, "unit", e.target.value)} style={inputStyle} />
+                      <input type="number" placeholder="Preis CHF" value={row.price} onChange={(e) => updateMaterialRow(index, "price", e.target.value)} style={inputStyle} />
+                      <input type="text" value={total.toFixed(2)} readOnly style={{ ...inputStyle, color: colors.gold }} />
+                    </div>
+                  );
+                })}
+                <div style={{ textAlign: "right", color: colors.gold, fontWeight: 700 }}>Subtotal Material: CHF {materialSubtotal.toFixed(2)}</div>
+              </div>
+            </section>
+
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Kosten</h3>
+              <div style={{ display: "grid", gap: 10 }}>
+                <input type="number" placeholder="Spesen CHF" value={reportForm.expenses} onChange={(e) => setReportForm((prev) => ({ ...prev, expenses: e.target.value }))} style={inputStyle} />
+                <textarea placeholder="Notizen" rows={4} value={reportForm.notes} onChange={(e) => setReportForm((prev) => ({ ...prev, notes: e.target.value }))} style={{ ...inputStyle, minHeight: 100, padding: 12 }} />
+              </div>
+            </section>
+
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Totals</h3>
+              <div style={{ display: "grid", gap: 6 }}>
+                <div style={{ color: colors.muted }}>Zwischensumme: CHF {subtotal.toFixed(2)}</div>
+                <div style={{ color: colors.muted }}>MwSt 8.1%: CHF {vat.toFixed(2)}</div>
+                <div style={{ color: colors.gold, fontSize: 28, fontWeight: 800 }}>TOTAL CHF {grandTotal.toFixed(2)}</div>
+              </div>
+            </section>
+
+            <section style={{ border: `1px solid ${colors.border}`, borderRadius: 10, padding: 12 }}>
+              <h3 style={{ marginTop: 0 }}>Unterschrift</h3>
+              <canvas
+                ref={signatureCanvasRef}
+                width={720}
+                height={180}
+                onMouseDown={startSign}
+                onMouseMove={moveSign}
+                onMouseUp={endSign}
+                onMouseLeave={endSign}
+                onTouchStart={startSign}
+                onTouchMove={moveSign}
+                onTouchEnd={endSign}
+                style={{ width: "100%", maxWidth: "100%", background: "#0f0f0f", border: `1px solid ${colors.border}`, borderRadius: 8, touchAction: "none" }}
               />
-              <select
-                value={reportForm.status}
-                onChange={(e) => setReportForm((prev) => ({ ...prev, status: e.target.value }))}
-                style={inputStyle}
-              >
-                <option value="open">Offen</option>
-                <option value="done">Erledigt</option>
-              </select>
-            </div>
+              <div style={{ display: "grid", gap: 10, marginTop: 10, gridTemplateColumns: "1fr auto" }}>
+                <input type="text" placeholder="Kundenname" value={reportForm.signerName} onChange={(e) => setReportForm((prev) => ({ ...prev, signerName: e.target.value }))} style={inputStyle} />
+                <button type="button" onClick={clearSignature} style={{ ...buttonPrimary, minHeight: 42 }}>Unterschrift loschen</button>
+              </div>
+            </section>
+
             <button type="button" onClick={handleSaveReport} disabled={savingReport} style={{ ...buttonPrimary, opacity: savingReport ? 0.7 : 1 }}>
               {savingReport ? "Speichert..." : "Rapport speichern"}
             </button>
