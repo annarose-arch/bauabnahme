@@ -141,7 +141,13 @@ function Landing({ lang, setLang, onNavigate }) {
               </button>
             ))}
           </div>
-          <button className="touch-button" style={{ border: "none", background: colors.gold, color: "#111", borderRadius: 8, padding: "10px 14px", cursor: "pointer", fontWeight: 700 }}>{t.navStart}</button>
+          <button
+            className="touch-button"
+            onClick={() => onNavigate("/login")}
+            style={{ border: "none", background: colors.gold, color: "#111", borderRadius: 8, padding: "10px 14px", cursor: "pointer", fontWeight: 700 }}
+          >
+            {t.navStart}
+          </button>
         </div>
         <button className="mobile-only touch-button" onClick={() => setMenuOpen((prev) => !prev)} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, padding: "8px 10px", cursor: "pointer", alignItems: "center", justifyContent: "center" }} aria-label="Toggle menu">
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -176,7 +182,11 @@ function Landing({ lang, setLang, onNavigate }) {
           <p className="hero-subtitle" style={{ color: colors.muted, maxWidth: 760, margin: "0 auto 28px", lineHeight: 1.6, fontSize: 18 }}>
             {t.heroSubtitle}
           </p>
-          <button className="touch-button" style={{ border: "none", background: colors.gold, color: "#111", borderRadius: 10, padding: "12px 18px", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <button
+            className="touch-button"
+            onClick={() => onNavigate("/login")}
+            style={{ border: "none", background: colors.gold, color: "#111", borderRadius: 10, padding: "12px 18px", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}
+          >
             {t.heroCta}
             <ChevronRight size={16} />
           </button>
