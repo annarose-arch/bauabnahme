@@ -108,6 +108,21 @@ function Landing({ lang, setLang, onNavigate }) {
     border: "rgba(212, 168, 83, 0.25)"
   };
 
+  const handleNavigate = (path, source) => {
+    console.log(`[Landing] ${source} -> navigate(${path})`);
+    onNavigate(path);
+  };
+
+  const handleLanguageChange = (code, source) => {
+    console.log(`[Landing] ${source} -> setLang(${code})`);
+    setLang(code);
+  };
+
+  const handleToggleMenu = () => {
+    console.log(`[Landing] toggle mobile menu -> ${!menuOpen}`);
+    setMenuOpen((prev) => !prev);
+  };
+
   return (
     <div style={{ background: colors.bg, color: colors.text, minHeight: "100vh", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`
@@ -130,26 +145,26 @@ function Landing({ lang, setLang, onNavigate }) {
         <div className="desktop-only" style={{ alignItems: "center", gap: 16 }}>
           <a href="#features" style={{ color: colors.muted, textDecoration: "none" }}>{t.navFeatures}</a>
           <a href="#pricing" style={{ color: colors.muted, textDecoration: "none" }}>{t.navPricing}</a>
-          <button onClick={() => onNavigate("/login")} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, padding: "9px 12px", cursor: "pointer", fontWeight: 600 }}>
+          <button onClick={() => handleNavigate("/login", "desktop login")} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, padding: "9px 12px", cursor: "pointer", fontWeight: 600 }}>
             {t.navLogin}
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Globe size={14} color={colors.gold} />
             {["de", "fr", "it", "en"].map((code) => (
-              <button key={code} onClick={() => setLang(code)} style={{ border: "none", background: "transparent", color: code === lang ? colors.gold : colors.muted, cursor: "pointer", fontWeight: code === lang ? 700 : 500, minHeight: 40, padding: "0 6px" }}>
+              <button key={code} onClick={() => handleLanguageChange(code, "desktop language button")} style={{ border: "none", background: "transparent", color: code === lang ? colors.gold : colors.muted, cursor: "pointer", fontWeight: code === lang ? 700 : 500, minHeight: 40, padding: "0 6px" }}>
                 {code.toUpperCase()}
               </button>
             ))}
           </div>
           <button
             className="touch-button"
-            onClick={() => onNavigate("/login")}
+            onClick={() => handleNavigate("/login", "desktop start")}
             style={{ border: "none", background: colors.gold, color: "#111", borderRadius: 8, padding: "10px 14px", cursor: "pointer", fontWeight: 700 }}
           >
             {t.navStart}
           </button>
         </div>
-        <button className="mobile-only touch-button" onClick={() => setMenuOpen((prev) => !prev)} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, padding: "8px 10px", cursor: "pointer", alignItems: "center", justifyContent: "center" }} aria-label="Toggle menu">
+        <button className="mobile-only touch-button" onClick={handleToggleMenu} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, padding: "8px 10px", cursor: "pointer", alignItems: "center", justifyContent: "center" }} aria-label="Toggle menu">
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </nav>
@@ -157,15 +172,15 @@ function Landing({ lang, setLang, onNavigate }) {
       {menuOpen && (
         <div style={{ position: "fixed", top: 62, left: 0, right: 0, zIndex: 99, background: "#111", borderBottom: `1px solid ${colors.border}`, padding: "12px 16px" }}>
           <div style={{ display: "grid", gap: 10 }}>
-            <a href="#features" onClick={() => setMenuOpen(false)} style={{ color: colors.muted, textDecoration: "none", padding: "6px 0" }}>{t.navFeatures}</a>
-            <a href="#pricing" onClick={() => setMenuOpen(false)} style={{ color: colors.muted, textDecoration: "none", padding: "6px 0" }}>{t.navPricing}</a>
-            <button onClick={() => { setMenuOpen(false); onNavigate("/login"); }} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, minHeight: 44, cursor: "pointer", fontWeight: 600 }}>
+            <a href="#features" onClick={() => { console.log("[Landing] mobile nav -> features"); setMenuOpen(false); }} style={{ color: colors.muted, textDecoration: "none", padding: "6px 0" }}>{t.navFeatures}</a>
+            <a href="#pricing" onClick={() => { console.log("[Landing] mobile nav -> pricing"); setMenuOpen(false); }} style={{ color: colors.muted, textDecoration: "none", padding: "6px 0" }}>{t.navPricing}</a>
+            <button onClick={() => { console.log("[Landing] mobile login button"); setMenuOpen(false); handleNavigate("/login", "mobile login"); }} style={{ border: `1px solid ${colors.border}`, background: "transparent", color: colors.text, borderRadius: 8, minHeight: 44, cursor: "pointer", fontWeight: 600 }}>
               {t.navLogin}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 4 }}>
               <Globe size={14} color={colors.gold} />
               {["de", "fr", "it", "en"].map((code) => (
-                <button key={code} onClick={() => setLang(code)} style={{ border: "none", background: "transparent", color: code === lang ? colors.gold : colors.muted, cursor: "pointer", fontWeight: code === lang ? 700 : 500, minHeight: 40, padding: "0 8px" }}>
+                <button key={code} onClick={() => handleLanguageChange(code, "mobile language button")} style={{ border: "none", background: "transparent", color: code === lang ? colors.gold : colors.muted, cursor: "pointer", fontWeight: code === lang ? 700 : 500, minHeight: 40, padding: "0 8px" }}>
                   {code.toUpperCase()}
                 </button>
               ))}
@@ -184,7 +199,7 @@ function Landing({ lang, setLang, onNavigate }) {
           </p>
           <button
             className="touch-button"
-            onClick={() => onNavigate("/login")}
+            onClick={() => handleNavigate("/login", "hero cta")}
             style={{ border: "none", background: colors.gold, color: "#111", borderRadius: 10, padding: "12px 18px", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}
           >
             {t.heroCta}
@@ -246,10 +261,13 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
 
   const navigate = (path) => {
+    console.log(`[App] navigate requested: ${route} -> ${path}`);
     if (path !== route) {
       window.history.pushState({}, "", path);
       setRoute(path);
+      return;
     }
+    console.log("[App] route unchanged, no state update");
   };
 
   useEffect(() => {
@@ -257,6 +275,10 @@ export default function App() {
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
+
+  useEffect(() => {
+    console.log(`[App] route state changed to: ${route}`);
+  }, [route]);
 
   useEffect(() => {
     let isMounted = true;

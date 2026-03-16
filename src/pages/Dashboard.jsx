@@ -89,6 +89,11 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
     description: ""
   });
 
+  const setDashboardView = (nextView, source) => {
+    console.log(`[Dashboard] ${source} -> setView(${nextView})`);
+    setView(nextView);
+  };
+
   const colors = {
     bg: "#0a0a0a",
     panel: "#141414",
@@ -116,6 +121,10 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
     fetchCustomers(userId).then(({ data }) => setCustomers(data || []));
   }, [userId]);
 
+  useEffect(() => {
+    console.log(`[Dashboard] view state changed to: ${view}`);
+  }, [view]);
+
   const openReports = reports.filter((r) => (r.status || "").toLowerCase() === "open").length;
   const thisMonth = reports.filter((r) => {
     if (!r.date) return false;
@@ -125,6 +134,7 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
   }).length;
 
   const handleSaveReport = async () => {
+    console.log("[Dashboard] save report button clicked");
     if (!userId || !reportForm.customer.trim()) return;
     const payload = {
       user_id: userId,
@@ -137,7 +147,7 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
     if (data) {
       setReports((prev) => [data, ...prev]);
       setReportForm((prev) => ({ ...prev, customer: "", description: "" }));
-      setView("reports");
+      setDashboardView("reports", "save report success");
     }
   };
 
@@ -215,7 +225,7 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
             <input type="checkbox" defaultChecked />
             <span style={{ color: colors.muted }}>{t.settings.notifications}</span>
           </label>
-          <button type="button" onClick={() => setView("home")} style={{ minHeight: 44, borderRadius: 10, border: "none", background: colors.gold, color: "#111", fontWeight: 700, cursor: "pointer", padding: "0 14px" }}>
+          <button type="button" onClick={() => setDashboardView("home", "settings save")} style={{ minHeight: 44, borderRadius: 10, border: "none", background: colors.gold, color: "#111", fontWeight: 700, cursor: "pointer", padding: "0 14px" }}>
             {t.settings.save}
           </button>
         </section>
@@ -241,10 +251,10 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
         <aside style={{ borderRight: `1px solid ${colors.border}`, background: colors.panel, padding: 18 }}>
           <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 18 }}>Bau<span style={{ color: colors.gold }}>Abnahme</span></div>
           <nav style={{ display: "grid", gap: 8 }}>
-            <button type="button" onClick={() => setView("new-report")} style={{ border: `1px solid ${view === "new-report" ? colors.gold : colors.border}`, background: view === "new-report" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><FilePlus2 size={16} color={colors.gold} />{t.nav.newReport}</button>
-            <button type="button" onClick={() => setView("reports")} style={{ border: `1px solid ${view === "reports" ? colors.gold : colors.border}`, background: view === "reports" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><FileText size={16} color={colors.gold} />{t.nav.reports}</button>
-            <button type="button" onClick={() => setView("customers")} style={{ border: `1px solid ${view === "customers" ? colors.gold : colors.border}`, background: view === "customers" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><Users size={16} color={colors.gold} />{t.nav.customers}</button>
-            <button type="button" onClick={() => setView("settings")} style={{ border: `1px solid ${view === "settings" ? colors.gold : colors.border}`, background: view === "settings" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><Settings size={16} color={colors.gold} />{t.nav.settings}</button>
+            <button type="button" onClick={() => setDashboardView("new-report", "sidebar new report")} style={{ border: `1px solid ${view === "new-report" ? colors.gold : colors.border}`, background: view === "new-report" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><FilePlus2 size={16} color={colors.gold} />{t.nav.newReport}</button>
+            <button type="button" onClick={() => setDashboardView("reports", "sidebar all reports")} style={{ border: `1px solid ${view === "reports" ? colors.gold : colors.border}`, background: view === "reports" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><FileText size={16} color={colors.gold} />{t.nav.reports}</button>
+            <button type="button" onClick={() => setDashboardView("customers", "sidebar customers")} style={{ border: `1px solid ${view === "customers" ? colors.gold : colors.border}`, background: view === "customers" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><Users size={16} color={colors.gold} />{t.nav.customers}</button>
+            <button type="button" onClick={() => setDashboardView("settings", "sidebar settings")} style={{ border: `1px solid ${view === "settings" ? colors.gold : colors.border}`, background: view === "settings" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}><Settings size={16} color={colors.gold} />{t.nav.settings}</button>
           </nav>
         </aside>
 
@@ -257,6 +267,7 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
             <button
               type="button"
               onClick={() => {
+                console.log("[Dashboard] logout button clicked");
                 if (onLogout) {
                   onLogout();
                   return;
