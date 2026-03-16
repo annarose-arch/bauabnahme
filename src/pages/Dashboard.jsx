@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FilePlus2,
   FileText,
@@ -133,7 +133,7 @@ const dashboardCopy = {
 export default function Dashboard({ lang = "en", onNavigate, onLogout, session }) {
   const t = dashboardCopy[lang] || dashboardCopy.en;
   const userId = session?.user?.id;
-  const [view, setView] = useState("all");
+  const [view, setView] = useState("dashboard");
   const [reports, setReports] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
@@ -156,16 +156,6 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
     gold: "#d4a853",
     border: "rgba(212,168,83,0.25)"
   };
-
-  const navItems = useMemo(
-    () => [
-      { key: "new", label: t.nav.new, icon: FilePlus2 },
-      { key: "all", label: t.nav.all, icon: FileText },
-      { key: "customers", label: t.nav.customers, icon: Users },
-      { key: "settings", label: t.nav.settings, icon: Settings }
-    ],
-    [t]
-  );
 
   useEffect(() => {
     if (!userId) return;
@@ -221,11 +211,11 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
     setReports((prev) => [data, ...prev]);
     setReportForm((prev) => ({ ...prev, customer: "", description: "" }));
     setMessage(t.reportSaved);
-    setView("all");
+    setView("all-reports");
   };
 
   const renderMainView = () => {
-    if (view === "new") {
+    if (view === "new-report") {
       return (
         <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
           <h2 style={{ marginTop: 0 }}>{t.form.title}</h2>
@@ -333,9 +323,36 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
       );
     }
 
+    if (view === "all-reports") {
+      return (
+        <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
+          <h2 style={{ marginTop: 0, marginBottom: 12 }}>{t.nav.all}</h2>
+          {loadingReports ? (
+            <p style={{ color: colors.muted }}>Loading...</p>
+          ) : reports.length === 0 ? (
+            <p style={{ color: colors.muted }}>{t.noReports}</p>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {reports.map((report) => (
+                <div key={report.id} style={{ display: "grid", gridTemplateColumns: "90px 1fr 90px 120px", gap: 10, alignItems: "center", border: `1px solid ${colors.border}`, borderRadius: 10, padding: "10px 12px" }}>
+                  <strong>R-{report.id}</strong>
+                  <span style={{ color: colors.muted }}>{report.customer}</span>
+                  <span style={{ color: (report.status || "").toLowerCase() === "open" ? colors.gold : "#80c783", fontWeight: 600 }}>
+                    {(report.status || "").toLowerCase() === "open" ? t.form.open : t.form.done}
+                  </span>
+                  <span style={{ color: colors.muted }}>{report.date}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    }
+
     return (
       <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 16 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 12 }}>{t.recent}</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 12 }}>{t.title}</h2>
+        <p style={{ marginTop: 0, color: colors.muted }}>{t.recent}</p>
         {loadingReports ? (
           <p style={{ color: colors.muted }}>Loading...</p>
         ) : reports.length === 0 ? (
@@ -366,22 +383,42 @@ export default function Dashboard({ lang = "en", onNavigate, onLogout, session }
             Bau<span style={{ color: colors.gold }}>Abnahme</span>
           </div>
           <nav style={{ display: "grid", gap: 8 }}>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const selected = view === item.key;
-              return (
-                <button
-                  type="button"
-                  key={item.key}
-                  onClick={() => setView(item.key)}
-                  aria-pressed={selected}
-                  style={{ border: `1px solid ${selected ? colors.gold : colors.border}`, background: selected ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}
-                >
-                  <Icon size={16} color={colors.gold} />
-                  {item.label}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => setView("new-report")}
+              aria-pressed={view === "new-report"}
+              style={{ border: `1px solid ${view === "new-report" ? colors.gold : colors.border}`, background: view === "new-report" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}
+            >
+              <FilePlus2 size={16} color={colors.gold} />
+              {t.nav.new}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("all-reports")}
+              aria-pressed={view === "all-reports"}
+              style={{ border: `1px solid ${view === "all-reports" ? colors.gold : colors.border}`, background: view === "all-reports" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}
+            >
+              <FileText size={16} color={colors.gold} />
+              {t.nav.all}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("customers")}
+              aria-pressed={view === "customers"}
+              style={{ border: `1px solid ${view === "customers" ? colors.gold : colors.border}`, background: view === "customers" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}
+            >
+              <Users size={16} color={colors.gold} />
+              {t.nav.customers}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("settings")}
+              aria-pressed={view === "settings"}
+              style={{ border: `1px solid ${view === "settings" ? colors.gold : colors.border}`, background: view === "settings" ? "rgba(212,168,83,0.12)" : "transparent", color: colors.text, minHeight: 44, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "0 12px", textAlign: "left" }}
+            >
+              <Settings size={16} color={colors.gold} />
+              {t.nav.settings}
+            </button>
           </nav>
         </aside>
 
