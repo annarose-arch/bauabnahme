@@ -439,11 +439,152 @@ ${photos.before||photos.after?`<div class="card"><h3>Fotos</h3><div style="displ
   <div class="total">TOTAL CHF ${Number(tot.total||0).toFixed(2)}</div>
 </div>
 ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4px"><b>${sig.name||"-"}</b></div><img src="${sig.image}" style="width:280px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/></div>`:""}
-<div style="margin-top:24px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#aaa">
-  Erstellt mit <a href="https://bauabnahme.app" style="color:#d4a853;text-decoration:none">bauabnahme.app</a>
-</div>
 </body></html>`;
   }
+
+  function buildSwissQR(iban, amount, creditorName, creditorAddress, creditorZip, creditorCity, debtorName, debtorAddress, debtorZip, debtorCity, ref, message) {
+    // Swiss QR-Bill payload (SPS 2.2 standard)
+    const lines = [
+      "SPC","0200","1",
+      iban.replace(/\s/g,""),
+      "K", creditorName||"", creditorAddress||"", `${creditorZip||""} ${creditorCity||""}`.trim(), "","","CH","",
+      "","","","","","","",
+      amount ? Number(amount).toFixed(2) : "0.00", "CHF",
+      "K", debtorName||"", debtorAddress||"", `${debtorZip||""} ${debtorCity||""}`.trim(), "","","CH","",
+      "NON","",
+      message||"","EPD",""
+    ];
+    const payload = lines.join("\n");
+    // Encode as QR using qr-server API (no install needed)
+    const encoded = encodeURIComponent(payload);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}&ecc=M`;
+  }
+
+  const openInvoice = (report) => {
+    const p = parseReport(report);
+    const meta = session?.user?.user_metadata || {};
+    const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
+    const isDemoMode = !userId || userId === "demo-user";
+    const firmName = meta.company_name || "";
+    const firmLogo = meta.company_logo || "";
+    const firmAddress = meta.address || "";
+    const firmZip = meta.zip || "";
+    const firmCity = meta.city || "";
+    const firmContact = [meta.first_name, meta.last_name].filter(Boolean).join(" ");
+    const firmPhone = meta.phone ? `Tel: ${meta.phone}` : "";
+    const firmEmail = meta.email || userEmail;
+    const firmIban = meta.iban || "";
+    const custMeta = {};
+    const name = report.customer || "-";
+    const custAddr = p.address || "";
+    const tot = p.totals || {};
+    const totalAmount = Number(tot.total || 0);
+    const invoiceNr = `RE-${p.rapportNr || report.id}`;
+    const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {};
+    const wHtml = work.map((r,i) => `<tr><td>${r.employee||"-"}</td><td style="text-align:center">${r.from||"-"}–${r.to||"-"}</td><td style="text-align:center">${Number(r.hours||0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
+    const mHtml = mat.map((r,i) => `<tr><td>${r.name||"-"}</td><td style="text-align:center">${r.qty||0} ${r.unit||""}</td><td style="text-align:center">CHF ${Number(r.price||0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
+    const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName||firmContact, firmAddress, firmZip, firmCity, name, custAddr, "", "", "", `Rechnung ${invoiceNr}`) : "";
+    const win = window.open("", "_blank", "width=980,height=860");
+    if (!win) return;
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"/>
+<title>Rechnung ${invoiceNr}</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;color:#222;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:3px solid #d4a853}
+.firm-name{font-size:22px;font-weight:900;color:#111}
+.firm-details{font-size:12px;color:#555;line-height:1.7;margin-top:4px}
+.invoice-label{font-size:28px;font-weight:900;color:#d4a853;text-align:right}
+.invoice-meta{font-size:13px;color:#555;text-align:right;line-height:1.8}
+.address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.address-box{background:#f9f4ec;border-left:3px solid #d4a853;padding:12px 16px;border-radius:0 8px 8px 0}
+.address-label{font-size:10px;text-transform:uppercase;color:#999;font-weight:700;margin-bottom:4px;letter-spacing:1px}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{background:#d4a853;color:#111;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
+td{padding:7px 10px;font-size:13px;border-bottom:1px solid #f0ebe0}
+tr:nth-child(even) td{background:#faf7f1}
+.totals-box{display:flex;justify-content:flex-end;margin-bottom:28px}
+.totals-inner{width:300px}
+.totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#555;border-bottom:1px solid #f0ebe0}
+.totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#d4a853;border-top:2px solid #d4a853;margin-top:4px}
+.qr-section{border-top:3px solid #d4a853;margin-top:32px;padding-top:20px;display:flex;gap:24px;align-items:flex-start}
+.qr-left{flex:1}
+.qr-title{font-size:16px;font-weight:800;color:#111;margin-bottom:12px}
+.qr-fields{display:grid;gap:6px;font-size:12px;color:#444;line-height:1.6}
+.qr-label{font-size:10px;text-transform:uppercase;color:#999;font-weight:700;letter-spacing:1px}
+.qr-img{border:1px solid #ddd;border-radius:8px;padding:8px;background:#fff}
+.no-iban{background:#fff8e6;border:2px dashed #d4a853;border-radius:8px;padding:14px;font-size:13px;color:#555;text-align:center}
+.watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(212,168,83,0.10);white-space:nowrap;pointer-events:none;z-index:1000}
+.btn{background:#d4a853;border:none;color:#111;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
+@media print{.noprint{display:none}.qr-section{page-break-inside:avoid}}
+</style></head><body>
+${isDemoMode?'<div class="watermark">ENTWURF</div>':""}
+<div class="noprint" style="margin-bottom:20px">
+${!isPro?'<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#d4a853;color:#111;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>':""}
+<button class="btn" onclick="window.print()">💾 Drucken / PDF</button>
+</div>
+<div class="header">
+  <div>
+    ${firmLogo?`<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>`:""}
+    <div class="firm-name">${firmName||firmContact||""}</div>
+    <div class="firm-details">
+      ${firmContact&&firmName?`<div>${firmContact}</div>`:""}
+      ${firmAddress?`<div>${firmAddress}, ${firmZip} ${firmCity}</div>`:""}
+      ${firmPhone?`<div>${firmPhone}</div>`:""}
+      ${firmEmail?`<div>${firmEmail}</div>`:""}
+      ${firmIban?`<div>IBAN: ${firmIban}</div>`:""}
+    </div>
+  </div>
+  <div>
+    <div class="invoice-label">RECHNUNG</div>
+    <div class="invoice-meta">
+      <div><b>Nr.:</b> ${invoiceNr}</div>
+      <div><b>Datum:</b> ${formatDateCH(report.date)}</div>
+      <div><b>Fällig:</b> ${formatDateCH(new Date(new Date(report.date).getTime()+30*86400000).toISOString().slice(0,10))}</div>
+      ${p.orderNo?`<div><b>Auftrag-Nr:</b> ${p.orderNo}</div>`:""}
+    </div>
+  </div>
+</div>
+<div class="address-block">
+  <div class="address-box">
+    <div class="address-label">Rechnungssteller</div>
+    <strong>${firmName||firmContact||"-"}</strong><br/>
+    ${firmAddress?`${firmAddress}<br/>${firmZip} ${firmCity}`:""}
+  </div>
+  <div class="address-box">
+    <div class="address-label">Rechnungsempfänger</div>
+    <strong>${name}</strong><br/>
+    ${custAddr||"-"}
+  </div>
+</div>
+${work.length>0?`<h3 style="color:#d4a853;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Arbeitsleistungen</h3>
+<table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Betrag</th></tr></thead>
+<tbody>${wHtml}</tbody></table>`:""}
+${mat.length>0?`<h3 style="color:#d4a853;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Material</h3>
+<table><thead><tr><th>Bezeichnung</th><th style="text-align:center">Menge</th><th style="text-align:center">Preis</th><th style="text-align:right">Betrag</th></tr></thead>
+<tbody>${mHtml}</tbody></table>`:""}
+<div class="totals-box"><div class="totals-inner">
+  ${toNum(costs.expenses)>0?`<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses||0).toFixed(2)}</span></div>`:""}
+  <div class="totals-row"><span>Subtotal</span><span>CHF ${Number(tot.subtotal||0).toFixed(2)}</span></div>
+  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${Number(tot.vat||0).toFixed(2)}</span></div>
+  <div class="totals-total"><span>TOTAL</span><span>CHF ${totalAmount.toFixed(2)}</span></div>
+</div></div>
+${costs.notes?`<div style="background:#f9f4ec;border-left:3px solid #d4a853;padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;margin-bottom:20px"><b>Bemerkungen:</b> ${costs.notes}</div>`:""}
+<div class="qr-section">
+  <div class="qr-left">
+    <div class="qr-title">Zahlung – Swiss QR-Bill</div>
+    <div class="qr-fields">
+      <div><div class="qr-label">Konto / Zahlbar an</div><div style="font-weight:700">${firmIban||"— IBAN in Einstellungen hinterlegen —"}</div></div>
+      <div><div class="qr-label">Betrag</div><div style="font-size:16px;font-weight:900;color:#d4a853">CHF ${totalAmount.toFixed(2)}</div></div>
+      <div><div class="qr-label">Zahlbar bis</div><div>${formatDateCH(new Date(new Date(report.date).getTime()+30*86400000).toISOString().slice(0,10))}</div></div>
+      <div><div class="qr-label">Mitteilung</div><div>Rechnung ${invoiceNr}</div></div>
+    </div>
+  </div>
+  ${qrUrl?`<div><div style="font-size:11px;color:#999;margin-bottom:6px;text-align:center">QR-Code scannen</div><img src="${qrUrl}" class="qr-img" width="180" height="180" alt="Swiss QR Code"/></div>`:`<div class="no-iban">⚠️ Bitte IBAN in<br/><b>Einstellungen → Firmenprofil</b><br/>hinterlegen für QR-Code</div>`}
+</div>
+</body></html>`);
+    win.document.close();
+  };
 
   const openPDF = (report) => {
     const p = parseReport(report);
@@ -546,6 +687,7 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
           <button type="button" onClick={() => startEdit(openedReport)} style={pBtn}>✏️ Bearbeiten</button>
           <button type="button" onClick={() => openPDF(openedReport)} style={pBtn}>🖨 PDF / Drucken</button>
           <button type="button" onClick={() => downloadAndEmail(openedReport)} style={{...pBtn, background:"transparent", border:`1px solid ${GOLD}`, color:GOLD}}>📧 Per E-Mail senden</button>
+          <button type="button" onClick={() => openInvoice(openedReport)} style={{...pBtn, background:"#1a472a", border:`1px solid #2d7a45`, color:"#7ddb9a"}}>🧾 Rechnung erstellen</button>
         </div>
       </>);
     }
@@ -595,6 +737,22 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
               <div style={{display:"flex",gap:8,flexWrap:"wrap",borderTop:`1px solid ${BORDER}`,paddingTop:8}}>
                 <button type="button" onClick={()=>{ setSelectedCustomer(null); startEdit(r); }} style={{...gBtn,minHeight:32,fontSize:13}}>✏️ Bearbeiten</button>
                 <button type="button" onClick={()=>openPDF(r)} style={{...gBtn,minHeight:32,fontSize:13}}>🖨 PDF</button>
+                <button type="button" onClick={()=>openInvoice(r)} style={{...gBtn,minHeight:32,fontSize:13,color:"#7ddb9a",borderColor:"#2d7a45"}}>🧾 Rechnung</button>
+                <button type="button" onClick={async()=>{
+                  if(!window.confirm("Rapport in den Papierkorb verschieben?"))return;
+                  const deleted={...r,status:"geloescht"};
+                  if(isDemo){
+                    const all=JSON.parse(localStorage.getItem("demo_reports")||"[]");
+                    localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?deleted:x)));
+                  } else {
+                    const{error}=await supabase.from("reports").update({status:"geloescht"}).eq("id",r.id).eq("user_id",userId);
+                    if(error){showNotice("Fehler: "+error.message);return;}
+                  }
+                  setArchivedReports(p=>p.filter(x=>x.id!==r.id));
+                  setReports(p=>p.filter(x=>x.id!==r.id));
+                  setTrashReports(p=>[...p,deleted]);
+                  showNotice("🗑 Rapport in den Papierkorb verschoben.");
+                }} style={{...dBtn,minHeight:32,fontSize:13}}>🗑 Löschen</button>
               </div>
             </div>
           );
@@ -921,6 +1079,19 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
                 reader.readAsDataURL(f);
               }}/>
             </label>
+          </div>
+          <div style={{marginTop:12}}>
+            <div style={{color:MUTED,fontSize:12,marginBottom:6}}>🏦 IBAN (für Swiss QR-Rechnung):</div>
+            <div style={{display:"flex",gap:8}}>
+              <input placeholder="CH56 0483 5012 3456 7800 9" defaultValue={meta.iban||""} id="iban-input"
+                style={{...iStyle,flex:1,fontFamily:"monospace",fontSize:13,letterSpacing:"0.5px"}}/>
+              <button type="button" style={pBtn} onClick={async()=>{
+                const val=document.getElementById("iban-input").value.trim();
+                await supabase.auth.updateUser({data:{...meta,iban:val}});
+                showNotice("✅ IBAN gespeichert!");
+              }}>Speichern</button>
+            </div>
+            {meta.iban&&<div style={{color:GOLD,fontSize:12,marginTop:4}}>✓ {meta.iban}</div>}
           </div>
         </div>
 
