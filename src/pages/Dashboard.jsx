@@ -118,6 +118,9 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(null);
   const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
+  const [invoiceModal, setInvoiceModal] = useState(null); // {report, discountPct, skontoPct}
+  const [invoiceDiscount, setInvoiceDiscount] = useState("0");
+  const [invoiceSkonto, setInvoiceSkonto] = useState("0");
 
   // Katalog: Mitarbeiter & Material
   const [catalog, setCatalog] = useState(() => {
@@ -461,6 +464,13 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
   }
 
   const openInvoice = async (report) => {
+    setInvoiceDiscount("0");
+    setInvoiceSkonto("0");
+    setInvoiceModal(report);
+  };
+
+  const generateInvoice = async (report, discountPct, skontoPct) => {
+    setInvoiceModal(null);
     const p = parseReport(report);
     const meta = session?.user?.user_metadata || {};
     const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
@@ -480,13 +490,8 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const invoiceNr = `RE-${p.rapportNr || report.id}`;
     const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {};
 
-    // Filter out empty rows
     const validWork = work.filter(r => r.employee || toNum(r.hours) > 0 || toNum(r.total) > 0);
     const validMat = mat.filter(r => r.name || toNum(r.qty) > 0);
-
-    // Ask for discount/skonto
-    const discountPct = parseFloat(window.prompt("Rabatt in % (0 = kein Rabatt):", "0") || "0") || 0;
-    const skontoPct = parseFloat(window.prompt("Skonto in % (z.B. 2 für 2% bei Zahlung innert 10 Tagen, 0 = kein Skonto):", "0") || "0") || 0;
 
     const subtotal = Number(tot.subtotal || 0);
     const discountAmt = subtotal * (discountPct / 100);
@@ -496,7 +501,6 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const skontoAmt = totalAmount * (skontoPct / 100);
     const dueDate = formatDateCH(new Date(new Date(report.date).getTime() + 30 * 86400000).toISOString().slice(0, 10));
     const skontoDueDate = formatDateCH(new Date(new Date(report.date).getTime() + 10 * 86400000).toISOString().slice(0, 10));
-
     const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName || firmContact, firmAddress, firmZip, firmCity, name, custAddr, "", "", "", `Rechnung ${invoiceNr}`) : "";
 
     const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
@@ -508,6 +512,7 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
 <title>Rechnung ${invoiceNr}</title>
 <style>
 *{box-sizing:border-box}
+@page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #111}
 .firm-name{font-size:22px;font-weight:900;color:#111}
@@ -517,7 +522,7 @@ body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14p
 .address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:8px}
 .address-box{border-left:3px solid #111;padding:10px 14px}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
-.subject-line{margin-bottom:24px;padding:10px 0;border-bottom:1px solid #ddd;font-size:14px}
+.project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}
 table{width:100%;border-collapse:collapse;margin-bottom:16px}
 th{background:#111;color:#fff;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
 td{padding:7px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}
@@ -526,8 +531,9 @@ tr:nth-child(even) td{background:#f8f8f8}
 .totals-box{display:flex;justify-content:flex-end;margin-bottom:20px}
 .totals-inner{width:320px}
 .totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
+.totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;font-weight:700;border-bottom:1px solid #eee}
 .totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#111;border-top:2px solid #111;margin-top:4px}
-.skonto-box{background:#f5f5f5;border-left:3px solid #111;padding:10px 14px;font-size:12px;color:#333;margin-bottom:20px;border-radius:0 4px 4px 0}
+.skonto-box{background:#f5f5f5;border-left:3px solid #555;padding:10px 14px;font-size:12px;color:#333;margin-bottom:20px}
 .qr-section{border-top:2px solid #111;margin-top:28px;padding-top:18px;display:flex;gap:24px;align-items:flex-start}
 .qr-left{flex:1}
 .qr-title{font-size:15px;font-weight:800;color:#111;margin-bottom:12px}
@@ -537,7 +543,7 @@ tr:nth-child(even) td{background:#f8f8f8}
 .no-iban{background:#f5f5f5;border:2px dashed #999;border-radius:6px;padding:14px;font-size:13px;color:#555;text-align:center}
 .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000}
 .btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
-@media print{.noprint{display:none}.qr-section{page-break-inside:avoid}}
+@media print{.noprint{display:none}.qr-section{page-break-inside:avoid}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:20px">
@@ -578,7 +584,7 @@ ${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8
     ${custAddr || "-"}
   </div>
 </div>
-${p.projectName ? `<div class="subject-line"><b>Betreff:</b> ${p.projectName}</div>` : "<div style='margin-bottom:24px'></div>"}
+${p.projectName ? `<div class="project-line">${p.projectName}</div>` : `<div style="margin-bottom:24px"></div>`}
 ${validWork.length > 0 ? `<div class="section-title">Arbeitsleistungen</div>
 <table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Betrag</th></tr></thead>
 <tbody>${wHtml}</tbody></table>` : ""}
@@ -588,11 +594,12 @@ ${validMat.length > 0 ? `<div class="section-title">Material</div>
 <div class="totals-box"><div class="totals-inner">
   ${toNum(costs.expenses) > 0 ? `<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses || 0).toFixed(2)}</span></div>` : ""}
   <div class="totals-row"><span>Subtotal</span><span>CHF ${subtotal.toFixed(2)}</span></div>
-  ${discountPct > 0 ? `<div class="totals-row"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>` : ""}
+  ${discountPct > 0 ? `<div class="totals-discount"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>` : ""}
+  ${skontoPct > 0 ? `<div class="totals-row" style="color:#555;font-size:12px"><span>Skonto ${skontoPct}% (bei Zahlung bis ${skontoDueDate})</span><span>− CHF ${skontoAmt.toFixed(2)}</span></div>` : ""}
   <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${vat.toFixed(2)}</span></div>
   <div class="totals-total"><span>TOTAL CHF</span><span>${totalAmount.toFixed(2)}</span></div>
 </div></div>
-${skontoPct > 0 ? `<div class="skonto-box">💡 <b>Skonto:</b> Bei Zahlung innert 10 Tagen bis ${skontoDueDate} gewähren wir ${skontoPct}% Skonto = <b>CHF ${skontoAmt.toFixed(2)}</b> → Zahlbetrag CHF <b>${(totalAmount - skontoAmt).toFixed(2)}</b></div>` : ""}
+${skontoPct > 0 ? `<div class="skonto-box">Bei Zahlung innert 10 Tagen bis <b>${skontoDueDate}</b>: Zahlbetrag <b>CHF ${(totalAmount - skontoAmt).toFixed(2)}</b></div>` : ""}
 ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-size:13px;margin-bottom:20px;color:#333"><b>Bemerkungen:</b> ${costs.notes}</div>` : ""}
 <div class="qr-section">
   <div class="qr-left">
@@ -608,10 +615,9 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
 </div>
 </body></html>`);
     win.document.close();
-    // Auto-archivieren nach Rechnungserstellung
     if (!isDemo && report.status !== "archiviert" && report.status !== "gesendet") {
       await updateStatus(report.id, "archiviert");
-      showNotice("✅ Rechnung erstellt & Rapport im Kundenarchiv gespeichert.");
+      showNotice("✅ Rechnung erstellt & Rapport archiviert.");
     }
   };
 
@@ -1244,6 +1250,48 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
   return (
     <div style={{minHeight:"100vh",background:BG,color:TEXT,fontFamily:"Inter,system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box}input,select,textarea{max-width:100%}@media(max-width:768px){.dash-sidebar{display:none!important}.dash-sidebar.open{display:block!important;position:fixed;top:0;left:0;width:240px;height:100vh;z-index:200;overflow-y:auto}.dash-mh{display:flex!important}.dash-grid{grid-template-columns:1fr!important}}@media(min-width:769px){.dash-mh{display:none!important}}`}</style>
+
+      {/* Rechnung Modal — Rabatt & Skonto */}
+      {invoiceModal&&<div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setInvoiceModal(null)}>
+        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:16,padding:28,maxWidth:420,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <h2 style={{margin:0,color:GOLD,fontSize:18}}>🧾 Rechnung erstellen</h2>
+            <button onClick={()=>setInvoiceModal(null)} style={{...gBtn,minHeight:32,padding:"0 10px",fontSize:16}}>✕</button>
+          </div>
+          <div style={{display:"grid",gap:16}}>
+            <div>
+              <div style={{color:MUTED,fontSize:12,marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>Rabatt</div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <input type="number" min="0" max="100" step="0.5" value={invoiceDiscount}
+                  onChange={e=>setInvoiceDiscount(e.target.value)}
+                  style={{...iStyle,flex:1,fontSize:18,fontWeight:700,textAlign:"center"}}/>
+                <span style={{color:TEXT,fontSize:20,fontWeight:700}}>%</span>
+              </div>
+              {parseFloat(invoiceDiscount)>0&&<div style={{color:GOLD,fontSize:12,marginTop:4}}>
+                − CHF {(Number(parseReport(invoiceModal).totals?.subtotal||0)*(parseFloat(invoiceDiscount)/100)).toFixed(2)}
+              </div>}
+            </div>
+            <div>
+              <div style={{color:MUTED,fontSize:12,marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>Skonto (bei Zahlung innert 10 Tagen)</div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <input type="number" min="0" max="100" step="0.5" value={invoiceSkonto}
+                  onChange={e=>setInvoiceSkonto(e.target.value)}
+                  style={{...iStyle,flex:1,fontSize:18,fontWeight:700,textAlign:"center"}}/>
+                <span style={{color:TEXT,fontSize:20,fontWeight:700}}>%</span>
+              </div>
+              {parseFloat(invoiceSkonto)>0&&<div style={{color:MUTED,fontSize:12,marginTop:4}}>
+                Hinweis auf Rechnung: {parseFloat(invoiceSkonto)}% Skonto bei Zahlung innert 10 Tagen
+              </div>}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:4}}>
+              <button type="button" onClick={()=>setInvoiceModal(null)} style={{...gBtn,flex:1}}>Abbrechen</button>
+              <button type="button" style={{...pBtn,flex:2,fontSize:15}} onClick={()=>generateInvoice(invoiceModal,parseFloat(invoiceDiscount)||0,parseFloat(invoiceSkonto)||0)}>
+                Rechnung öffnen →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>}
 
       <div className="dash-mh" style={{display:"none",position:"sticky",top:0,zIndex:150,background:PANEL,borderBottom:`1px solid ${BORDER}`,padding:"12px 16px",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{fontWeight:700,fontSize:18}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
