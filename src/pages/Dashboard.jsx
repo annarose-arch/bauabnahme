@@ -119,6 +119,19 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [showLegalModal, setShowLegalModal] = useState(null);
   const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
 
+  // Katalog: Mitarbeiter & Material
+  const [catalog, setCatalog] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("bauabnahme_catalog") || '{"employees":[],"materials":[]}'); } catch { return {employees:[],materials:[]}; }
+  });
+  const [catalogTab, setCatalogTab] = useState("employees");
+  const [newEmployee, setNewEmployee] = useState({ name: "", rate: "" });
+  const [newMaterial, setNewMaterial] = useState({ name: "", unit: "", price: "" });
+
+  const saveCatalog = (updated) => {
+    setCatalog(updated);
+    localStorage.setItem("bauabnahme_catalog", JSON.stringify(updated));
+  };
+
   const emptyForm = {
     selectedCustomerId: "", selectedProjectId: "", customer: "", address: "",
     orderNo: "", customerEmail: "", date: new Date().toISOString().slice(0, 10),
@@ -437,7 +450,7 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
     const isDemoMode = !userId || userId === "demo-user";
     const meta = session?.user?.user_metadata || {};
-    const firmName = meta.company_name || "BauAbnahme";
+    const firmName = meta.company_name || "";
     const firmLogo = meta.company_logo || "";
     const firmAddress = meta.address ? `${meta.address}, ${meta.zip||""} ${meta.city||""}` : "";
     const firmContact = [meta.first_name, meta.last_name].filter(Boolean).join(" ");
@@ -459,7 +472,7 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
     const isDemoMode = !userId || userId === "demo-user";
     const meta = session?.user?.user_metadata || {};
-    const firmName = meta.company_name || "BauAbnahme";
+    const firmName = meta.company_name || "";
     const firmLogo = meta.company_logo || "";
     const firmAddress = meta.address ? `${meta.address}, ${meta.zip||""} ${meta.city||""}` : "";
     const firmContact = [meta.first_name, meta.last_name].filter(Boolean).join(" ");
@@ -678,9 +691,25 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
         <button type="button" onClick={()=>setWorkRows(p=>[...p,{employee:"",from:"",to:"",rate:""}])} style={{ ...pBtn, width:180 }}>+ Zeile hinzufügen</button>
         {workRows.map((row,i)=>{
           const h=calcHours(row.from,row.to), t=h*toNum(row.rate);
+          const isCustomEmp = row._customEmployee;
           return <div key={i} style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${BORDER}`, borderRadius:8, padding:"10px 12px", marginBottom:6 }}>
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:8, marginBottom:8 }}>
-              <input placeholder="Mitarbeiter" value={row.employee} onChange={e=>setWorkRows(p=>p.map((r,j)=>j===i?{...r,employee:e.target.value}:r))} style={iStyle}/>
+              {catalog.employees.length>0 && !isCustomEmp ? (
+                <select value={row.employee||""} onChange={e=>{
+                  if(e.target.value==="__custom__"){setWorkRows(p=>p.map((r,j)=>j===i?{...r,employee:"",_customEmployee:true}:r));return;}
+                  const emp=catalog.employees.find(x=>x.name===e.target.value);
+                  setWorkRows(p=>p.map((r,j)=>j===i?{...r,employee:e.target.value,rate:emp?.rate||r.rate,_customEmployee:false}:r));
+                }} style={{...iStyle,width:"100%"}}>
+                  <option value="">Mitarbeiter wählen...</option>
+                  {catalog.employees.map(emp=><option key={emp.id} value={emp.name}>{emp.name}{emp.rate?` — CHF ${emp.rate}/h`:""}</option>)}
+                  <option value="__custom__">✏️ Manuell eingeben</option>
+                </select>
+              ) : (
+                <div style={{display:"flex",gap:6}}>
+                  <input placeholder="Mitarbeiter" value={row.employee} onChange={e=>setWorkRows(p=>p.map((r,j)=>j===i?{...r,employee:e.target.value}:r))} style={{...iStyle,flex:1}}/>
+                  {catalog.employees.length>0&&<button type="button" onClick={()=>setWorkRows(p=>p.map((r,j)=>j===i?{...r,_customEmployee:false,employee:""}:r))} style={{...gBtn,fontSize:11,minHeight:34,padding:"0 8px"}}>↩ Dropdown</button>}
+                </div>
+              )}
               <button type="button" onClick={()=>setWorkRows(p=>p.filter((_,j)=>j!==i))} style={{ ...dBtn, minWidth:34 }} disabled={workRows.length===1}>✕</button>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
@@ -697,12 +726,33 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
         <button type="button" onClick={()=>setMaterialRows(p=>[...p,{name:"",qty:"",unit:"",price:""}])} style={{ ...pBtn, width:180 }}>+ Zeile hinzufügen</button>
         {materialRows.map((row,i)=>{
           const t=toNum(row.qty)*toNum(row.price);
-          return <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr auto", gap:8, alignItems:"center", marginBottom:6 }}>
-            <input placeholder="Bezeichnung" value={row.name} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,name:e.target.value}:r))} style={iStyle}/>
-            <input placeholder="Menge" value={row.qty} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,qty:e.target.value}:r))} style={iStyle}/>
-            <input placeholder="Einheit" value={row.unit} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,unit:e.target.value}:r))} style={iStyle}/>
-            <input placeholder="Preis" value={row.price} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,price:e.target.value}:r))} style={iStyle}/>
-            <button type="button" onClick={()=>setMaterialRows(p=>p.filter((_,j)=>j!==i))} style={{ ...dBtn, minWidth:34 }} disabled={materialRows.length===1}>✕</button>
+          const isCustomMat = row._customMaterial;
+          return <div key={i} style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${BORDER}`, borderRadius:8, padding:"10px 12px", marginBottom:6 }}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8,marginBottom:6}}>
+              {catalog.materials.length>0 && !isCustomMat ? (
+                <select value={row.name||""} onChange={e=>{
+                  if(e.target.value==="__custom__"){setMaterialRows(p=>p.map((r,j)=>j===i?{...r,name:"",_customMaterial:true}:r));return;}
+                  const mat=catalog.materials.find(x=>x.name===e.target.value);
+                  setMaterialRows(p=>p.map((r,j)=>j===i?{...r,name:e.target.value,unit:mat?.unit||r.unit,price:mat?.price||r.price,_customMaterial:false}:r));
+                }} style={{...iStyle,width:"100%"}}>
+                  <option value="">Material wählen...</option>
+                  {catalog.materials.map(mat=><option key={mat.id} value={mat.name}>{mat.name}{mat.unit?` (${mat.unit})`:""}{mat.price?` — CHF ${mat.price}`:""}</option>)}
+                  <option value="__custom__">✏️ Manuell eingeben</option>
+                </select>
+              ) : (
+                <div style={{display:"flex",gap:6}}>
+                  <input placeholder="Bezeichnung" value={row.name} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,name:e.target.value}:r))} style={{...iStyle,flex:1}}/>
+                  {catalog.materials.length>0&&<button type="button" onClick={()=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,_customMaterial:false,name:""}:r))} style={{...gBtn,fontSize:11,minHeight:34,padding:"0 8px"}}>↩ Dropdown</button>}
+                </div>
+              )}
+              <button type="button" onClick={()=>setMaterialRows(p=>p.filter((_,j)=>j!==i))} style={{ ...dBtn, minWidth:34 }} disabled={materialRows.length===1}>✕</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+              <input placeholder="Menge" value={row.qty} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,qty:e.target.value}:r))} style={iStyle}/>
+              <input placeholder="Einheit" value={row.unit} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,unit:e.target.value}:r))} style={iStyle}/>
+              <input placeholder="CHF Preis" value={row.price} onChange={e=>setMaterialRows(p=>p.map((r,j)=>j===i?{...r,price:e.target.value}:r))} style={iStyle}/>
+            </div>
+            <div style={{textAlign:"right",color:GOLD,fontWeight:700,fontSize:14,marginTop:6}}>Total: CHF {t.toFixed(2)}</div>
           </div>;
         })}
         <div style={{ color:MUTED, fontSize:13 }}>Subtotal Material: CHF {materialSubtotal.toFixed(2)}</div>
@@ -764,6 +814,72 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
           </div>
         </div>
       ))}
+    </>);
+
+    if (view === "catalog") return section(<>
+      <h2 style={{marginTop:0}}>📦 Katalog</h2>
+      <p style={{color:MUTED,marginTop:0,fontSize:14}}>Hinterlege deine Mitarbeiter mit Stundensätzen und Materialien mit Preisen. Diese kannst du beim Erstellen von Rapporten per Dropdown auswählen.</p>
+      {/* Tabs */}
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {[["employees","👷 Mitarbeiter"],["materials","🔧 Material"]].map(([k,l])=>(
+          <button key={k} type="button" onClick={()=>setCatalogTab(k)}
+            style={{...gBtn,fontWeight:catalogTab===k?700:400,borderColor:catalogTab===k?GOLD:BORDER,color:catalogTab===k?GOLD:TEXT,background:catalogTab===k?"rgba(212,168,83,0.1)":"transparent"}}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {catalogTab==="employees"&&<>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:8,marginBottom:12,alignItems:"center"}}>
+          <input placeholder="Name (z.B. Max Muster)" value={newEmployee.name} onChange={e=>setNewEmployee(p=>({...p,name:e.target.value}))} style={iStyle}/>
+          <input placeholder="CHF/h (z.B. 110)" value={newEmployee.rate} onChange={e=>setNewEmployee(p=>({...p,rate:e.target.value}))} style={iStyle}/>
+          <button type="button" style={pBtn} onClick={()=>{
+            if(!newEmployee.name.trim())return;
+            saveCatalog({...catalog,employees:[...catalog.employees,{id:Date.now(),...newEmployee}]});
+            setNewEmployee({name:"",rate:""});
+            showNotice("✅ Mitarbeiter gespeichert.");
+          }}>+ Hinzufügen</button>
+        </div>
+        {catalog.employees.length===0&&<p style={{color:MUTED,fontSize:13}}>Noch keine Mitarbeiter hinterlegt.</p>}
+        {catalog.employees.map(emp=>(
+          <div key={emp.id} style={{border:`1px solid ${BORDER}`,borderRadius:8,padding:"10px 12px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <strong>{emp.name}</strong>
+              {emp.rate&&<span style={{color:MUTED,fontSize:13,marginLeft:10}}>CHF {emp.rate}/h</span>}
+            </div>
+            <button type="button" style={dBtn} onClick={()=>{
+              saveCatalog({...catalog,employees:catalog.employees.filter(e=>e.id!==emp.id)});
+            }}>✕</button>
+          </div>
+        ))}
+      </>}
+
+      {catalogTab==="materials"&&<>
+        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr auto",gap:8,marginBottom:12,alignItems:"center"}}>
+          <input placeholder="Bezeichnung (z.B. Beton B25)" value={newMaterial.name} onChange={e=>setNewMaterial(p=>({...p,name:e.target.value}))} style={iStyle}/>
+          <input placeholder="Einheit (z.B. m³)" value={newMaterial.unit} onChange={e=>setNewMaterial(p=>({...p,unit:e.target.value}))} style={iStyle}/>
+          <input placeholder="CHF Preis" value={newMaterial.price} onChange={e=>setNewMaterial(p=>({...p,price:e.target.value}))} style={iStyle}/>
+          <button type="button" style={pBtn} onClick={()=>{
+            if(!newMaterial.name.trim())return;
+            saveCatalog({...catalog,materials:[...catalog.materials,{id:Date.now(),...newMaterial}]});
+            setNewMaterial({name:"",unit:"",price:""});
+            showNotice("✅ Material gespeichert.");
+          }}>+ Hinzufügen</button>
+        </div>
+        {catalog.materials.length===0&&<p style={{color:MUTED,fontSize:13}}>Noch keine Materialien hinterlegt.</p>}
+        {catalog.materials.map(mat=>(
+          <div key={mat.id} style={{border:`1px solid ${BORDER}`,borderRadius:8,padding:"10px 12px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <strong>{mat.name}</strong>
+              {mat.unit&&<span style={{color:MUTED,fontSize:13,marginLeft:8}}>{mat.unit}</span>}
+              {mat.price&&<span style={{color:GOLD,fontSize:13,marginLeft:10}}>CHF {mat.price}</span>}
+            </div>
+            <button type="button" style={dBtn} onClick={()=>{
+              saveCatalog({...catalog,materials:catalog.materials.filter(m=>m.id!==mat.id)});
+            }}>✕</button>
+          </div>
+        ))}
+      </>}
     </>);
 
     if (view === "settings") {
@@ -921,7 +1037,7 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
   const navItems = [
     {key:"home",label:"Start"},{key:"customers",label:"Kunden"},
     {key:"new-report",label:"Neuer Rapport"},{key:"reports",label:"Offene Rapporte"},
-    {key:"trash",label:"Papierkorb"},{key:"settings",label:"Einstellungen"}
+    {key:"trash",label:"Papierkorb"},{key:"catalog",label:"📦 Katalog"},{key:"settings",label:"Einstellungen"}
   ];
   const activeView = editingReport?"new-report":openedReport?"reports":selectedCustomer?"customers":view;
 
