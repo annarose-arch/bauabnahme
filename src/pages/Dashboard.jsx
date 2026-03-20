@@ -513,7 +513,9 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const firmEmail = meta.email || userEmail;
     const firmIban = meta.iban || "";
     const name = report.customer || "-";
-    const custAddr = p.address || "";
+    const custStreet = p.address || "";
+    const custZipCity = [p.zip, p.city].filter(Boolean).join(" ");
+    const custAddr = custZipCity ? `${custStreet}\n${custZipCity}` : custStreet;
     const tot = p.totals || {};
     const invoiceNr = `RE-${p.rapportNr || report.id}`;
     const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {};
@@ -612,7 +614,7 @@ ${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8
   <div class="address-box">
     <div class="address-label">Rechnungsempfänger</div>
     <strong>${name}</strong><br/>
-    ${custAddr || "-"}
+    ${custStreet||"-"}${custZipCity?`<br/>${custZipCity}`:""}
   </div>
 </div>
 ${p.projectName ? `<div class="project-line">${p.projectName}</div>` : `<div style="margin-bottom:24px"></div>`}
@@ -712,7 +714,7 @@ ${inv.status==="entwurf"?'<div style="position:fixed;top:50%;left:50%;transform:
 </div>
 <div class="address-block">
   <div class="address-box"><div class="address-label">Rechnungssteller</div><strong>${firmName||firmContact||"-"}</strong><br/>${firmAddress?`${firmAddress}<br/>${firmZip} ${firmCity}`:""}</div>
-  <div class="address-box"><div class="address-label">Rechnungsempfänger</div><strong>${customer}</strong><br/>${p.address||"-"}</div>
+  <div class="address-box"><div class="address-label">Rechnungsempfänger</div><strong>${customer}</strong><br/>${p.address||"-"}${[p.zip,p.city].filter(Boolean).length>0?`<br/>${[p.zip,p.city].filter(Boolean).join(" ")}`:""}  </div>
 </div>
 ${p.projectName?`<div class="project-line">${p.projectName}</div>`:`<div style="margin-bottom:24px"></div>`}
 ${validWork.length>0?`<div class="section-title">Arbeitsleistungen</div><table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Betrag</th></tr></thead><tbody>${wHtml}</tbody></table>`:""}
@@ -1025,7 +1027,11 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
         </div>
         <input placeholder="Projektname (optional)" value={reportForm.projectSearch||""} 
           onChange={e=>setReportForm(p=>({...p,projectSearch:e.target.value}))} style={iStyle}/>
-        <input placeholder="Adresse" value={reportForm.address} onChange={e=>setReportForm(p=>({...p,address:e.target.value}))} style={iStyle}/>
+        <input placeholder="Adresse (Strasse)" value={reportForm.address} onChange={e=>setReportForm(p=>({...p,address:e.target.value}))} style={iStyle}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:8}}>
+          <input placeholder="PLZ" value={reportForm.zip||""} onChange={e=>setReportForm(p=>({...p,zip:e.target.value}))} style={iStyle}/>
+          <input placeholder="Ort" value={reportForm.city||""} onChange={e=>setReportForm(p=>({...p,city:e.target.value}))} style={iStyle}/>
+        </div>
         <input placeholder="Kunde E-Mail" value={reportForm.customerEmail} onChange={e=>setReportForm(p=>({...p,customerEmail:e.target.value}))} style={iStyle}/>
         <input placeholder="Auftrag-Nr" value={reportForm.orderNo} onChange={e=>setReportForm(p=>({...p,orderNo:e.target.value}))} style={iStyle}/>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
@@ -1328,24 +1334,6 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
           </div>
         </div>
 
-        {/* Sprache — kompakt wie Navbar */}
-        <div style={{marginBottom:20,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-          <span style={{color:MUTED,fontSize:13}}>🌍</span>
-          {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
-            <button key={code} type="button" onClick={()=>{
-              setSettingsLang(code);
-              localStorage.setItem("bauabnahme_language_pref", code);
-            }}
-              style={{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:8,cursor:"pointer",
-                border:settingsLang===code?`2px solid ${GOLD}`:`1px solid ${BORDER}`,
-                background:settingsLang===code?"rgba(212,168,83,0.15)":"transparent",
-                color:settingsLang===code?GOLD:MUTED,fontSize:13,fontWeight:settingsLang===code?700:400}}>
-              <span style={{fontSize:16}}>{flag}</span>
-              <span>{code}</span>
-            </button>
-          ))}
-        </div>
-
         {/* Aktueller Plan */}
         <div style={{marginBottom:20,border:`1px solid ${BORDER}`,borderRadius:10,padding:14}}>
           <div style={{color:MUTED,fontSize:13,marginBottom:10}}>💳 Aktueller Plan</div>
@@ -1406,7 +1394,7 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
         </div>}
 
         {/* Rechtliches & Konto-Aktionen — kompakt in einer Zeile */}
-        <div style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:12}}>
+        <div style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:12,marginBottom:12}}>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
             <button type="button" onClick={()=>setShowLegalModal("impressum")} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>Impressum</button>
             <button type="button" onClick={()=>setShowLegalModal("datenschutz")} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>Datenschutz</button>
@@ -1415,6 +1403,19 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
             <button type="button" onClick={()=>{if(window.confirm("Konto wirklich pausieren?"))showNotice("Konto pausiert. Bitte kontaktiere den Support.");}} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>⏸ Pausieren</button>
             <button type="button" onClick={()=>{if(window.confirm("Konto wirklich löschen? Alle Daten gehen verloren!"))if(window.confirm("Letzte Bestätigung — wirklich löschen?"))showNotice("Löschung angefragt. Support wird dich kontaktieren.");}} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px",color:"#e05c5c",borderColor:"#e05c5c"}}>🗑 Löschen</button>
           </div>
+        </div>
+
+        {/* Sprache — ganz unten, kein Flaggen, nur Text */}
+        <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{color:MUTED,fontSize:11}}>Sprache:</span>
+          {["DE","FR","IT","EN"].map(code=>(
+            <button key={code} type="button" onClick={()=>{setSettingsLang(code);localStorage.setItem("bauabnahme_language_pref",code);}}
+              style={{padding:"3px 9px",borderRadius:6,cursor:"pointer",border:`1px solid ${settingsLang===code?GOLD:BORDER}`,
+                background:settingsLang===code?"rgba(212,168,83,0.15)":"transparent",
+                color:settingsLang===code?GOLD:MUTED,fontSize:12,fontWeight:settingsLang===code?700:400}}>
+              {code}
+            </button>
+          ))}
         </div>
 
       </>);
@@ -1518,33 +1519,14 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
 
       <div className="dash-mh" style={{display:"none",position:"sticky",top:0,zIndex:150,background:PANEL,borderBottom:`1px solid ${BORDER}`,padding:"10px 16px",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{fontWeight:700,fontSize:18}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
-            <button key={code} type="button" onClick={()=>{setSettingsLang(code);localStorage.setItem("bauabnahme_language_pref",code);}}
-              style={{border:"none",background:"transparent",color:settingsLang===code?GOLD:MUTED,cursor:"pointer",fontWeight:settingsLang===code?700:400,fontSize:12,padding:"0 3px",minHeight:32}}>
-              <span style={{fontSize:15}}>{flag}</span> {code}
-            </button>
-          ))}
-          <button type="button" onClick={()=>setMobileSidebarOpen(p=>!p)} style={{...gBtn,minHeight:34,padding:"0 10px",marginLeft:4}}>{mobileSidebarOpen?"✕":"☰"}</button>
-        </div>
+        <button type="button" onClick={()=>setMobileSidebarOpen(p=>!p)} style={{...gBtn,minHeight:34,padding:"0 10px"}}>{mobileSidebarOpen?"✕":"☰"}</button>
       </div>
 
       {mobileSidebarOpen&&<div onClick={()=>setMobileSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:199}}/>}
 
       <div className="dash-grid" style={{display:"grid",gridTemplateColumns:"240px 1fr",minHeight:"100vh"}}>
         <aside className={`dash-sidebar${mobileSidebarOpen?" open":""}`} style={{borderRight:`1px solid ${BORDER}`,background:PANEL,padding:16}}>
-          <div style={{fontWeight:700,fontSize:20,marginBottom:10}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
-          <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
-            {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
-              <button key={code} type="button" onClick={()=>{setSettingsLang(code);localStorage.setItem("bauabnahme_language_pref",code);}}
-                style={{display:"flex",alignItems:"center",gap:3,padding:"3px 7px",borderRadius:6,cursor:"pointer",
-                  border:settingsLang===code?`1px solid ${GOLD}`:`1px solid transparent`,
-                  background:settingsLang===code?"rgba(212,168,83,0.15)":"transparent",
-                  color:settingsLang===code?GOLD:MUTED,fontSize:11,fontWeight:settingsLang===code?700:400}}>
-                <span style={{fontSize:13}}>{flag}</span><span>{code}</span>
-              </button>
-            ))}
-          </div>
+          <div style={{fontWeight:700,fontSize:20,marginBottom:16}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
           <nav style={{display:"grid",gap:6}}>
             {navItems.map(item=>(
               <button key={item.key} type="button" onClick={()=>goTo(item.key)}
