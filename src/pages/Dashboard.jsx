@@ -129,6 +129,22 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [openedInvoice, setOpenedInvoice] = useState(null); // stored invoice object
   const [editingInvoice, setEditingInvoice] = useState(null); // invoice being edited
 
+  // Fortlaufende Nummern
+  const [nextRapportNr, setNextRapportNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_rapport_nr") || "1001"));
+  const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
+  const bumpRapportNr = () => {
+    const next = nextRapportNr + 1;
+    setNextRapportNrState(next);
+    localStorage.setItem("bauabnahme_next_rapport_nr", String(next));
+    return nextRapportNr;
+  };
+  const bumpInvoiceNr = () => {
+    const next = nextInvoiceNr + 1;
+    setNextInvoiceNrState(next);
+    localStorage.setItem("bauabnahme_next_invoice_nr", String(next));
+    return nextInvoiceNr;
+  };
+
   const saveInvoiceToStorage = (inv) => {
     const updated = invoices.filter(i => i.id !== inv.id);
     updated.unshift(inv);
@@ -249,7 +265,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const handleSave = async () => {
     if (!reportForm.customer.trim()) { showNotice("Bitte Firmenname eingeben."); return; }
     const sp = customerProjects.find(p => String(p.id) === String(reportForm.selectedProjectId));
-    const rapportNr = editingReport ? (parseReport(editingReport).rapportNr || editingReport.id) : (10000 + (Date.now() % 90000));
+    const rapportNr = editingReport ? (parseReport(editingReport).rapportNr || editingReport.id) : bumpRapportNr();
     const payload = {
       rapportNr, customer: reportForm.customer.trim(), customerEmail: reportForm.customerEmail.trim(),
       address: reportForm.address.trim(), zip: reportForm.zip||"", city: reportForm.city||"",
@@ -398,9 +414,13 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     const work = p.workRows || [], mat = p.materialRows || [], tot = p.totals || {};
     const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {};
     const name = report.customer || "-";
-    // Build full customer address: street + zip + city from report data
-    const custStreet = p.address || "-";
-    const custZipCity = [p.zip, p.city].filter(Boolean).join(" ");
+    // Build full customer address — prefer payload, fallback to customer record
+    const custRecord = customers.find(c => String(c.id) === String(p.customerId) || c.name === report.customer);
+    const custMeta = custRecord ? parseCustomerMeta(custRecord) : {};
+    const custStreet = p.address || custMeta.address || "-";
+    const custZip = p.zip || custMeta.zip || "";
+    const custCity = p.city || custMeta.city || "";
+    const custZipCity = [custZip, custCity].filter(Boolean).join(" ");
     const custFullAddr = custZipCity ? `${custStreet}, ${custZipCity}` : custStreet;
     const wHtml = work.map((r,i) => `<tr><td>${i+1}</td><td>${r.employee||"-"}</td><td>${r.from||"-"}–${r.to||"-"}</td><td>${Number(r.hours||0).toFixed(2)}</td><td>CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
     const mHtml = mat.map((r,i) => `<tr><td>${i+1}</td><td>${r.name||"-"}</td><td>${r.qty||0} ${r.unit||""}</td><td>CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
@@ -513,11 +533,16 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const firmEmail = meta.email || userEmail;
     const firmIban = meta.iban || "";
     const name = report.customer || "-";
-    const custStreet = p.address || "";
-    const custZipCity = [p.zip, p.city].filter(Boolean).join(" ");
+    // Get zip/city: prefer from payload, fallback to customer record
+    const custRecord = customers.find(c => String(c.id) === String(p.customerId) || c.name === report.customer);
+    const custMeta = custRecord ? parseCustomerMeta(custRecord) : {};
+    const custStreet = p.address || custMeta.address || "";
+    const custZip = p.zip || custMeta.zip || "";
+    const custCity = p.city || custMeta.city || "";
+    const custZipCity = [custZip, custCity].filter(Boolean).join(" ");
     const custAddr = custZipCity ? `${custStreet}\n${custZipCity}` : custStreet;
     const tot = p.totals || {};
-    const invoiceNr = `RE-${p.rapportNr || report.id}`;
+    const invoiceNr = `RE-${bumpInvoiceNr()}`;
     const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {};
 
     const validWork = work.filter(r => r.employee || toNum(r.hours) > 0 || toNum(r.total) > 0);
@@ -714,7 +739,7 @@ ${inv.status==="entwurf"?'<div style="position:fixed;top:50%;left:50%;transform:
 </div>
 <div class="address-block">
   <div class="address-box"><div class="address-label">Rechnungssteller</div><strong>${firmName||firmContact||"-"}</strong><br/>${firmAddress?`${firmAddress}<br/>${firmZip} ${firmCity}`:""}</div>
-  <div class="address-box"><div class="address-label">Rechnungsempfänger</div><strong>${customer}</strong><br/>${p.address||"-"}${[p.zip,p.city].filter(Boolean).length>0?`<br/>${[p.zip,p.city].filter(Boolean).join(" ")}`:""}  </div>
+  <div class="address-box"><div class="address-label">Rechnungsempfänger</div><strong>${customer}</strong><br/>${p.address||"-"}${(()=>{const zc=[p.zip,p.city].filter(Boolean).join(" ");return zc?`<br/>${zc}`:"";})()} </div>
 </div>
 ${p.projectName?`<div class="project-line">${p.projectName}</div>`:`<div style="margin-bottom:24px"></div>`}
 ${validWork.length>0?`<div class="section-title">Arbeitsleistungen</div><table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Betrag</th></tr></thead><tbody>${wHtml}</tbody></table>`:""}
@@ -1331,6 +1356,37 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
               }}>Speichern</button>
             </div>
             {meta.iban&&<div style={{color:GOLD,fontSize:12,marginTop:4}}>✓ {meta.iban}</div>}
+          </div>
+          {/* Fortlaufende Nummern */}
+          <div style={{marginTop:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>
+              <div style={{color:MUTED,fontSize:12,marginBottom:6}}>📋 Nächste Rapport-Nr:</div>
+              <div style={{display:"flex",gap:6}}>
+                <input type="number" defaultValue={nextRapportNr} id="next-rapport-nr"
+                  style={{...iStyle,flex:1,fontFamily:"monospace",fontSize:13}}/>
+                <button type="button" style={{...pBtn,padding:"0 10px",fontSize:12}} onClick={()=>{
+                  const val=parseInt(document.getElementById("next-rapport-nr").value)||1001;
+                  setNextRapportNrState(val);
+                  localStorage.setItem("bauabnahme_next_rapport_nr",String(val));
+                  showNotice("✅ Rapport-Nr gespeichert!");
+                }}>OK</button>
+              </div>
+              <div style={{color:MUTED,fontSize:11,marginTop:3}}>Nächster Rapport: {nextRapportNr}</div>
+            </div>
+            <div>
+              <div style={{color:MUTED,fontSize:12,marginBottom:6}}>🧾 Nächste Rechnungs-Nr:</div>
+              <div style={{display:"flex",gap:6}}>
+                <input type="number" defaultValue={nextInvoiceNr} id="next-invoice-nr"
+                  style={{...iStyle,flex:1,fontFamily:"monospace",fontSize:13}}/>
+                <button type="button" style={{...pBtn,padding:"0 10px",fontSize:12}} onClick={()=>{
+                  const val=parseInt(document.getElementById("next-invoice-nr").value)||1001;
+                  setNextInvoiceNrState(val);
+                  localStorage.setItem("bauabnahme_next_invoice_nr",String(val));
+                  showNotice("✅ Rechnungs-Nr gespeichert!");
+                }}>OK</button>
+              </div>
+              <div style={{color:MUTED,fontSize:11,marginTop:3}}>Nächste Rechnung: RE-{nextInvoiceNr}</div>
+            </div>
           </div>
         </div>
 
