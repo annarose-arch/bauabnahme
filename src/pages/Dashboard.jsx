@@ -474,65 +474,86 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const firmPhone = meta.phone ? `Tel: ${meta.phone}` : "";
     const firmEmail = meta.email || userEmail;
     const firmIban = meta.iban || "";
-    const custMeta = {};
     const name = report.customer || "-";
     const custAddr = p.address || "";
     const tot = p.totals || {};
-    const totalAmount = Number(tot.total || 0);
     const invoiceNr = `RE-${p.rapportNr || report.id}`;
     const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {};
-    const wHtml = work.map((r,i) => `<tr><td>${r.employee||"-"}</td><td style="text-align:center">${r.from||"-"}–${r.to||"-"}</td><td style="text-align:center">${Number(r.hours||0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
-    const mHtml = mat.map((r,i) => `<tr><td>${r.name||"-"}</td><td style="text-align:center">${r.qty||0} ${r.unit||""}</td><td style="text-align:center">CHF ${Number(r.price||0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
-    const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName||firmContact, firmAddress, firmZip, firmCity, name, custAddr, "", "", "", `Rechnung ${invoiceNr}`) : "";
+
+    // Filter out empty rows
+    const validWork = work.filter(r => r.employee || toNum(r.hours) > 0 || toNum(r.total) > 0);
+    const validMat = mat.filter(r => r.name || toNum(r.qty) > 0);
+
+    // Ask for discount/skonto
+    const discountPct = parseFloat(window.prompt("Rabatt in % (0 = kein Rabatt):", "0") || "0") || 0;
+    const skontoPct = parseFloat(window.prompt("Skonto in % (z.B. 2 für 2% bei Zahlung innert 10 Tagen, 0 = kein Skonto):", "0") || "0") || 0;
+
+    const subtotal = Number(tot.subtotal || 0);
+    const discountAmt = subtotal * (discountPct / 100);
+    const subtotalAfterDiscount = subtotal - discountAmt;
+    const vat = subtotalAfterDiscount * 0.081;
+    const totalAmount = subtotalAfterDiscount + vat + toNum(costs.expenses);
+    const skontoAmt = totalAmount * (skontoPct / 100);
+    const dueDate = formatDateCH(new Date(new Date(report.date).getTime() + 30 * 86400000).toISOString().slice(0, 10));
+    const skontoDueDate = formatDateCH(new Date(new Date(report.date).getTime() + 10 * 86400000).toISOString().slice(0, 10));
+
+    const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName || firmContact, firmAddress, firmZip, firmCity, name, custAddr, "", "", "", `Rechnung ${invoiceNr}`) : "";
+
+    const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
+    const mHtml = validMat.map(r => `<tr><td>${r.name || "-"}</td><td style="text-align:center">${r.qty || 0} ${r.unit || ""}</td><td style="text-align:center">CHF ${Number(r.price || 0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
+
     const win = window.open("", "_blank", "width=980,height=860");
     if (!win) return;
     win.document.write(`<!doctype html><html><head><meta charset="utf-8"/>
 <title>Rechnung ${invoiceNr}</title>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;color:#222;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:3px solid #d4a853}
+body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #111}
 .firm-name{font-size:22px;font-weight:900;color:#111}
-.firm-details{font-size:12px;color:#555;line-height:1.7;margin-top:4px}
-.invoice-label{font-size:28px;font-weight:900;color:#d4a853;text-align:right}
-.invoice-meta{font-size:13px;color:#555;text-align:right;line-height:1.8}
-.address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
-.address-box{background:#f9f4ec;border-left:3px solid #d4a853;padding:12px 16px;border-radius:0 8px 8px 0}
-.address-label{font-size:10px;text-transform:uppercase;color:#999;font-weight:700;margin-bottom:4px;letter-spacing:1px}
+.firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}
+.invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
+.invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
+.address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:8px}
+.address-box{border-left:3px solid #111;padding:10px 14px}
+.address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
+.subject-line{margin-bottom:24px;padding:10px 0;border-bottom:1px solid #ddd;font-size:14px}
 table{width:100%;border-collapse:collapse;margin-bottom:16px}
-th{background:#d4a853;color:#111;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
-td{padding:7px 10px;font-size:13px;border-bottom:1px solid #f0ebe0}
-tr:nth-child(even) td{background:#faf7f1}
-.totals-box{display:flex;justify-content:flex-end;margin-bottom:28px}
-.totals-inner{width:300px}
-.totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#555;border-bottom:1px solid #f0ebe0}
-.totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#d4a853;border-top:2px solid #d4a853;margin-top:4px}
-.qr-section{border-top:3px solid #d4a853;margin-top:32px;padding-top:20px;display:flex;gap:24px;align-items:flex-start}
+th{background:#111;color:#fff;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
+td{padding:7px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}
+tr:nth-child(even) td{background:#f8f8f8}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#111;margin:20px 0 6px;border-bottom:2px solid #111;padding-bottom:4px}
+.totals-box{display:flex;justify-content:flex-end;margin-bottom:20px}
+.totals-inner{width:320px}
+.totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
+.totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#111;border-top:2px solid #111;margin-top:4px}
+.skonto-box{background:#f5f5f5;border-left:3px solid #111;padding:10px 14px;font-size:12px;color:#333;margin-bottom:20px;border-radius:0 4px 4px 0}
+.qr-section{border-top:2px solid #111;margin-top:28px;padding-top:18px;display:flex;gap:24px;align-items:flex-start}
 .qr-left{flex:1}
-.qr-title{font-size:16px;font-weight:800;color:#111;margin-bottom:12px}
-.qr-fields{display:grid;gap:6px;font-size:12px;color:#444;line-height:1.6}
-.qr-label{font-size:10px;text-transform:uppercase;color:#999;font-weight:700;letter-spacing:1px}
-.qr-img{border:1px solid #ddd;border-radius:8px;padding:8px;background:#fff}
-.no-iban{background:#fff8e6;border:2px dashed #d4a853;border-radius:8px;padding:14px;font-size:13px;color:#555;text-align:center}
-.watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(212,168,83,0.10);white-space:nowrap;pointer-events:none;z-index:1000}
-.btn{background:#d4a853;border:none;color:#111;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
+.qr-title{font-size:15px;font-weight:800;color:#111;margin-bottom:12px}
+.qr-fields{display:grid;gap:6px;font-size:12px;color:#333;line-height:1.6}
+.qr-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;letter-spacing:1px}
+.qr-img{border:1px solid #ccc;padding:6px;background:#fff}
+.no-iban{background:#f5f5f5;border:2px dashed #999;border-radius:6px;padding:14px;font-size:13px;color:#555;text-align:center}
+.watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000}
+.btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
 @media print{.noprint{display:none}.qr-section{page-break-inside:avoid}}
 </style></head><body>
-${isDemoMode?'<div class="watermark">ENTWURF</div>':""}
+${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:20px">
-${!isPro?'<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#d4a853;color:#111;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>':""}
+${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
 <button class="btn" onclick="window.print()">💾 Drucken / PDF</button>
 </div>
 <div class="header">
   <div>
-    ${firmLogo?`<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>`:""}
-    <div class="firm-name">${firmName||firmContact||""}</div>
+    ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>` : ""}
+    <div class="firm-name">${firmName || firmContact || ""}</div>
     <div class="firm-details">
-      ${firmContact&&firmName?`<div>${firmContact}</div>`:""}
-      ${firmAddress?`<div>${firmAddress}, ${firmZip} ${firmCity}</div>`:""}
-      ${firmPhone?`<div>${firmPhone}</div>`:""}
-      ${firmEmail?`<div>${firmEmail}</div>`:""}
-      ${firmIban?`<div>IBAN: ${firmIban}</div>`:""}
+      ${firmContact && firmName ? `<div>${firmContact}</div>` : ""}
+      ${firmAddress ? `<div>${firmAddress}, ${firmZip} ${firmCity}</div>` : ""}
+      ${firmPhone ? `<div>${firmPhone}</div>` : ""}
+      ${firmEmail ? `<div>${firmEmail}</div>` : ""}
+      ${firmIban ? `<div>IBAN: ${firmIban}</div>` : ""}
     </div>
   </div>
   <div>
@@ -540,50 +561,58 @@ ${!isPro?'<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:
     <div class="invoice-meta">
       <div><b>Nr.:</b> ${invoiceNr}</div>
       <div><b>Datum:</b> ${formatDateCH(report.date)}</div>
-      <div><b>Fällig:</b> ${formatDateCH(new Date(new Date(report.date).getTime()+30*86400000).toISOString().slice(0,10))}</div>
-      ${p.orderNo?`<div><b>Auftrag-Nr:</b> ${p.orderNo}</div>`:""}
+      <div><b>Fällig:</b> ${dueDate}</div>
+      ${p.orderNo ? `<div><b>Auftrag-Nr:</b> ${p.orderNo}</div>` : ""}
     </div>
   </div>
 </div>
 <div class="address-block">
   <div class="address-box">
     <div class="address-label">Rechnungssteller</div>
-    <strong>${firmName||firmContact||"-"}</strong><br/>
-    ${firmAddress?`${firmAddress}<br/>${firmZip} ${firmCity}`:""}
+    <strong>${firmName || firmContact || "-"}</strong><br/>
+    ${firmAddress ? `${firmAddress}<br/>${firmZip} ${firmCity}` : ""}
   </div>
   <div class="address-box">
     <div class="address-label">Rechnungsempfänger</div>
     <strong>${name}</strong><br/>
-    ${custAddr||"-"}
+    ${custAddr || "-"}
   </div>
 </div>
-${work.length>0?`<h3 style="color:#d4a853;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Arbeitsleistungen</h3>
+${p.projectName ? `<div class="subject-line"><b>Betreff:</b> ${p.projectName}</div>` : "<div style='margin-bottom:24px'></div>"}
+${validWork.length > 0 ? `<div class="section-title">Arbeitsleistungen</div>
 <table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Betrag</th></tr></thead>
-<tbody>${wHtml}</tbody></table>`:""}
-${mat.length>0?`<h3 style="color:#d4a853;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Material</h3>
+<tbody>${wHtml}</tbody></table>` : ""}
+${validMat.length > 0 ? `<div class="section-title">Material</div>
 <table><thead><tr><th>Bezeichnung</th><th style="text-align:center">Menge</th><th style="text-align:center">Preis</th><th style="text-align:right">Betrag</th></tr></thead>
-<tbody>${mHtml}</tbody></table>`:""}
+<tbody>${mHtml}</tbody></table>` : ""}
 <div class="totals-box"><div class="totals-inner">
-  ${toNum(costs.expenses)>0?`<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses||0).toFixed(2)}</span></div>`:""}
-  <div class="totals-row"><span>Subtotal</span><span>CHF ${Number(tot.subtotal||0).toFixed(2)}</span></div>
-  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${Number(tot.vat||0).toFixed(2)}</span></div>
-  <div class="totals-total"><span>TOTAL</span><span>CHF ${totalAmount.toFixed(2)}</span></div>
+  ${toNum(costs.expenses) > 0 ? `<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses || 0).toFixed(2)}</span></div>` : ""}
+  <div class="totals-row"><span>Subtotal</span><span>CHF ${subtotal.toFixed(2)}</span></div>
+  ${discountPct > 0 ? `<div class="totals-row"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>` : ""}
+  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${vat.toFixed(2)}</span></div>
+  <div class="totals-total"><span>TOTAL CHF</span><span>${totalAmount.toFixed(2)}</span></div>
 </div></div>
-${costs.notes?`<div style="background:#f9f4ec;border-left:3px solid #d4a853;padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;margin-bottom:20px"><b>Bemerkungen:</b> ${costs.notes}</div>`:""}
+${skontoPct > 0 ? `<div class="skonto-box">💡 <b>Skonto:</b> Bei Zahlung innert 10 Tagen bis ${skontoDueDate} gewähren wir ${skontoPct}% Skonto = <b>CHF ${skontoAmt.toFixed(2)}</b> → Zahlbetrag CHF <b>${(totalAmount - skontoAmt).toFixed(2)}</b></div>` : ""}
+${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-size:13px;margin-bottom:20px;color:#333"><b>Bemerkungen:</b> ${costs.notes}</div>` : ""}
 <div class="qr-section">
   <div class="qr-left">
     <div class="qr-title">Zahlung – Swiss QR-Bill</div>
     <div class="qr-fields">
-      <div><div class="qr-label">Konto / Zahlbar an</div><div style="font-weight:700">${firmIban||"— IBAN in Einstellungen hinterlegen —"}</div></div>
-      <div><div class="qr-label">Betrag</div><div style="font-size:16px;font-weight:900;color:#d4a853">CHF ${totalAmount.toFixed(2)}</div></div>
-      <div><div class="qr-label">Zahlbar bis</div><div>${formatDateCH(new Date(new Date(report.date).getTime()+30*86400000).toISOString().slice(0,10))}</div></div>
+      <div><div class="qr-label">Konto / Zahlbar an</div><div style="font-weight:700">${firmIban || "— IBAN in Einstellungen hinterlegen —"}</div></div>
+      <div><div class="qr-label">Betrag</div><div style="font-size:16px;font-weight:900">CHF ${totalAmount.toFixed(2)}</div></div>
+      <div><div class="qr-label">Zahlbar bis</div><div>${dueDate}</div></div>
       <div><div class="qr-label">Mitteilung</div><div>Rechnung ${invoiceNr}</div></div>
     </div>
   </div>
-  ${qrUrl?`<div><div style="font-size:11px;color:#999;margin-bottom:6px;text-align:center">QR-Code scannen</div><img src="${qrUrl}" class="qr-img" width="180" height="180" alt="Swiss QR Code"/></div>`:`<div class="no-iban">⚠️ Bitte IBAN in<br/><b>Einstellungen → Firmenprofil</b><br/>hinterlegen für QR-Code</div>`}
+  ${qrUrl ? `<div><div style="font-size:11px;color:#666;margin-bottom:6px;text-align:center">QR-Code scannen</div><img src="${qrUrl}" class="qr-img" width="180" height="180" alt="Swiss QR Code"/></div>` : `<div class="no-iban">⚠️ Bitte IBAN in<br/><b>Einstellungen → Firmenprofil</b><br/>hinterlegen für QR-Code</div>`}
 </div>
 </body></html>`);
     win.document.close();
+    // Auto-archivieren nach Rechnungserstellung
+    if (!isDemo && report.status !== "archiviert" && report.status !== "gesendet") {
+      await updateStatus(report.id, "archiviert");
+      showNotice("✅ Rechnung erstellt & Rapport im Kundenarchiv gespeichert.");
+    }
   };
 
   const openPDF = (report) => {
