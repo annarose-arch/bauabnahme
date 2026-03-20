@@ -156,7 +156,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   };
 
   const emptyForm = {
-    selectedCustomerId: "", selectedProjectId: "", customer: "", address: "",
+    selectedCustomerId: "", selectedProjectId: "", customer: "", address: "", zip: "", city: "",
     orderNo: "", customerEmail: "", date: new Date().toISOString().slice(0, 10),
     status: "offen", expenses: "", notes: "", beforePhoto: "", afterPhoto: "",
     signerName: "", signatureImage: ""
@@ -243,7 +243,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     const c = customers.find(x => String(x.id) === String(id));
     if (!c) return;
     const m = parseCustomerMeta(c);
-    setReportForm(p => ({ ...p, selectedCustomerId: String(c.id), selectedProjectId: "", customer: c.name || "", customerEmail: c.email || "", address: m.address || "" }));
+    setReportForm(p => ({ ...p, selectedCustomerId: String(c.id), selectedProjectId: "", customer: c.name || "", customerEmail: c.email || "", address: m.address || "", zip: m.zip || "", city: m.city || "" }));
   };
 
   const handleSave = async () => {
@@ -252,7 +252,8 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     const rapportNr = editingReport ? (parseReport(editingReport).rapportNr || editingReport.id) : (10000 + (Date.now() % 90000));
     const payload = {
       rapportNr, customer: reportForm.customer.trim(), customerEmail: reportForm.customerEmail.trim(),
-      address: reportForm.address.trim(), orderNo: reportForm.orderNo.trim(), date: reportForm.date, status: reportForm.status,
+      address: reportForm.address.trim(), zip: reportForm.zip||"", city: reportForm.city||"",
+      orderNo: reportForm.orderNo.trim(), date: reportForm.date, status: reportForm.status,
       customerId: reportForm.selectedCustomerId || null, projectId: reportForm.selectedProjectId || null,
       projectName: sp?.name || reportForm.projectSearch || "", projektnummer: sp?.projektnummer || "",
       photos: { before: reportForm.beforePhoto, after: reportForm.afterPhoto },
@@ -308,7 +309,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
 
   const startEdit = (r) => {
     const p = parseReport(r);
-    setReportForm({ selectedCustomerId: String(p.customerId || ""), selectedProjectId: String(p.projectId || ""), customer: r.customer || "", address: p.address || "", orderNo: p.orderNo || "", customerEmail: p.customerEmail || "", date: r.date || emptyForm.date, status: r.status || "offen", expenses: p.costs?.expenses ? String(p.costs.expenses) : "", notes: p.costs?.notes || "", beforePhoto: p.photos?.before || "", afterPhoto: p.photos?.after || "", signerName: p.signature?.name || "", signatureImage: p.signature?.image || "" });
+    setReportForm({ selectedCustomerId: String(p.customerId || ""), selectedProjectId: String(p.projectId || ""), customer: r.customer || "", address: p.address || "", zip: p.zip || "", city: p.city || "", orderNo: p.orderNo || "", customerEmail: p.customerEmail || "", date: r.date || emptyForm.date, status: r.status || "offen", expenses: p.costs?.expenses ? String(p.costs.expenses) : "", notes: p.costs?.notes || "", beforePhoto: p.photos?.before || "", afterPhoto: p.photos?.after || "", signerName: p.signature?.name || "", signatureImage: p.signature?.image || "" });
     setWorkRows(p.workRows?.length ? p.workRows.map(r => ({ employee: r.employee || "", from: r.from || "", to: r.to || "", rate: r.rate ? String(r.rate) : "" })) : [{ employee: "", from: "", to: "", rate: "" }]);
     setMaterialRows(p.materialRows?.length ? p.materialRows.map(r => ({ name: r.name || "", qty: r.qty ? String(r.qty) : "", unit: r.unit || "", price: r.price ? String(r.price) : "" })) : [{ name: "", qty: "", unit: "", price: "" }]);
     setEditingReport(r); setOpenedReport(null); setView("new-report");
@@ -397,12 +398,17 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     const work = p.workRows || [], mat = p.materialRows || [], tot = p.totals || {};
     const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {};
     const name = report.customer || "-";
+    // Build full customer address: street + zip + city from report data
+    const custStreet = p.address || "-";
+    const custZipCity = [p.zip, p.city].filter(Boolean).join(" ");
+    const custFullAddr = custZipCity ? `${custStreet}, ${custZipCity}` : custStreet;
     const wHtml = work.map((r,i) => `<tr><td>${i+1}</td><td>${r.employee||"-"}</td><td>${r.from||"-"}–${r.to||"-"}</td><td>${Number(r.hours||0).toFixed(2)}</td><td>CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
     const mHtml = mat.map((r,i) => `<tr><td>${i+1}</td><td>${r.name||"-"}</td><td>${r.qty||0} ${r.unit||""}</td><td>CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
     return `<!doctype html><html><head><meta charset="utf-8"/>
 <title>Rapport ${p.rapportNr||report.id}</title>
 <style>
 body{font-family:Arial,sans-serif;color:#222;margin:24px;font-size:14px}
+@page{margin:12mm;size:A4}
 .letterhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #d4a853}
 .firm-info{display:flex;align-items:center;gap:14px}
 .firm-details{font-size:12px;color:#444;line-height:1.6}
@@ -416,7 +422,7 @@ th,td{border:1px solid #ddd;padding:6px 8px;font-size:13px;text-align:left}
 th{background:#f9f4ec}
 .total{color:#d4a853;font-size:24px;font-weight:800;text-align:right}
 .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(212,168,83,0.12);white-space:nowrap;pointer-events:none;z-index:1000}
-@media print{.noprint{display:none}}
+@media print{.noprint{display:none}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 ${isDemoMode?'<div class="watermark">ENTWURF</div>':""}
 <div class="noprint" style="margin-bottom:14px">
@@ -447,13 +453,13 @@ ${!isPro?'<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:
   <table><tbody>
     <tr><td><b>Rapport-Nr:</b></td><td>${p.rapportNr||"-"}</td><td><b>Datum:</b></td><td>${formatDateCH(report.date)}</td></tr>
     <tr><td><b>Kunde:</b></td><td>${name}</td><td><b>Auftrag-Nr:</b></td><td>${p.orderNo||"-"}</td></tr>
+    <tr><td><b>Adresse:</b></td><td colspan="3">${custFullAddr}</td></tr>
     ${p.projectName?`<tr><td><b>Projekt:</b></td><td colspan="3">${p.projectName}</td></tr>`:""}
-    <tr><td><b>Adresse:</b></td><td colspan="3">${p.address||"-"}</td></tr>
   </tbody></table>
 </div>
 ${photos.before||photos.after?`<div class="card"><h3>Fotos</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${photos.before?`<div><p><b>Vorher</b></p><img src="${photos.before}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"/></div>`:""}${photos.after?`<div><p><b>Nachher</b></p><img src="${photos.after}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"/></div>`:""}</div></div>`:""}
-<div class="card"><h3>Arbeitsstunden</h3><table><thead><tr><th>#</th><th>Mitarbeiter</th><th>Zeit</th><th>Stunden</th><th>Total</th></tr></thead><tbody>${wHtml||"<tr><td colspan=\'5\'>Keine Daten</td></tr>"}</tbody></table></div>
-<div class="card"><h3>Material / Kranrapport</h3><table><thead><tr><th>#</th><th>Bezeichnung</th><th>Menge</th><th>Total</th></tr></thead><tbody>${mHtml||"<tr><td colspan=\'4\'>Keine Daten</td></tr>"}</tbody></table></div>
+<div class="card"><h3>Arbeitsstunden</h3><table><thead><tr><th>#</th><th>Mitarbeiter</th><th>Zeit</th><th>Stunden</th><th>Total</th></tr></thead><tbody>${wHtml||"<tr><td colspan='5'>Keine Daten</td></tr>"}</tbody></table></div>
+<div class="card"><h3>Material / Kranrapport</h3><table><thead><tr><th>#</th><th>Bezeichnung</th><th>Menge</th><th>Total</th></tr></thead><tbody>${mHtml||"<tr><td colspan='4'>Keine Daten</td></tr>"}</tbody></table></div>
 <div class="card">
   <div><b>Spesen:</b> CHF ${Number(costs.expenses||0).toFixed(2)}</div>
   ${costs.notes?`<div><b>Notizen:</b> ${costs.notes}</div>`:""}
