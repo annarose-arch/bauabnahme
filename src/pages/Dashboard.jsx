@@ -694,7 +694,6 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
 ${inv.status==="entwurf"?'<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000">ENTWURF</div>':""}
 <div class="noprint" style="margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
   <button class="btn" onclick="window.print()">💾 Drucken / PDF</button>
-  <span style="font-size:13px;color:#666">Status: <b>${inv.status==="versendet"?"✅ Versendet":"📝 Entwurf"}</b></span>
 </div>
 <div class="header">
   <div>${firmLogo?`<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>`:""}
@@ -1323,25 +1322,22 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
           </div>
         </div>
 
-        {/* Sprache */}
-        <div style={{marginBottom:20}}>
-          <div style={{color:MUTED,fontSize:13,marginBottom:10}}>🌍 Sprache</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
-              <button key={code} type="button" onClick={()=>{
-                setSettingsLang(code);
-                localStorage.setItem("bauabnahme_language_pref", code);
-                // Sprache ohne Reload wechseln
-              }}
-                style={{display:"flex",alignItems:"center",gap:4,padding:"6px 10px",borderRadius:8,cursor:"pointer",
-                  border:settingsLang===code?`2px solid ${GOLD}`:`1px solid ${BORDER}`,
-                  background:settingsLang===code?"rgba(212,168,83,0.15)":"transparent",
-                  color:settingsLang===code?GOLD:MUTED,fontSize:13,fontWeight:settingsLang===code?700:400}}>
-                <span style={{fontSize:16}}>{flag}</span>
-                <span>{code}</span>
-              </button>
-            ))}
-          </div>
+        {/* Sprache — kompakt wie Navbar */}
+        <div style={{marginBottom:20,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <span style={{color:MUTED,fontSize:13}}>🌍</span>
+          {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
+            <button key={code} type="button" onClick={()=>{
+              setSettingsLang(code);
+              localStorage.setItem("bauabnahme_language_pref", code);
+            }}
+              style={{display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:8,cursor:"pointer",
+                border:settingsLang===code?`2px solid ${GOLD}`:`1px solid ${BORDER}`,
+                background:settingsLang===code?"rgba(212,168,83,0.15)":"transparent",
+                color:settingsLang===code?GOLD:MUTED,fontSize:13,fontWeight:settingsLang===code?700:400}}>
+              <span style={{fontSize:16}}>{flag}</span>
+              <span>{code}</span>
+            </button>
+          ))}
         </div>
 
         {/* Aktueller Plan */}
@@ -1368,26 +1364,8 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
           </button>
         </div>
 
-        {/* Konto-Aktionen */}
-        <div style={{marginBottom:20,border:`1px solid ${BORDER}`,borderRadius:10,padding:14}}>
-          <div style={{color:MUTED,fontSize:13,marginBottom:12}}>⚙️ Konto-Aktionen</div>
-          <div style={{display:"grid",gap:8}}>
-            <button type="button" onClick={()=>{if(onLogout)onLogout();else if(onNavigate)onNavigate("/");}} style={{...pBtn,justifyContent:"flex-start",display:"flex",alignItems:"center",gap:8}}>
-              🚪 Logout
-            </button>
-            <button type="button" onClick={()=>{if(window.confirm("Konto wirklich pausieren?"))showNotice("Konto pausiert. Bitte kontaktiere den Support.");}}
-              style={{...gBtn,justifyContent:"flex-start",display:"flex",alignItems:"center",gap:8}}>
-              ⏸ Konto pausieren
-            </button>
-            <button type="button" onClick={()=>{if(window.confirm("Konto wirklich löschen? Alle Daten gehen verloren!"))if(window.confirm("Letzte Bestätigung — wirklich löschen?"))showNotice("Löschung angefragt. Support wird dich kontaktieren.");}}
-              style={{...gBtn,justifyContent:"flex-start",display:"flex",alignItems:"center",gap:8,color:"#e05c5c",borderColor:"#e05c5c"}}>
-              🗑 Konto löschen
-            </button>
-          </div>
-        </div>
-
         {/* Support */}
-        <div style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:14,background:"rgba(212,168,83,0.03)"}}>
+        <div style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:14,marginBottom:16,background:"rgba(212,168,83,0.03)"}}>
           <div style={{color:GOLD,fontWeight:700,marginBottom:8}}>💬 Support</div>
           <p style={{color:MUTED,fontSize:14,marginTop:0,marginBottom:12}}>
             Bei Fragen oder Problemen stehen wir dir gerne zur Verfügung.
@@ -1397,7 +1375,7 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
           </a>
         </div>
 
-        {/* Impressum & Datenschutz */}
+        {/* Rechtliches + Konto-Aktionen kombiniert */}
         {showLegalModal==="impressum"&&<div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowLegalModal(null)}>
           <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:14,padding:24,maxWidth:600,width:"100%",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><h2 style={{margin:0,color:GOLD}}>Impressum</h2><button onClick={()=>setShowLegalModal(null)} style={gBtn}>✕</button></div>
@@ -1420,11 +1398,16 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
             </div>
           </div>
         </div>}
-        <div style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:14}}>
-          <div style={{color:MUTED,fontSize:13,marginBottom:12}}>📄 Rechtliches</div>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            <button type="button" onClick={()=>setShowLegalModal("impressum")} style={{...gBtn,fontSize:13}}>Impressum</button>
-            <button type="button" onClick={()=>setShowLegalModal("datenschutz")} style={{...gBtn,fontSize:13}}>Datenschutz</button>
+
+        {/* Rechtliches & Konto-Aktionen — kompakt in einer Zeile */}
+        <div style={{border:`1px solid ${BORDER}`,borderRadius:10,padding:12}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+            <button type="button" onClick={()=>setShowLegalModal("impressum")} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>Impressum</button>
+            <button type="button" onClick={()=>setShowLegalModal("datenschutz")} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>Datenschutz</button>
+            <div style={{width:1,height:20,background:BORDER,margin:"0 4px"}}/>
+            <button type="button" onClick={()=>{if(onLogout)onLogout();else if(onNavigate)onNavigate("/");}} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>🚪 Logout</button>
+            <button type="button" onClick={()=>{if(window.confirm("Konto wirklich pausieren?"))showNotice("Konto pausiert. Bitte kontaktiere den Support.");}} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px"}}>⏸ Pausieren</button>
+            <button type="button" onClick={()=>{if(window.confirm("Konto wirklich löschen? Alle Daten gehen verloren!"))if(window.confirm("Letzte Bestätigung — wirklich löschen?"))showNotice("Löschung angefragt. Support wird dich kontaktieren.");}} style={{...gBtn,fontSize:12,minHeight:32,padding:"0 10px",color:"#e05c5c",borderColor:"#e05c5c"}}>🗑 Löschen</button>
           </div>
         </div>
 
@@ -1435,9 +1418,9 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
 
   const navItems = [
     {key:"home",label:"Start"},{key:"customers",label:"Kunden"},
-    {key:"new-report",label:"Neuer Rapport"},{key:"reports",label:"Offene Rapporte"},
-    {key:"invoices",label:"🧾 Rechnungen"},{key:"trash",label:"Papierkorb"},
-    {key:"catalog",label:"📦 Katalog"},{key:"settings",label:"Einstellungen"}
+    {key:"catalog",label:"Katalog"},{key:"new-report",label:"Neuer Rapport"},
+    {key:"reports",label:"Offene Rapporte"},{key:"invoices",label:"Rechnungen"},
+    {key:"trash",label:"Papierkorb"},{key:"settings",label:"Einstellungen"}
   ];
   const activeView = editingReport?"new-report":openedReport?"reports":selectedCustomer?"customers":view;
 
@@ -1500,7 +1483,7 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
               </div>
               {parseFloat(invoiceSkonto)>0&&<>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
-                  {["5","10","15","20"].map(d=>(
+                  {["5","10","15","20","30"].map(d=>(
                     <button key={d} type="button" onClick={()=>setInvoiceSkontoDays(d)}
                       style={{minHeight:32,borderRadius:8,padding:"0 12px",cursor:"pointer",fontWeight:invoiceSkontoDays===d?700:400,
                         background:invoiceSkontoDays===d?GOLD:"transparent",color:invoiceSkontoDays===d?"#111":MUTED,
@@ -1527,16 +1510,35 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
         </div>
       </div>}
 
-      <div className="dash-mh" style={{display:"none",position:"sticky",top:0,zIndex:150,background:PANEL,borderBottom:`1px solid ${BORDER}`,padding:"12px 16px",alignItems:"center",justifyContent:"space-between"}}>
+      <div className="dash-mh" style={{display:"none",position:"sticky",top:0,zIndex:150,background:PANEL,borderBottom:`1px solid ${BORDER}`,padding:"10px 16px",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{fontWeight:700,fontSize:18}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
-        <button type="button" onClick={()=>setMobileSidebarOpen(p=>!p)} style={{...gBtn,minHeight:36,padding:"0 12px"}}>{mobileSidebarOpen?"✕":"☰"}</button>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
+            <button key={code} type="button" onClick={()=>{setSettingsLang(code);localStorage.setItem("bauabnahme_language_pref",code);}}
+              style={{border:"none",background:"transparent",color:settingsLang===code?GOLD:MUTED,cursor:"pointer",fontWeight:settingsLang===code?700:400,fontSize:12,padding:"0 3px",minHeight:32}}>
+              <span style={{fontSize:15}}>{flag}</span> {code}
+            </button>
+          ))}
+          <button type="button" onClick={()=>setMobileSidebarOpen(p=>!p)} style={{...gBtn,minHeight:34,padding:"0 10px",marginLeft:4}}>{mobileSidebarOpen?"✕":"☰"}</button>
+        </div>
       </div>
 
       {mobileSidebarOpen&&<div onClick={()=>setMobileSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:199}}/>}
 
       <div className="dash-grid" style={{display:"grid",gridTemplateColumns:"240px 1fr",minHeight:"100vh"}}>
         <aside className={`dash-sidebar${mobileSidebarOpen?" open":""}`} style={{borderRight:`1px solid ${BORDER}`,background:PANEL,padding:16}}>
-          <div style={{fontWeight:700,fontSize:20,marginBottom:18}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
+          <div style={{fontWeight:700,fontSize:20,marginBottom:10}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
+          <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
+            {[["DE","🇩🇪"],["FR","🇫🇷"],["IT","🇮🇹"],["EN","🇬🇧"]].map(([code,flag])=>(
+              <button key={code} type="button" onClick={()=>{setSettingsLang(code);localStorage.setItem("bauabnahme_language_pref",code);}}
+                style={{display:"flex",alignItems:"center",gap:3,padding:"3px 7px",borderRadius:6,cursor:"pointer",
+                  border:settingsLang===code?`1px solid ${GOLD}`:`1px solid transparent`,
+                  background:settingsLang===code?"rgba(212,168,83,0.15)":"transparent",
+                  color:settingsLang===code?GOLD:MUTED,fontSize:11,fontWeight:settingsLang===code?700:400}}>
+                <span style={{fontSize:13}}>{flag}</span><span>{code}</span>
+              </button>
+            ))}
+          </div>
           <nav style={{display:"grid",gap:6}}>
             {navItems.map(item=>(
               <button key={item.key} type="button" onClick={()=>goTo(item.key)}
