@@ -118,9 +118,27 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(null);
   const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
-  const [invoiceModal, setInvoiceModal] = useState(null); // {report, discountPct, skontoPct}
+  const [invoiceModal, setInvoiceModal] = useState(null);
   const [invoiceDiscount, setInvoiceDiscount] = useState("0");
   const [invoiceSkonto, setInvoiceSkonto] = useState("0");
+  const [invoices, setInvoices] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; }
+  });
+  const [openedInvoice, setOpenedInvoice] = useState(null); // stored invoice object
+  const [editingInvoice, setEditingInvoice] = useState(null); // invoice being edited
+
+  const saveInvoiceToStorage = (inv) => {
+    const updated = invoices.filter(i => i.id !== inv.id);
+    updated.unshift(inv);
+    setInvoices(updated);
+    localStorage.setItem("bauabnahme_invoices", JSON.stringify(updated));
+  };
+
+  const deleteInvoice = (id) => {
+    const updated = invoices.filter(i => i.id !== id);
+    setInvoices(updated);
+    localStorage.setItem("bauabnahme_invoices", JSON.stringify(updated));
+  };
 
   // Katalog: Mitarbeiter & Material
   const [catalog, setCatalog] = useState(() => {
@@ -594,7 +612,7 @@ ${validMat.length > 0 ? `<div class="section-title">Material</div>
 <div class="totals-box"><div class="totals-inner">
   ${toNum(costs.expenses) > 0 ? `<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses || 0).toFixed(2)}</span></div>` : ""}
   <div class="totals-row"><span>Subtotal</span><span>CHF ${subtotal.toFixed(2)}</span></div>
-  ${discountPct > 0 ? `<div class="totals-discount"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>` : ""}
+  ${discountPct > 0 ? `<div class="totals-row"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>` : ""}
   ${skontoPct > 0 ? `<div class="totals-row" style="color:#555;font-size:12px"><span>Skonto ${skontoPct}% (bei Zahlung bis ${skontoDueDate})</span><span>− CHF ${skontoAmt.toFixed(2)}</span></div>` : ""}
   <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${vat.toFixed(2)}</span></div>
   <div class="totals-total"><span>TOTAL CHF</span><span>${totalAmount.toFixed(2)}</span></div>
@@ -615,10 +633,98 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
 </div>
 </body></html>`);
     win.document.close();
+
+    // Save invoice to storage
+    const savedInvoice = {
+      id: `inv-${Date.now()}`,
+      invoiceNr,
+      reportId: report.id,
+      customerId: p.customerId || null,
+      customer: report.customer,
+      date: report.date,
+      discountPct,
+      skontoPct,
+      totalAmount,
+      status: "entwurf", // entwurf | versendet
+      createdAt: new Date().toISOString(),
+      // Store all data for re-editing
+      reportData: p,
+      firmName, firmLogo, firmAddress, firmZip, firmCity, firmContact, firmPhone, firmEmail, firmIban,
+    };
+    saveInvoiceToStorage(savedInvoice);
+
     if (!isDemo && report.status !== "archiviert" && report.status !== "gesendet") {
       await updateStatus(report.id, "archiviert");
-      showNotice("✅ Rechnung erstellt & Rapport archiviert.");
     }
+    showNotice("✅ Rechnung gespeichert — sichtbar im Kundenarchiv unter 'Rechnungen'.");
+  };
+
+  const reopenInvoice = (inv) => {
+    // Rebuild the invoice HTML from stored data and open it
+    const { reportData: p, firmName, firmLogo, firmAddress, firmZip, firmCity, firmContact, firmPhone, firmEmail, firmIban,
+      invoiceNr, discountPct, skontoPct, totalAmount, customer, date } = inv;
+    const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
+    const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {}, tot = p.totals || {};
+    const validWork = work.filter(r => r.employee || toNum(r.hours) > 0 || toNum(r.total) > 0);
+    const validMat = mat.filter(r => r.name || toNum(r.qty) > 0);
+    const subtotal = Number(tot.subtotal || 0);
+    const discountAmt = subtotal * ((discountPct||0) / 100);
+    const subtotalAfterDiscount = subtotal - discountAmt;
+    const vat = subtotalAfterDiscount * 0.081;
+    const skontoAmt = totalAmount * ((skontoPct||0) / 100);
+    const dueDate = formatDateCH(new Date(new Date(date).getTime() + 30*86400000).toISOString().slice(0,10));
+    const skontoDueDate = formatDateCH(new Date(new Date(date).getTime() + 10*86400000).toISOString().slice(0,10));
+    const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName||firmContact, firmAddress, firmZip, firmCity, customer, p.address||"", "","","", `Rechnung ${invoiceNr}`) : "";
+    const wHtml = validWork.map(r => `<tr><td>${r.employee||"-"}</td><td style="text-align:center">${r.from||"-"}–${r.to||"-"}</td><td style="text-align:center">${Number(r.hours||0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
+    const mHtml = validMat.map(r => `<tr><td>${r.name||"-"}</td><td style="text-align:center">${r.qty||0} ${r.unit||""}</td><td style="text-align:center">CHF ${Number(r.price||0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
+    const win = window.open("", "_blank", "width=980,height=860");
+    if (!win) return;
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"/><title>Rechnung ${invoiceNr}</title>
+<style>*{box-sizing:border-box}@page{margin:16mm;size:A4}body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #111}.firm-name{font-size:22px;font-weight:900}.firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}.invoice-label{font-size:28px;font-weight:900;text-align:right}.invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}.address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:8px}.address-box{border-left:3px solid #111;padding:10px 14px}.address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}.project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#111;color:#fff;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}td{padding:7px 10px;font-size:13px;border-bottom:1px solid #eee}.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;margin:20px 0 6px;border-bottom:2px solid #111;padding-bottom:4px}.totals-box{display:flex;justify-content:flex-end;margin-bottom:20px}.totals-inner{width:320px}.totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}.totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;border-top:2px solid #111;margin-top:4px}.skonto-box{background:#f5f5f5;border-left:3px solid #555;padding:10px 14px;font-size:12px;color:#333;margin-bottom:20px}.qr-section{border-top:2px solid #111;margin-top:28px;padding-top:18px;display:flex;gap:24px;align-items:flex-start}.qr-left{flex:1}.qr-title{font-size:15px;font-weight:800;margin-bottom:12px}.qr-fields{display:grid;gap:6px;font-size:12px;color:#333;line-height:1.6}.qr-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;letter-spacing:1px}.qr-img{border:1px solid #ccc;padding:6px;background:#fff}.no-iban{background:#f5f5f5;border:2px dashed #999;border-radius:6px;padding:14px;font-size:13px;color:#555;text-align:center}.btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}@media print{.noprint{display:none}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>
+${inv.status==="entwurf"?'<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000">ENTWURF</div>':""}
+<div class="noprint" style="margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <button class="btn" onclick="window.print()">💾 Drucken / PDF</button>
+  <span style="font-size:13px;color:#666">Status: <b>${inv.status==="versendet"?"✅ Versendet":"📝 Entwurf"}</b></span>
+</div>
+<div class="header">
+  <div>${firmLogo?`<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>`:""}
+    <div class="firm-name">${firmName||firmContact||""}</div>
+    <div class="firm-details">${firmContact&&firmName?`<div>${firmContact}</div>`:""}${firmAddress?`<div>${firmAddress}, ${firmZip} ${firmCity}</div>`:""}${firmPhone?`<div>${firmPhone}</div>`:""}${firmEmail?`<div>${firmEmail}</div>`:""}${firmIban?`<div>IBAN: ${firmIban}</div>`:""}</div>
+  </div>
+  <div><div class="invoice-label">RECHNUNG</div>
+    <div class="invoice-meta"><div><b>Nr.:</b> ${invoiceNr}</div><div><b>Datum:</b> ${formatDateCH(date)}</div><div><b>Fällig:</b> ${dueDate}</div>${p.orderNo?`<div><b>Auftrag-Nr:</b> ${p.orderNo}</div>`:""}</div>
+  </div>
+</div>
+<div class="address-block">
+  <div class="address-box"><div class="address-label">Rechnungssteller</div><strong>${firmName||firmContact||"-"}</strong><br/>${firmAddress?`${firmAddress}<br/>${firmZip} ${firmCity}`:""}</div>
+  <div class="address-box"><div class="address-label">Rechnungsempfänger</div><strong>${customer}</strong><br/>${p.address||"-"}</div>
+</div>
+${p.projectName?`<div class="project-line">${p.projectName}</div>`:`<div style="margin-bottom:24px"></div>`}
+${validWork.length>0?`<div class="section-title">Arbeitsleistungen</div><table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Betrag</th></tr></thead><tbody>${wHtml}</tbody></table>`:""}
+${validMat.length>0?`<div class="section-title">Material</div><table><thead><tr><th>Bezeichnung</th><th style="text-align:center">Menge</th><th style="text-align:center">Preis</th><th style="text-align:right">Betrag</th></tr></thead><tbody>${mHtml}</tbody></table>`:""}
+<div class="totals-box"><div class="totals-inner">
+  ${toNum(costs.expenses)>0?`<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses||0).toFixed(2)}</span></div>`:""}
+  <div class="totals-row"><span>Subtotal</span><span>CHF ${subtotal.toFixed(2)}</span></div>
+  ${(discountPct||0)>0?`<div class="totals-row"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>`:""}
+  ${(skontoPct||0)>0?`<div class="totals-row" style="color:#555;font-size:12px"><span>Skonto ${skontoPct}% (bei Zahlung bis ${skontoDueDate})</span><span>− CHF ${skontoAmt.toFixed(2)}</span></div>`:""}
+  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${vat.toFixed(2)}</span></div>
+  <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toFixed(2)}</span></div>
+</div></div>
+${(skontoPct||0)>0?`<div class="skonto-box">Bei Zahlung innert 10 Tagen bis <b>${skontoDueDate}</b>: Zahlbetrag <b>CHF ${(totalAmount-skontoAmt).toFixed(2)}</b></div>`:""}
+${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-size:13px;margin-bottom:20px;color:#333"><b>Bemerkungen:</b> ${costs.notes}</div>`:""}
+<div class="qr-section">
+  <div class="qr-left"><div class="qr-title">Zahlung – Swiss QR-Bill</div>
+    <div class="qr-fields">
+      <div><div class="qr-label">Konto / Zahlbar an</div><div style="font-weight:700">${firmIban||"— IBAN in Einstellungen hinterlegen —"}</div></div>
+      <div><div class="qr-label">Betrag</div><div style="font-size:16px;font-weight:900">CHF ${Number(totalAmount).toFixed(2)}</div></div>
+      <div><div class="qr-label">Zahlbar bis</div><div>${dueDate}</div></div>
+      <div><div class="qr-label">Mitteilung</div><div>Rechnung ${invoiceNr}</div></div>
+    </div>
+  </div>
+  ${qrUrl?`<div><div style="font-size:11px;color:#666;margin-bottom:6px;text-align:center">QR-Code scannen</div><img src="${qrUrl}" class="qr-img" width="180" height="180" alt="Swiss QR Code"/></div>`:`<div class="no-iban">⚠️ Bitte IBAN in<br/><b>Einstellungen → Firmenprofil</b><br/>hinterlegen</div>`}
+</div>
+</body></html>`);
+    win.document.close();
   };
 
   const openPDF = (report) => {
@@ -793,6 +899,44 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
           );
         })}
         </div>
+        {/* Rechnungen für diesen Kunden */}
+        {(() => {
+          const custInvoices = invoices.filter(inv =>
+            String(inv.customerId) === String(selectedCustomer.id) || inv.customer === selectedCustomer.name
+          );
+          if (custInvoices.length === 0) return null;
+          return <>
+            <h3 style={{marginBottom:8,marginTop:4}}>🧾 Rechnungen ({custInvoices.length})</h3>
+            <div style={{display:"grid",gap:8,marginBottom:14}}>
+              {custInvoices.map(inv=>(
+                <div key={inv.id} style={{border:`1px solid ${inv.status==="versendet"?GOLD:BORDER}`,borderRadius:10,padding:"12px 14px",background:"rgba(255,255,255,0.02)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div>
+                      <strong style={{color:GOLD}}>{inv.invoiceNr}</strong>
+                      <span style={{color:MUTED,fontSize:12,marginLeft:8}}>{formatDateCH(inv.date)}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontWeight:800,color:TEXT}}>CHF {Number(inv.totalAmount).toFixed(2)}</span>
+                      <span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,
+                        border:`1px solid ${inv.status==="versendet"?GOLD:BORDER}`,
+                        color:inv.status==="versendet"?GOLD:MUTED}}>
+                        {inv.status==="versendet"?"✅ Versendet":"📝 Entwurf"}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap",borderTop:`1px solid ${BORDER}`,paddingTop:8}}>
+                    <button type="button" onClick={()=>reopenInvoice(inv)} style={{...gBtn,minHeight:32,fontSize:13}}>🖨 Öffnen</button>
+                    {inv.status==="entwurf"&&<button type="button" onClick={()=>{
+                      saveInvoiceToStorage({...inv,status:"versendet"});
+                      showNotice("✅ Als versendet markiert.");
+                    }} style={{...pBtn,minHeight:32,fontSize:13}}>✅ Versendet</button>}
+                    <button type="button" onClick={()=>{if(window.confirm("Rechnung löschen?"))deleteInvoice(inv.id);}} style={{...dBtn,minHeight:32,fontSize:13}}>🗑</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>;
+        })()}
         <div style={{ color:GOLD, fontWeight:800, fontSize:20, marginTop:4, marginBottom:14 }}>Gesamtumsatz CHF {revenue.toFixed(2)}</div>
         <button type="button" onClick={() => setSelectedCustomer(null)} style={gBtn}>Zurück</button>
       </>);
@@ -992,6 +1136,45 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
           </div>;
         })}
       </div>}
+    </>);
+
+    if (view === "invoices") return section(<>
+      <h2 style={{marginTop:0}}>🧾 Rechnungen</h2>
+      {invoices.length===0&&<p style={{color:MUTED}}>Noch keine Rechnungen erstellt.</p>}
+      <div style={{display:"grid",gap:10}}>
+        {invoices.map(inv=>(
+          <div key={inv.id} style={{border:`1px solid ${inv.status==="versendet"?GOLD:BORDER}`,borderRadius:10,padding:"12px 14px",background:"rgba(255,255,255,0.02)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:8}}>
+              <div>
+                <div style={{fontWeight:700,color:GOLD,fontSize:15}}>{inv.invoiceNr}</div>
+                <div style={{color:TEXT,fontSize:14}}>{inv.customer}</div>
+                <div style={{color:MUTED,fontSize:12,marginTop:2}}>{formatDateCH(inv.date)}{inv.reportData?.projectName&&` · ${inv.reportData.projectName}`}</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontWeight:800,fontSize:17,color:TEXT}}>CHF {Number(inv.totalAmount).toFixed(2)}</div>
+                <div style={{marginTop:4}}>
+                  <span style={{fontSize:11,padding:"2px 8px",borderRadius:4,fontWeight:700,
+                    background:inv.status==="versendet"?"rgba(212,168,83,0.15)":"rgba(255,255,255,0.05)",
+                    border:`1px solid ${inv.status==="versendet"?GOLD:BORDER}`,
+                    color:inv.status==="versendet"?GOLD:MUTED}}>
+                    {inv.status==="versendet"?"✅ Versendet":"📝 Entwurf"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",borderTop:`1px solid ${BORDER}`,paddingTop:8}}>
+              <button type="button" onClick={()=>reopenInvoice(inv)} style={{...pBtn,minHeight:32,fontSize:13}}>🖨 Öffnen / Drucken</button>
+              {inv.status==="entwurf"&&<button type="button" onClick={()=>{
+                const updated={...inv,status:"versendet"};
+                saveInvoiceToStorage(updated);
+                showNotice("✅ Rechnung als versendet markiert.");
+              }} style={{...gBtn,minHeight:32,fontSize:13,color:GOLD,borderColor:GOLD}}>✅ Als versendet markieren</button>}
+              {inv.status==="entwurf"&&<button type="button" onClick={()=>setInvoiceModal({...invoices.find(i=>i.id===inv.id), _reEdit:true})} style={{...gBtn,minHeight:32,fontSize:13}}>✏️ Rabatt/Skonto ändern</button>}
+              <button type="button" onClick={()=>{if(window.confirm("Rechnung löschen?"))deleteInvoice(inv.id);}} style={{...dBtn,minHeight:32,fontSize:13}}>🗑 Löschen</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </>);
 
     if (view === "trash") return section(<>
@@ -1243,7 +1426,8 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
   const navItems = [
     {key:"home",label:"Start"},{key:"customers",label:"Kunden"},
     {key:"new-report",label:"Neuer Rapport"},{key:"reports",label:"Offene Rapporte"},
-    {key:"trash",label:"Papierkorb"},{key:"catalog",label:"📦 Katalog"},{key:"settings",label:"Einstellungen"}
+    {key:"invoices",label:"🧾 Rechnungen"},{key:"trash",label:"Papierkorb"},
+    {key:"catalog",label:"📦 Katalog"},{key:"settings",label:"Einstellungen"}
   ];
   const activeView = editingReport?"new-report":openedReport?"reports":selectedCustomer?"customers":view;
 
