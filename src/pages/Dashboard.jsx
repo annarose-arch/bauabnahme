@@ -460,7 +460,7 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}&ecc=M`;
   }
 
-  const openInvoice = (report) => {
+  const openInvoice = async (report) => {
     const p = parseReport(report);
     const meta = session?.user?.user_metadata || {};
     const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
