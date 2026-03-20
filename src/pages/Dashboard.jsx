@@ -121,6 +121,8 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [invoiceModal, setInvoiceModal] = useState(null);
   const [invoiceDiscount, setInvoiceDiscount] = useState("0");
   const [invoiceSkonto, setInvoiceSkonto] = useState("0");
+  const [invoicePayDays, setInvoicePayDays] = useState("30");
+  const [invoiceSkontoDays, setInvoiceSkontoDays] = useState("10");
   const [invoices, setInvoices] = useState(() => {
     try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; }
   });
@@ -484,10 +486,12 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
   const openInvoice = async (report) => {
     setInvoiceDiscount("0");
     setInvoiceSkonto("0");
+    setInvoicePayDays("30");
+    setInvoiceSkontoDays("10");
     setInvoiceModal(report);
   };
 
-  const generateInvoice = async (report, discountPct, skontoPct) => {
+  const generateInvoice = async (report, discountPct, skontoPct, payDays, skontoDays) => {
     setInvoiceModal(null);
     const p = parseReport(report);
     const meta = session?.user?.user_metadata || {};
@@ -517,8 +521,10 @@ ${sig.image?`<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4p
     const vat = subtotalAfterDiscount * 0.081;
     const totalAmount = subtotalAfterDiscount + vat + toNum(costs.expenses);
     const skontoAmt = totalAmount * (skontoPct / 100);
-    const dueDate = formatDateCH(new Date(new Date(report.date).getTime() + 30 * 86400000).toISOString().slice(0, 10));
-    const skontoDueDate = formatDateCH(new Date(new Date(report.date).getTime() + 10 * 86400000).toISOString().slice(0, 10));
+    const payDaysNum = parseInt(payDays) || 30;
+    const skontoDaysNum = parseInt(skontoDays) || 10;
+    const dueDate = formatDateCH(new Date(new Date(report.date).getTime() + payDaysNum * 86400000).toISOString().slice(0, 10));
+    const skontoDueDate = formatDateCH(new Date(new Date(report.date).getTime() + skontoDaysNum * 86400000).toISOString().slice(0, 10));
     const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName || firmContact, firmAddress, firmZip, firmCity, name, custAddr, "", "", "", `Rechnung ${invoiceNr}`) : "";
 
     const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
@@ -562,6 +568,7 @@ tr:nth-child(even) td{background:#f8f8f8}
 .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000}
 .btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
 @media print{.noprint{display:none}.qr-section{page-break-inside:avoid}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@page{margin:12mm;size:A4}
 </style></head><body>
 ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:20px">
@@ -644,10 +651,11 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
       date: report.date,
       discountPct,
       skontoPct,
+      payDays: payDaysNum,
+      skontoDays: skontoDaysNum,
       totalAmount,
-      status: "entwurf", // entwurf | versendet
+      status: "entwurf",
       createdAt: new Date().toISOString(),
-      // Store all data for re-editing
       reportData: p,
       firmName, firmLogo, firmAddress, firmZip, firmCity, firmContact, firmPhone, firmEmail, firmIban,
     };
@@ -662,7 +670,7 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
   const reopenInvoice = (inv) => {
     // Rebuild the invoice HTML from stored data and open it
     const { reportData: p, firmName, firmLogo, firmAddress, firmZip, firmCity, firmContact, firmPhone, firmEmail, firmIban,
-      invoiceNr, discountPct, skontoPct, totalAmount, customer, date } = inv;
+      invoiceNr, discountPct, skontoPct, totalAmount, customer, date, payDays: pDays, skontoDays: sDays } = inv;
     const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
     const work = p.workRows || [], mat = p.materialRows || [], costs = p.costs || {}, tot = p.totals || {};
     const validWork = work.filter(r => r.employee || toNum(r.hours) > 0 || toNum(r.total) > 0);
@@ -672,8 +680,10 @@ ${costs.notes ? `<div style="border-left:3px solid #111;padding:10px 14px;font-s
     const subtotalAfterDiscount = subtotal - discountAmt;
     const vat = subtotalAfterDiscount * 0.081;
     const skontoAmt = totalAmount * ((skontoPct||0) / 100);
-    const dueDate = formatDateCH(new Date(new Date(date).getTime() + 30*86400000).toISOString().slice(0,10));
-    const skontoDueDate = formatDateCH(new Date(new Date(date).getTime() + 10*86400000).toISOString().slice(0,10));
+    const payDaysNum = pDays || 30;
+    const skontoDaysNum = sDays || 10;
+    const dueDate = formatDateCH(new Date(new Date(date).getTime() + payDaysNum*86400000).toISOString().slice(0,10));
+    const skontoDueDate = formatDateCH(new Date(new Date(date).getTime() + skontoDaysNum*86400000).toISOString().slice(0,10));
     const qrUrl = firmIban ? buildSwissQR(firmIban, totalAmount, firmName||firmContact, firmAddress, firmZip, firmCity, customer, p.address||"", "","","", `Rechnung ${invoiceNr}`) : "";
     const wHtml = validWork.map(r => `<tr><td>${r.employee||"-"}</td><td style="text-align:center">${r.from||"-"}–${r.to||"-"}</td><td style="text-align:center">${Number(r.hours||0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
     const mHtml = validMat.map(r => `<tr><td>${r.name||"-"}</td><td style="text-align:center">${r.qty||0} ${r.unit||""}</td><td style="text-align:center">CHF ${Number(r.price||0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total||0).toFixed(2)}</td></tr>`).join("");
@@ -1435,41 +1445,81 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
     <div style={{minHeight:"100vh",background:BG,color:TEXT,fontFamily:"Inter,system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box}input,select,textarea{max-width:100%}@media(max-width:768px){.dash-sidebar{display:none!important}.dash-sidebar.open{display:block!important;position:fixed;top:0;left:0;width:240px;height:100vh;z-index:200;overflow-y:auto}.dash-mh{display:flex!important}.dash-grid{grid-template-columns:1fr!important}}@media(min-width:769px){.dash-mh{display:none!important}}`}</style>
 
-      {/* Rechnung Modal — Rabatt & Skonto */}
+      {/* Rechnung Modal — Rabatt, Skonto & Fristen */}
       {invoiceModal&&<div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setInvoiceModal(null)}>
-        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:16,padding:28,maxWidth:420,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:16,padding:28,maxWidth:460,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.5)",overflowY:"auto",maxHeight:"90vh"}} onClick={e=>e.stopPropagation()}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
             <h2 style={{margin:0,color:GOLD,fontSize:18}}>🧾 Rechnung erstellen</h2>
             <button onClick={()=>setInvoiceModal(null)} style={{...gBtn,minHeight:32,padding:"0 10px",fontSize:16}}>✕</button>
           </div>
           <div style={{display:"grid",gap:16}}>
-            <div>
-              <div style={{color:MUTED,fontSize:12,marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>Rabatt</div>
+
+            {/* Zahlungsfrist */}
+            <div style={{background:"rgba(255,255,255,0.03)",borderRadius:10,padding:14,border:`1px solid ${BORDER}`}}>
+              <div style={{color:MUTED,fontSize:11,marginBottom:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"1px"}}>Zahlungsfrist</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                {["10","20","30","45","60"].map(d=>(
+                  <button key={d} type="button" onClick={()=>setInvoicePayDays(d)}
+                    style={{minHeight:34,borderRadius:8,padding:"0 14px",cursor:"pointer",fontWeight:invoicePayDays===d?700:400,
+                      background:invoicePayDays===d?GOLD:"transparent",color:invoicePayDays===d?"#111":MUTED,
+                      border:`1px solid ${invoicePayDays===d?GOLD:BORDER}`,fontSize:13}}>
+                    {d} Tage
+                  </button>
+                ))}
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <input type="number" min="1" max="365" value={invoicePayDays} onChange={e=>setInvoicePayDays(e.target.value)}
+                  style={{...iStyle,width:80,textAlign:"center",fontWeight:700}}/>
+                <span style={{color:MUTED,fontSize:13}}>Tage → Fällig am <b style={{color:TEXT}}>{formatDateCH(new Date(new Date(invoiceModal.date).getTime()+(parseInt(invoicePayDays)||30)*86400000).toISOString().slice(0,10))}</b></span>
+              </div>
+            </div>
+
+            {/* Rabatt */}
+            <div style={{background:"rgba(255,255,255,0.03)",borderRadius:10,padding:14,border:`1px solid ${BORDER}`}}>
+              <div style={{color:MUTED,fontSize:11,marginBottom:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"1px"}}>Rabatt</div>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <input type="number" min="0" max="100" step="0.5" value={invoiceDiscount}
                   onChange={e=>setInvoiceDiscount(e.target.value)}
-                  style={{...iStyle,flex:1,fontSize:18,fontWeight:700,textAlign:"center"}}/>
+                  style={{...iStyle,width:90,fontSize:18,fontWeight:700,textAlign:"center"}}/>
                 <span style={{color:TEXT,fontSize:20,fontWeight:700}}>%</span>
+                {parseFloat(invoiceDiscount)>0&&<span style={{color:GOLD,fontSize:13}}>
+                  − CHF {(Number(parseReport(invoiceModal).totals?.subtotal||0)*(parseFloat(invoiceDiscount)/100)).toFixed(2)}
+                </span>}
               </div>
-              {parseFloat(invoiceDiscount)>0&&<div style={{color:GOLD,fontSize:12,marginTop:4}}>
-                − CHF {(Number(parseReport(invoiceModal).totals?.subtotal||0)*(parseFloat(invoiceDiscount)/100)).toFixed(2)}
-              </div>}
             </div>
-            <div>
-              <div style={{color:MUTED,fontSize:12,marginBottom:6,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>Skonto (bei Zahlung innert 10 Tagen)</div>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
+
+            {/* Skonto */}
+            <div style={{background:"rgba(255,255,255,0.03)",borderRadius:10,padding:14,border:`1px solid ${BORDER}`}}>
+              <div style={{color:MUTED,fontSize:11,marginBottom:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"1px"}}>Skonto (Frühzahlerrabatt)</div>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                 <input type="number" min="0" max="100" step="0.5" value={invoiceSkonto}
                   onChange={e=>setInvoiceSkonto(e.target.value)}
-                  style={{...iStyle,flex:1,fontSize:18,fontWeight:700,textAlign:"center"}}/>
+                  style={{...iStyle,width:90,fontSize:18,fontWeight:700,textAlign:"center"}}/>
                 <span style={{color:TEXT,fontSize:20,fontWeight:700}}>%</span>
+                {parseFloat(invoiceSkonto)>0&&<span style={{color:MUTED,fontSize:13}}>bei Zahlung innert</span>}
               </div>
-              {parseFloat(invoiceSkonto)>0&&<div style={{color:MUTED,fontSize:12,marginTop:4}}>
-                Hinweis auf Rechnung: {parseFloat(invoiceSkonto)}% Skonto bei Zahlung innert 10 Tagen
-              </div>}
+              {parseFloat(invoiceSkonto)>0&&<>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+                  {["5","10","15","20"].map(d=>(
+                    <button key={d} type="button" onClick={()=>setInvoiceSkontoDays(d)}
+                      style={{minHeight:32,borderRadius:8,padding:"0 12px",cursor:"pointer",fontWeight:invoiceSkontoDays===d?700:400,
+                        background:invoiceSkontoDays===d?GOLD:"transparent",color:invoiceSkontoDays===d?"#111":MUTED,
+                        border:`1px solid ${invoiceSkontoDays===d?GOLD:BORDER}`,fontSize:13}}>
+                      {d} Tage
+                    </button>
+                  ))}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <input type="number" min="1" max="60" value={invoiceSkontoDays} onChange={e=>setInvoiceSkontoDays(e.target.value)}
+                    style={{...iStyle,width:80,textAlign:"center",fontWeight:700}}/>
+                  <span style={{color:MUTED,fontSize:13}}>Tage → bis <b style={{color:TEXT}}>{formatDateCH(new Date(new Date(invoiceModal.date).getTime()+(parseInt(invoiceSkontoDays)||10)*86400000).toISOString().slice(0,10))}</b></span>
+                </div>
+              </>}
             </div>
+
             <div style={{display:"flex",gap:10,marginTop:4}}>
               <button type="button" onClick={()=>setInvoiceModal(null)} style={{...gBtn,flex:1}}>Abbrechen</button>
-              <button type="button" style={{...pBtn,flex:2,fontSize:15}} onClick={()=>generateInvoice(invoiceModal,parseFloat(invoiceDiscount)||0,parseFloat(invoiceSkonto)||0)}>
+              <button type="button" style={{...pBtn,flex:2,fontSize:15}} onClick={()=>generateInvoice(invoiceModal,parseFloat(invoiceDiscount)||0,parseFloat(invoiceSkonto)||0,invoicePayDays,invoiceSkontoDays)}>
                 Rechnung öffnen →
               </button>
             </div>
