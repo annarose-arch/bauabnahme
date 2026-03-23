@@ -98,22 +98,23 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [reports, setReports] = useState([]);
   const [notice, setNotice] = useState("");
   const [openedReport, setOpenedReport] = useState(null);
-  const [invoices, setInvoices] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; }
+ const [reportForm, setReportForm] = useState({ 
+    customer: "", 
+    date: new Date().toISOString().split('T')[0], 
+    notes: "" 
   });
  const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
 
-  useEffect(() => {
+ useEffect(() => {
     const loadData = async () => {
       if (!userId) return;
       const { data, error } = await supabase
-        .from("reports")
+        .from("reports") // <-- HEISST DEINE TABELLE WIRKLICH "reports"?
         .select("*")
-        .eq("user_id", userId)
-        .order("id", { ascending: false });
+        .eq("user_id", userId);
 
       if (error) {
-        setNotice("Fehler beim Laden der Daten.");
+        setNotice("Datenbank-Fehler: " + error.message); // Zeigt uns den echten Grund
       } else {
         setReports(data || []);
       }
@@ -154,28 +155,29 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     }
   }; 
 
-  const renderView = () => {
+const renderView = () => {
+    // PRIORITÄT 1: Wenn ein Rapport angeklickt wurde -> Details zeigen
     if (openedReport) {
       return (
-        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h2 style={{ margin: 0, color: GOLD }}>Details</h2>
+        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <h2 style={{ color: GOLD }}>Details</h2>
             <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
           </div>
-          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
-          <pre style={{ color: MUTED, marginTop: 20, fontSize: 12 }}>{JSON.stringify(openedReport, null, 2)}</pre>
+          <p>Kunde: {openedReport.customer}</p>
+          <button onClick={() => openPDF(openedReport)} style={pBtn}>PDF erstellen</button>
         </section>
       );
     }
 
+    // PRIORITÄT 2: Wenn der User aktiv auf "Neu" geklickt hat -> Formular zeigen
     if (view === "new-report") {
       return (
-        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <h2 style={{ color: GOLD, marginBottom: 20 }}>Neuer Rapport</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-            <input style={iStyle} placeholder="Kunde" onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
-            <input type="date" style={iStyle} onChange={(e) => setReportForm({...reportForm, date: e.target.value})} />
-            <textarea style={{...iStyle, minHeight: 100}} placeholder="Notizen" onChange={(e) => setReportForm({...reportForm, notes: e.target.value})} />
+        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
+          <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input style={iStyle} placeholder="Kunde" value={reportForm.customer} onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
+            <textarea style={iStyle} placeholder="Notizen" onChange={(e) => setReportForm({...reportForm, notes: e.target.value})} />
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
               <button onClick={handleSave} style={pBtn}>Speichern</button>
@@ -185,14 +187,16 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
       );
     }
 
+    // PRIORITÄT 3: Standard-Ansicht -> Liste der Rapporte
     return (
-      <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+      <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ color: GOLD, margin: 0 }}>Rapporte</h2>
-          <button onClick={() => setView("new-report")} style={pBtn}>+ Neu</button>
+          <h2 style={{ color: GOLD, margin: 0 }}>Deine Rapporte</h2>
+          <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
         </div>
+        
         {reports.length === 0 ? (
-          <p style={{ color: MUTED }}>Keine Daten gefunden.</p>
+          <p style={{ color: MUTED }}>Keine Rapporte vorhanden.</p>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
             {reports.map(r => (
