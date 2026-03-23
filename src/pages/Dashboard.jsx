@@ -320,26 +320,20 @@ export default function Dashboard({ session, onLogout }) {
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
 
+         {/* Liste der Einträge */}
           {list.map(item => (
-            <div key={item.id} style={{ padding: "10px 0", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
+            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
               <span>{item.name}</span>
-              <button onClick={async () => { 
-                await supabase.from(table).delete().eq("id", item.id);
-                if (view === "customers") setCustomers(customers.filter(c => c.id !== item.id));
-                if (view === "material") setMaterials(materials.filter(m => m.id !== item.id));
-                if (view === "staff") setStaff(staff.filter(s => s.id !== item.id));
-              }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
+              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
             </div>
           ))}
         </section>
-     );
-    } // <--- Schließt den Material/Staff Block
+      );
+    } // <--- Schließt den "material/staff" Block
 
-    // Falls keine der obigen Ansichten matcht
     return renderHome();
-  }; // <--- Schließt renderView (Das ist die Klammer, die Vite in Zeile 131 vermisst!)
+  }; // <--- Schließt renderView (Das ist die Klammer aus Zeile 131!)
 
-  // Das Haupt-Return der Dashboard-Komponente
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
       <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -352,4 +346,4 @@ export default function Dashboard({ session, onLogout }) {
       </main>
     </div>
   );
-} // <--- Schließt die gesamte Dashboard-Funktion (Ganz am Ende der Datei)
+} // <--- Schließt die gesamte Dashboard-Komponente
