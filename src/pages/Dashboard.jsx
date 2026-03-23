@@ -133,24 +133,46 @@ useEffect(() => {
   };
 
   const handleSave = async () => {
+    console.log("Speichervorgang gestartet...", reportForm); // Test-Log
+
     if (!reportForm.customer) {
       setNotice("Bitte einen Kunden angeben.");
       return;
     }
-    const { error } = await supabase.from("reports").insert([{
-      user_id: userId,
-      customer: reportForm.customer,
-      date: reportForm.date,
-      description: JSON.stringify({ notes: reportForm.notes }),
-      status: "offen"
-    }]);
 
-    if (error) {
-      setNotice("Fehler beim Speichern: " + error.message);
-    } else {
-      setNotice("Erfolgreich gespeichert!");
-      setView("home");
-      window.location.reload(); 
+    try {
+      const { data, error } = await supabase
+        .from("reports")
+        .insert([
+          {
+            user_id: userId,
+            customer: reportForm.customer,
+            date: reportForm.date,
+            description: JSON.stringify({ notes: reportForm.notes }),
+            status: "offen",
+          },
+        ])
+        .select(); // .select() hilft uns zu sehen, ob wirklich was zurückkommt
+
+      if (error) {
+        console.error("Supabase Fehler:", error);
+        setNotice("Fehler beim Speichern: " + error.message);
+      } else {
+        console.log("Erfolgreich gespeichert:", data);
+        setNotice("Erfolgreich gespeichert!");
+        
+        // Formular zurücksetzen
+        setReportForm({ customer: "", date: new Date().toISOString().split('T')[0], notes: "" });
+        
+        // Zurück zur Liste
+        setView("home");
+        
+        // Daten neu laden, damit der neue Rapport erscheint
+        window.location.reload(); 
+      }
+    } catch (err) {
+      console.error("Unerwarteter Fehler:", err);
+      setNotice("Ein unerwarteter Fehler ist aufgetreten.");
     }
   };
 
