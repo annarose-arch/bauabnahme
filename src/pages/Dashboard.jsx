@@ -57,35 +57,45 @@ export default function Dashboard({ session, onLogout }) {
   }, [userId]);
 
   // --- AKTIONEN ---
-  const handleSave = async () => {
-    if (!reportForm.customer) return setNotice("Bitte Kunde eingeben!");
-    
-    // Wir bauen das Objekt erst zusammen
-    const payload = {
-      notes: reportForm.notes || "",
-      rows: reportForm.rows || []
-    };
+const handleSave = async () => {
+  if (!reportForm.customer) {
+    setNotice("Bitte einen Kunden wählen!");
+    return;
+  }
 
-    const { error } = await supabase.from("reports").insert([{
-      user_id: userId,
-      customer: reportForm.customer,
-      date: reportForm.date,
-      // Wir stellen sicher, dass es ein reiner String ist:
-      description: JSON.stringify(payload),
-      status: "offen"
-    }]);
-
-    if (error) {
-      console.error("Supabase Error:", error);
-      setNotice("Fehler: " + error.message);
-    } else {
-      setNotice("✅ Rapport erfolgreich gespeichert!");
-      // Kurze Pause, damit man die Nachricht sieht, dann zurück
-      setTimeout(() => setView("home"), 1500);
-      // Optional: Daten neu laden statt ganze Seite
-      window.location.reload(); 
-    }
+  // Wir bauen das Objekt für die Datenbank
+  const newEntry = {
+    user_id: userId, // Ganz wichtig!
+    customer: reportForm.customer,
+    date: reportForm.date,
+    description: JSON.stringify({
+      notes: reportForm.notes,
+      rows: reportForm.rows // Hier stecken deine Stundenzeilen drin
+    }),
+    status: "offen"
   };
+
+  const { data, error } = await supabase
+    .from("reports")
+    .insert([newEntry])
+    .select(); // .select() hilft uns zu prüfen, ob es geklappt hat
+
+  if (error) {
+    console.error("Speicherfehler:", error);
+    setNotice("Fehler beim Speichern: " + error.message);
+  } else {
+    setNotice("✅ Rapport erfolgreich gespeichert!");
+    
+    // Wir aktualisieren die lokale Liste sofort, ohne Neuladen
+    setReports([data[0], ...reports]); 
+    
+    // Zurück zur Übersicht
+    setTimeout(() => {
+      setNotice("");
+      setView("home");
+    }, 1000);
+  }
+};
 
   const openPDF = (report) => {
     const p = parseReport(report);
