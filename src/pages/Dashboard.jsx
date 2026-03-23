@@ -112,23 +112,47 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     }
   };
 
-  const renderView = () => {
-    if (view === "home") return <div style={{color: TEXT}}>Willkommen im Dashboard</div>;
-    return <div style={{color: TEXT}}>Ansicht: {view}</div>;
-  };
+const renderView = () => {
+    // 1. Wenn ein Rapport geöffnet ist (Detailansicht)
+    if (openedReport) {
+      return (
+        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <h2 style={{ margin: 0, color: GOLD }}>Rapport Details</h2>
+            <button onClick={() => setOpenedReport(null)} style={gBtn}> Zurück</button>
+          </div>
+          
+          <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+            <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF / Drucken</button>
+            <button onClick={() => setInvoiceModal(openedReport)} style={pBtn}>💰 Rechnung erstellen</button>
+          </div>
+          
+          {/* Hier kannst du weitere Details des Rapports anzeigen */}
+          <pre style={{ color: MUTED, fontSize: 12 }}>{JSON.stringify(openedReport, null, 2)}</pre>
+        </section>
+      );
+    }
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
-          <button onClick={onLogout} style={gBtn}>Logout</button>
-        </header>
-        <main style={{ padding: 20 }}>
-          {notice && <div style={{ color: GOLD, marginBottom: 12 }}>{notice}</div>}
-          {renderView()}
-        </main>
-      </div>
-    </div>
-  );
-}
+    // 2. Die normale Listenansicht
+    if (view === "home" || view === "reports") {
+      return (
+        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+          <h2 style={{ color: GOLD }}>Deine Rapporte</h2>
+          {reports.length === 0 ? (
+            <p style={{ color: MUTED }}>Noch keine Rapporte vorhanden.</p>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              {reports.map(r => (
+                <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 12, border: `1px solid ${BORDER}`, borderRadius: 8, cursor: "pointer", background: PANEL }}>
+                  <strong>{r.customer || "Unbekannter Kunde"}</strong>
+                  <div style={{ fontSize: 12, color: MUTED }}>{new Date(r.date).toLocaleDateString("de-CH")}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    return <div style={{ color: MUTED }}>Ansicht "{view}" wird noch geladen...</div>;
+  };
