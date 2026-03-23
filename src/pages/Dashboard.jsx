@@ -257,19 +257,25 @@ export default function Dashboard({ session, onLogout }) {
       );
     }
 
-    // --- 2. MATERIAL & PERSONAL (Einfachere Logik) ---
+    // --- 2. MATERIAL & PERSONAL ---
     if (view === "material" || view === "staff") {
       const table = view === "material" ? "materials" : "staff";
       const list = view === "material" ? materials : staff;
+
       const addItem = async () => {
         if (!newItemName) return;
         const payload = { 
           name: newItemName, user_id: userId,
-          description: JSON.stringify({ amount: reportForm.tempMenge, unit: reportForm.tempEinheit, price: reportForm.tempPreis })
+          description: JSON.stringify({ 
+            amount: reportForm.tempMenge || "1", 
+            unit: reportForm.tempEinheit || "Stk", 
+            price: reportForm.tempPreis || "0" 
+          })
         };
         const { data, error } = await supabase.from(table).insert([payload]).select();
         if (!error && data) {
-          if (view === "material") setMaterials([...materials, data[0]]); else setStaff([...staff, data[0]]);
+          if (view === "material") setMaterials([...materials, data[0]]); 
+          else setStaff([...staff, data[0]]);
           setNewItemName("");
           setNotice("✅ Gespeichert");
           setTimeout(() => setNotice(""), 2000);
@@ -279,89 +285,47 @@ export default function Dashboard({ session, onLogout }) {
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD, margin: 0 }}>{view === "material" ? "Material" : "Personal"}</h2>
+            <h2 style={{ color: GOLD, margin: 0 }}>{view === "material" ? "Materialstamm" : "Personalstamm"}</h2>
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
-          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-            <input style={iStyle} placeholder="Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+          <div style={{ display: "grid", gap: 10, marginBottom: 25, background: PANEL, padding: 15, borderRadius: 10 }}>
+            <input style={iStyle} placeholder="Bezeichnung / Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
             <div style={{ display: "flex", gap: 5 }}>
               <input type="number" placeholder="Menge" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
               <input placeholder="Einh." style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
               <input type="number" placeholder="Preis" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
             </div>
-            <button onClick={addItem} style={pBtn}>Hinzufügen</button>
+            <button onClick={addItem} style={pBtn}>+ Hinzufügen</button>
           </div>
-          {list.map(item => (
-            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-              <span>{item.name}</span>
-              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
-            </div>
-          ))}
-        </section>
-      );
-    }
-      return (
-        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
-          <h2 style={{ color: GOLD }}>{view === "customers" ? "Kunden" : view === "staff" ? "Personal" : "Material"}</h2>
-          
-          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-            <input style={iStyle} placeholder="Name / Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-            
-            {/* Preis-Felder werden jetzt auch bei 'staff' angezeigt */}
-            {(view === "material" || view === "staff") && (
-              <div style={{ display: "flex", gap: 5 }}>
-                <input type="number" placeholder="Menge/Std" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
-                <input placeholder="Einheit" style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
-                <input type="number" placeholder="Preis/Lohn" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
-              </div>
-            )}
-            
-            <button onClick={addItem} style={pBtn}>Hinzufügen</button>
-            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
-          </div>
-
-      {/* Liste der Einträge (Material/Personal) */}
           <div style={{ display: "grid", gap: 10 }}>
             {list.map(item => (
               <div key={item.id} style={{ padding: 12, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: PANEL, borderRadius: 8 }}>
                 <span>{item.name}</span>
-                <button 
-                  onClick={async () => { 
-                    await supabase.from(table).delete().eq("id", item.id); 
-                    if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); 
-                    else setStaff(staff.filter(s => s.id !== item.id)); 
-                  }} 
-                  style={{ color: DANGER, background: "none", border: "none", cursor: "pointer", fontWeight: "bold" }}
-                >
-                  Löschen
-                </button>
+                <button onClick={async () => { 
+                  await supabase.from(table).delete().eq("id", item.id); 
+                  if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); 
+                  else setStaff(staff.filter(s => s.id !== item.id)); 
+                }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
               </div>
             ))}
           </div>
         </section>
       );
-    } // <--- SCHLIESST: if (view === "material" || view === "staff")
+    }
 
-    // WICHTIG: Falls keine spezielle View aktiv ist, zeige das Home-Grid
     return renderHome();
-  }; // <--- SCHLIESST: const renderView = () => { (Das fehlte!)
+  };
 
-  // Das Haupt-Layout, das immer sichtbar ist (Header + Inhalt)
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
       <header style={{ padding: "15px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: CARD }}>
-        <span style={{ fontWeight: 900, color: GOLD, fontSize: 18, letterSpacing: 1 }}>PRO-RAPPORT</span>
+        <span style={{ fontWeight: 900, color: GOLD, fontSize: 18 }}>PRO-RAPPORT</span>
         <button onClick={onLogout} style={dBtn}>Logout</button>
       </header>
-      
       <main style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
-        {notice && (
-          <div style={{ background: GOLD, color: "#000", padding: "10px 15px", borderRadius: 8, marginBottom: 20, fontWeight: "bold", textAlign: "center" }}>
-            {notice}
-          </div>
-        )}
+        {notice && <div style={{ background: GOLD, color: "#000", padding: 10, borderRadius: 8, marginBottom: 20, textAlign: "center" }}>{notice}</div>}
         {renderView()}
       </main>
     </div>
   );
-} // <--- SCHLIESST: export default function Dashboard
+}
