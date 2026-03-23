@@ -106,32 +106,26 @@ export default function Dashboard({ session, onLogout }) {
   // Filter für die Anzeige
   const [statusFilter, setStatusFilter] = useState("offen");
   
-useEffect(() => {
+// 1. Daten laden
+  useEffect(() => {
     const loadData = async () => {
-      if (!userId) {
-        console.log("Abbruch: Keine userId vorhanden");
-        return;
-      }
-      
-      console.log("Lade Daten für User-ID:", userId);
-
+      if (!userId) return;
       const { data, error } = await supabase
         .from("reports")
         .select("*")
-        .eq("user_id", userId) // Dieser Filter muss exakt passen
+        .eq("user_id", userId)
         .order("id", { ascending: false });
 
       if (error) {
-        console.error("Fehler beim Laden der Liste:", error);
-        setNotice("Fehler beim Laden: " + error.message);
+        setNotice("Fehler: " + error.message);
       } else {
-        console.log("Erfolgreich geladene Rapporte:", data);
         setReports(data || []);
       }
     };
     loadData();
   }, [userId]);
 
+  // 2. Hilfsfunktionen
   const openPDF = (report) => {
     const p = parseReport(report);
     const win = window.open("", "_blank");
@@ -142,141 +136,96 @@ useEffect(() => {
   };
 
   const handleSave = async () => {
-    console.log("Speichervorgang gestartet...", reportForm); // Test-Log
-
     if (!reportForm.customer) {
       setNotice("Bitte einen Kunden angeben.");
       return;
     }
+    const { error } = await supabase.from("reports").insert([{
+      user_id: userId,
+      customer: reportForm.customer,
+      date: reportForm.date,
+      description: JSON.stringify({ 
+        notes: reportForm.notes,
+        rows: reportForm.rows, // Hier sind deine Arbeitszeiten drin
+        materialRows: reportForm.materialRows 
+      }),
+      status: "offen"
+    }]);
 
-    try {
-      const { data, error } = await supabase
-        .from("reports")
-        .insert([
-          {
-            user_id: userId,
-            customer: reportForm.customer,
-            date: reportForm.date,
-            description: JSON.stringify({ notes: reportForm.notes }),
-            status: "offen",
-          },
-        ])
-        .select(); // .select() hilft uns zu sehen, ob wirklich was zurückkommt
-
-      if (error) {
-        console.error("Supabase Fehler:", error);
-        setNotice("Fehler beim Speichern: " + error.message);
-      } else {
-        console.log("Erfolgreich gespeichert:", data);
-        setNotice("Erfolgreich gespeichert!");
-        
-        // Formular zurücksetzen
-        setReportForm({ customer: "", date: new Date().toISOString().split('T')[0], notes: "" });
-        
-        // Zurück zur Liste
-        setView("home");
-        
-        // Daten neu laden, damit der neue Rapport erscheint
-        window.location.reload(); 
-      }
-    } catch (err) {
-      console.error("Unerwarteter Fehler:", err);
-      setNotice("Ein unerwarteter Fehler ist aufgetreten.");
+    if (error) {
+      setNotice("Fehler: " + error.message);
+    } else {
+      setNotice("Erfolgreich gespeichert!");
+      setView("home");
+      window.location.reload(); 
     }
   };
 
- const renderHome = () => (
+  // 3. Die Haupt-Ansicht (Dashboard-Feeling)
+  const renderHome = () => (
     <>
-      {/* 1. STATUS-KACHELN (Wie im alten Design) */}
+      {/* STATUS-KACHELN */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 25 }}>
-        <div 
-          onClick={() => setStatusFilter("offen")}
-          style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "offen" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}
-        >
-          <div style={{ color: MUTED, fontSize: 12, marginBottom: 5 }}>OFFENE RAPPORTE</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>
-            {reports.filter(r => r.status === "offen").length}
-          </div>
+        <div onClick={() => setStatusFilter("offen")} style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "offen" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}>
+          <div style={{ color: MUTED, fontSize: 11 }}>OFFEN</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: GOLD }}>{reports.filter(r => r.status === "offen").length}</div>
         </div>
-        
-        <div 
-          onClick={() => setStatusFilter("rechnung")}
-          style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "rechnung" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}
-        >
-          <div style={{ color: MUTED, fontSize: 12, marginBottom: 5 }}>RECHNUNGEN</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: TEXT }}>
-            {reports.filter(r => r.status === "rechnung").length}
-          </div>
+        <div onClick={() => setStatusFilter("rechnung")} style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "rechnung" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}>
+          <div style={{ color: MUTED, fontSize: 11 }}>RECHNUNG</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: TEXT }}>{reports.filter(r => r.status === "rechnung").length}</div>
         </div>
-
-        <div 
-          onClick={() => setStatusFilter("archiv")}
-          style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "archiv" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}
-        >
-          <div style={{ color: MUTED, fontSize: 12, marginBottom: 5 }}>ARCHIV / GELÖSCHT</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: DANGER }}>
-            {reports.filter(r => r.status === "archiv").length}
-          </div>
+        <div onClick={() => setStatusFilter("archiv")} style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "archiv" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}>
+          <div style={{ color: MUTED, fontSize: 11 }}>ARCHIV</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: DANGER }}>{reports.filter(r => r.status === "archiv").length}</div>
         </div>
       </div>
 
-      {/* 2. VERWALTUNGS-MENÜ */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 30, overflowX: "auto", paddingBottom: 10 }}>
+      {/* NAVIGATION */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 30, overflowX: "auto" }}>
         <button onClick={() => setView("customers")} style={gBtn}>👥 Kunden</button>
-        <button onClick={() => setView("material")} style={gBtn}>📦 Materialliste</button>
+        <button onClick={() => setView("material")} style={gBtn}>📦 Material</button>
         <button onClick={() => setView("staff")} style={gBtn}>👷 Mitarbeiter</button>
-        <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+        <button onClick={() => setView("new-report")} style={pBtn}>+ Neu</button>
       </div>
 
-      {/* 3. DIE RAPPORT-LISTE */}
-      <h3 style={{ color: GOLD, marginBottom: 15 }}>
-        {statusFilter === "offen" ? "Aktuelle Aufträge" : statusFilter === "rechnung" ? "Verrechnete Rapporte" : "Archiv"}
-      </h3>
-      
-      <div style={{ display: "grid", gap: 12 }}>
-        {reports.filter(r => r.status === statusFilter).map(r => (
-          <div 
-            key={r.id} 
-            onClick={() => setOpenedReport(r)}
-            style={{ 
-              background: PANEL, padding: 18, borderRadius: 10, 
-              border: `1px solid ${BORDER}`, cursor: "pointer",
-              display: "flex", justifyContent: "space-between", alignItems: "center"
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 16 }}>{r.customer}</div>
-              <div style={{ color: MUTED, fontSize: 13 }}>{formatDateCH(r.date)}</div>
-            </div>
-            <div style={{ color: GOLD }}>➔</div>
+      {/* LISTE */}
+      <div style={{ display: "grid", gap: 10 }}>
+        {reports.filter(r => r.status === (statusFilter || "offen")).map(r => (
+          <div key={r.id} onClick={() => setOpenedReport(r)} style={{ background: PANEL, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}`, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
+            <span>{r.customer}</span>
+            <span style={{ color: MUTED }}>{r.date} ➔</span>
           </div>
         ))}
-        {reports.filter(r => r.status === statusFilter).length === 0 && (
-          <p style={{ color: MUTED, textAlign: "center", padding: 20 }}>Keine Rapporte in dieser Kategorie.</p>
-        )}
       </div>
     </>
   );
-  
-    return (
-      <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ color: GOLD, margin: 0 }}>Deine Rapporte</h2>
-          <button onClick={() => setView("new-report")} style={pBtn}>+ Neu</button>
-        </div>
-        {reports.length === 0 ? (
-          <p style={{ color: MUTED }}>Keine Rapporte vorhanden.</p>
-        ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {reports.map(r => (
-              <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, background: PANEL, borderRadius: 8, cursor: "pointer", border: `1px solid ${BORDER}` }}>
-                {r.customer}
-              </div>
-            ))}
+
+  const renderView = () => {
+    if (openedReport) {
+      return (
+        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ color: GOLD, margin: 0 }}>Details: {openedReport.customer}</h2>
+            <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
           </div>
-        )}
-      </section>
-    );
+          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
+        </section>
+      );
+    }
+    if (view === "new-report") {
+      return (
+        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
+          <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
+          <input style={iStyle} placeholder="Kunde" value={reportForm.customer} onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
+          <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
+            <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
+            <button onClick={handleSave} style={pBtn}>Speichern</button>
+          </div>
+        </section>
+      );
+    }
+    // Standardansicht
+    return renderHome();
   };
 
   return (
