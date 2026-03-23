@@ -105,17 +105,17 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   });
  const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
 
- useEffect(() => {
+useEffect(() => {
     const loadData = async () => {
       if (!userId) return;
       const { data, error } = await supabase
-        .from("reports") // <-- PRÜFEN: Muss exakt "reports" heißen
+        .from("reports")
         .select("*")
         .eq("user_id", userId)
         .order("id", { ascending: false });
 
       if (error) {
-        setNotice("Fehler: " + error.message);
+        setNotice("Fehler beim Laden: " + error.message);
       } else {
         setReports(data || []);
       }
@@ -133,53 +133,47 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   };
 
   const handleSave = async () => {
-    // ... dein restlicher Code ...
-    const { error } = await supabase
-      .from("reports") // <-- PRÜFEN: Auch hier muss "reports" stehen
-      .insert([{
-        user_id: userId,
-        customer: reportForm.customer,
-        date: reportForm.date,
-        description: JSON.stringify({ notes: reportForm.notes }),
-        status: "offen"
-      }]);
-    // ...
-  };
+    if (!reportForm.customer) {
+      setNotice("Bitte einen Kunden angeben.");
+      return;
+    }
+    const { error } = await supabase.from("reports").insert([{
+      user_id: userId,
+      customer: reportForm.customer,
+      date: reportForm.date,
+      description: JSON.stringify({ notes: reportForm.notes }),
+      status: "offen"
+    }]);
 
-    // --- DIESE ZEILEN FEHLTEN IN DEINEM SCHNIPSEL ---
     if (error) {
       setNotice("Fehler beim Speichern: " + error.message);
     } else {
       setNotice("Erfolgreich gespeichert!");
       setView("home");
-      // Optional: Seite neu laden oder Liste aktualisieren
       window.location.reload(); 
     }
-  }; 
+  };
 
-const renderView = () => {
-    // PRIORITÄT 1: Wenn ein Rapport angeklickt wurde -> Details zeigen
+  const renderView = () => {
     if (openedReport) {
       return (
         <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <h2 style={{ color: GOLD }}>Details</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ color: GOLD, margin: 0 }}>Details</h2>
             <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
           </div>
-          <p>Kunde: {openedReport.customer}</p>
-          <button onClick={() => openPDF(openedReport)} style={pBtn}>PDF erstellen</button>
+          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
         </section>
       );
     }
 
-    // PRIORITÄT 2: Wenn der User aktiv auf "Neu" geklickt hat -> Formular zeigen
     if (view === "new-report") {
       return (
         <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
           <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input style={iStyle} placeholder="Kunde" value={reportForm.customer} onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
-            <textarea style={iStyle} placeholder="Notizen" onChange={(e) => setReportForm({...reportForm, notes: e.target.value})} />
+            <textarea style={{...iStyle, minHeight: 100}} placeholder="Notizen" onChange={(e) => setReportForm({...reportForm, notes: e.target.value})} />
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
               <button onClick={handleSave} style={pBtn}>Speichern</button>
@@ -189,14 +183,12 @@ const renderView = () => {
       );
     }
 
-    // PRIORITÄT 3: Standard-Ansicht -> Liste der Rapporte
     return (
       <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ color: GOLD, margin: 0 }}>Deine Rapporte</h2>
-          <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+          <button onClick={() => setView("new-report")} style={pBtn}>+ Neu</button>
         </div>
-        
         {reports.length === 0 ? (
           <p style={{ color: MUTED }}>Keine Rapporte vorhanden.</p>
         ) : (
@@ -215,12 +207,9 @@ const renderView = () => {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
           <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={() => setView("home")} style={gBtn}>Home</button>
-            <button onClick={onLogout} style={dBtn}>Logout</button>
-          </div>
+          <button onClick={onLogout} style={dBtn}>Logout</button>
         </header>
         <main style={{ padding: 20 }}>
           {notice && <div style={{ color: GOLD, marginBottom: 12 }}>{notice}</div>}
