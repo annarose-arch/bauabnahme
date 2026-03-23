@@ -25,6 +25,13 @@ export default function Dashboard({ session, onLogout }) {
   const [openedReport, setOpenedReport] = useState(null);
   const [statusFilter, setStatusFilter] = useState("offen");
   const [newItemName, setNewItemName] = useState("");
+  const [custNumberPrefix, setCustNumberPrefix] = useState("KD-"); // Standard-Präfix
+  const [custFields, setCustFields] = useState({
+  address: "",
+  contact: "",
+  email: "",
+  phone: ""
+});
 
   const [reportForm, setReportForm] = useState({
     customer: "", date: new Date().toISOString().split('T')[0], notes: "",
@@ -58,16 +65,36 @@ export default function Dashboard({ session, onLogout }) {
   };
 
   const handleSaveReport = async () => {
-    if (!reportForm.customer) return setNotice("Kunde fehlt!");
-    const { error } = await supabase.from("reports").insert([{
-      user_id: userId, customer: reportForm.customer, date: reportForm.date,
-      description: JSON.stringify({ notes: reportForm.notes, rows: reportForm.rows }),
-      status: "offen"
-    }]);
-    if (error) setNotice(error.message);
-    else window.location.reload();
-  };
+    if (!reportForm.customer) return setNotice("⚠️ Bitte Kunde wählen!");
+    
+    setNotice("Speichere...");
 
+    const { data, error } = await supabase.from("reports").insert([{
+      user_id: userId,
+      customer: reportForm.customer,
+      date: reportForm.date,
+      // Wir senden es als reines Objekt, jsonb in Supabase erledigt den Rest
+      description: { 
+        notes: reportForm.notes, 
+        rows: reportForm.rows 
+      },
+      status: "offen"
+    }]).select();
+
+    if (error) {
+      console.error("Supabase Error Details:", error);
+      // Zeigt dir genau an, welches Feld Probleme macht:
+      setNotice("❌ Fehler: " + error.message); 
+    } else {
+      setNotice("✅ Rapport erfolgreich gespeichert!");
+      setReports([data[0], ...reports]);
+      setTimeout(() => {
+        setNotice("");
+        setView("home");
+      }, 1500);
+    }
+  };
+  
   // --- VIEWS ---
   const renderHome = () => {
     const filtered = reports.filter(r => r.status === statusFilter);
@@ -174,15 +201,105 @@ export default function Dashboard({ session, onLogout }) {
           setNotice("Fehler: " + error.message);
         } else if (data) {
           // Liste sofort aktualisieren ohne Neuladen
-          if (view === "customers") setCustomers([...customers, data[0]]);
-          if (view === "material") setMaterials([...materials, data[0]]);
-          if (view === "staff") setStaff([...staff, data[0]]);
+         // --- 1. SPEZIALISIERTER KUNDEN-BLOCK ---
+    if (view === "customers") {
+      const addItem = async () => {
+        if (!newItemName) return;
+        const newCustNo = `${custNumberPrefix}${Date.now().toString().slice(-4)}`;
+        const payload = { 
+          name: newItemName, user_id: userId, customer_number: newCustNo,
+          address: custFields.address, contact_person: custFields.contact,
+          email: custFields.email, phone: custFields.phone
+        };
+        const { data, error } = await supabase.from("customers").insert([payload]).select();
+        if (!error && data) {
+          setCustomers([...customers, data[0]]);
+          setNewItemName("");
+          setCustFields({ address: "", contact: "", email: "", phone: "" });
+          setNotice(`✅ Kunde ${newCustNo} angelegt`);
+          setTimeout(() => setNotice(""), 2000);
+        } else { setNotice("Fehler: " + error?.message); }
+      };
+
+      return (
+        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ color: GOLD, margin: 0 }}>Kundenstamm</h2>
+            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
+          </div>
+          <div style={{ background: PANEL, padding: 15, borderRadius: 10, marginBottom: 25, border: `1px solid ${BORDER}`, display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <label style={{ fontSize: 12, color: MUTED }}>Präfix:</label>
+              <input style={{...iStyle, width: 80}} value={custNumberPrefix} onChange={e => setCustNumberPrefix(e.target.value)} />
+            </div>
+            <input style={iStyle} placeholder="Firmenname *" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+            <input style={iStyle} placeholder="Adresse" value={custFields.address} onChange={e => setCustFields({...custFields, address: e.target.value})} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <input style={iStyle} placeholder="Ansprechperson" value={custFields.contact} onChange={e => setCustFields({...custFields, contact: e.target.value})} />
+              <input style={iStyle} placeholder="Telefon" value={custFields.phone} onChange={e => setCustFields({...custFields, phone: e.target.value})} />
+            </div>
+            <input style={iStyle} placeholder="E-Mail" value={custFields.email} onChange={e => setCustFields({...custFields, email: e.target.value})} />
+            <button onClick={addItem} style={pBtn}>+ Kunde speichern</button>
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {customers.map(c => (
+              <div key={c.id} style={{ background: CARD, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <b style={{ color: GOLD }}>{c.customer_number}</b>
+                  <button onClick={async () => { await supabase.from("customers").delete().eq("id", c.id); setCustomers(customers.filter(i => i.id !== c.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
+                </div>
+                <div style={{ fontWeight: "bold", marginTop: 5 }}>{c.name}</div>
+                <div style={{ fontSize: 12, color: MUTED }}>{c.address}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    // --- 2. MATERIAL & PERSONAL (Einfachere Logik) ---
+    if (view === "material" || view === "staff") {
+      const table = view === "material" ? "materials" : "staff";
+      const list = view === "material" ? materials : staff;
+      const addItem = async () => {
+        if (!newItemName) return;
+        const payload = { 
+          name: newItemName, user_id: userId,
+          description: JSON.stringify({ amount: reportForm.tempMenge, unit: reportForm.tempEinheit, price: reportForm.tempPreis })
+        };
+        const { data, error } = await supabase.from(table).insert([payload]).select();
+        if (!error && data) {
+          if (view === "material") setMaterials([...materials, data[0]]); else setStaff([...staff, data[0]]);
           setNewItemName("");
           setNotice("✅ Gespeichert");
           setTimeout(() => setNotice(""), 2000);
         }
       };
 
+      return (
+        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ color: GOLD, margin: 0 }}>{view === "material" ? "Material" : "Personal"}</h2>
+            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
+          </div>
+          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
+            <input style={iStyle} placeholder="Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+            <div style={{ display: "flex", gap: 5 }}>
+              <input type="number" placeholder="Menge" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
+              <input placeholder="Einh." style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
+              <input type="number" placeholder="Preis" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
+            </div>
+            <button onClick={addItem} style={pBtn}>Hinzufügen</button>
+          </div>
+          {list.map(item => (
+            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
+              <span>{item.name}</span>
+              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
+            </div>
+          ))}
+        </section>
+      );
+    }
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <h2 style={{ color: GOLD }}>{view === "customers" ? "Kunden" : view === "staff" ? "Personal" : "Material"}</h2>
