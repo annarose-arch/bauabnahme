@@ -107,16 +107,24 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
 
 useEffect(() => {
     const loadData = async () => {
-      if (!userId) return;
+      if (!userId) {
+        console.log("Abbruch: Keine userId vorhanden");
+        return;
+      }
+      
+      console.log("Lade Daten für User-ID:", userId);
+
       const { data, error } = await supabase
         .from("reports")
         .select("*")
-        .eq("user_id", userId)
+        .eq("user_id", userId) // Dieser Filter muss exakt passen
         .order("id", { ascending: false });
 
       if (error) {
+        console.error("Fehler beim Laden der Liste:", error);
         setNotice("Fehler beim Laden: " + error.message);
       } else {
+        console.log("Erfolgreich geladene Rapporte:", data);
         setReports(data || []);
       }
     };
