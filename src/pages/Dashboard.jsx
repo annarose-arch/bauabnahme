@@ -112,13 +112,8 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     }
   };
 
-const renderView = () => {
-    // 1. Wenn ein Rapport geöffnet ist (Detailansicht)
-    if (openedReport) {
-      };
-  
   return (
-  <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontWeight: 900, color: GOLD, fontSize: 18 }}>PRO-RAPPORT</span>
@@ -139,4 +134,4 @@ const renderView = () => {
       </div>
     </div>
   );
-}
+} 
