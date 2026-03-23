@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "../supabase";
-import { buildPdfHtml, formatDateCH, generateInvoice } from "./utils/exportUtils";
+import { buildPdfHtml, formatDateCH, generateInvoice } from "../utils/exportUtils";
 
 const BG = "#0a0a0a", PANEL = "#141414", CARD = "#1a1a1a";
 const TEXT = "#f0ece4", MUTED = "#b9b0a3", GOLD = "#d4a853";
