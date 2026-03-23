@@ -267,6 +267,16 @@ const renderHome = () => {
       </>
     );
   };
+
+  const calculateRowTotal = (from, to, pause) => {
+  if (!from || !to) return 0;
+  const [fH, fM] = from.split(':').map(Number);
+  const [tH, tM] = to.split(':').map(Number);
+  let diff = (tH * 60 + tM) - (fH * 60 + fM);
+  if (diff < 0) diff += 1440; // Über Mitternacht
+  const total = (diff / 60) - (parseFloat(pause) || 0);
+  return Math.max(0, total).toFixed(2);
+};
   
   const renderView = () => {
     if (openedReport) {
@@ -281,33 +291,99 @@ const renderHome = () => {
       );
     }
     if (view === "new-report") {
+      const addRow = () => {
+        setReportForm({
+          ...reportForm,
+          rows: [...reportForm.rows, { worker: "", from: "07:00", to: "16:00", pause: "0.5", total: "8.50" }]
+        });
+      };
+
+      const updateRow = (index, field, value) => {
+        const newRows = [...reportForm.rows];
+        newRows[index][field] = value;
+        if (field === "from" || field === "to" || field === "pause") {
+          newRows[index].total = calculateRowTotal(newRows[index].from, newRows[index].to, newRows[index].pause);
+        }
+        setReportForm({ ...reportForm, rows: newRows });
+      };
+
       return (
-        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
-          <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
-          <input style={iStyle} placeholder="Kunde" value={reportForm.customer} onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
-          <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
+        <section style={{ background: CARD, padding: 25, borderRadius: 15, maxWidth: 900, margin: "0 auto" }}>
+          <h2 style={{ color: GOLD, marginBottom: 20, borderBottom: `1px solid ${BORDER}`, paddingBottom: 10 }}>Neuer Arbeitsrapport</h2>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15, marginBottom: 25 }}>
+            <div>
+              <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 5 }}>KUNDE / PROJEKT</label>
+              <input 
+                style={iStyle} 
+                placeholder="Name des Kunden" 
+                value={reportForm.customer} 
+                onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} 
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 5 }}>DATUM</label>
+              <input 
+                type="date" 
+                style={iStyle} 
+                value={reportForm.date} 
+                onChange={(e) => setReportForm({...reportForm, date: e.target.value})} 
+              />
+            </div>
+          </div>
+
+          <h3 style={{ color: GOLD, fontSize: 16, marginBottom: 10 }}>Arbeitsstunden</h3>
+          <div style={{ overflowX: "auto", marginBottom: 20 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ color: MUTED, fontSize: 12, textAlign: "left" }}>
+                  <th style={{ padding: 8 }}>Mitarbeiter</th>
+                  <th style={{ padding: 8 }}>Von</th>
+                  <th style={{ padding: 8 }}>Bis</th>
+                  <th style={{ padding: 8 }}>Pause (h)</th>
+                  <th style={{ padding: 8 }}>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportForm.rows.map((row, idx) => (
+                  <tr key={idx} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <td><input style={{...iStyle, width: "100%"}} value={row.worker} onChange={(e) => updateRow(idx, "worker", e.target.value)} placeholder="Name" /></td>
+                    <td><input type="time" style={iStyle} value={row.from} onChange={(e) => updateRow(idx, "from", e.target.value)} /></td>
+                    <td><input type="time" style={iStyle} value={row.to} onChange={(e) => updateRow(idx, "to", e.target.value)} /></td>
+                    <td><input type="number" step="0.25" style={{...iStyle, width: 60}} value={row.pause} onChange={(e) => updateRow(idx, "pause", e.target.value)} /></td>
+                    <td style={{ fontWeight: "bold", color: GOLD }}>{row.total}h</td>
+                    <td>
+                      <button 
+                        onClick={() => {
+                          const r = [...reportForm.rows];
+                          r.splice(idx, 1);
+                          setReportForm({...reportForm, rows: r});
+                        }} 
+                        style={{ background: "none", border: "none", color: DANGER, cursor: "pointer" }}
+                      >✕</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button onClick={addRow} style={{ ...gBtn, marginTop: 10, width: "100%", borderStyle: "dashed" }}>+ Zeile hinzufügen</button>
+          </div>
+
+          <div style={{ marginBottom: 25 }}>
+            <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 5 }}>NOTIZEN / MATERIAL / KRAN</label>
+            <textarea 
+              style={{ ...iStyle, width: "100%", minHeight: 120, paddingTop: 10 }} 
+              placeholder="Besondere Vorkommnisse, verwendetes Material oder Kranstunden..." 
+              value={reportForm.notes} 
+              onChange={(e) => setReportForm({...reportForm, notes: e.target.value})}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: 15, justifyContent: "flex-end" }}>
             <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
-            <button onClick={handleSave} style={pBtn}>Speichern</button>
+            <button onClick={handleSave} style={{ ...pBtn, padding: "0 30px" }}>Rapport Speichern</button>
           </div>
         </section>
       );
     }
-    // Standardansicht
-    return renderHome();
-  };
-
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
-          <button onClick={onLogout} style={dBtn}>Logout</button>
-        </header>
-        <main style={{ padding: 20 }}>
-          {notice && <div style={{ color: GOLD, marginBottom: 12 }}>{notice}</div>}
-          {renderView()}
-        </main>
-      </div>
-    </div>
-  );
-}
