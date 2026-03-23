@@ -466,8 +466,8 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
     const body = `Guten Tag\n\nIm Anhang finden Sie den Rapport Nr. ${p.rapportNr||"-"}\n\nKunde: ${name}\nDatum: ${formatDateCH(report.date)}\nTOTAL CHF: ${Number(p.totals?.total||0).toFixed(2)}\n\nFreundliche Grüsse\n${firmContact||firmName}`;
     const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
     const win = window.open("", "_blank", "width=980,height=760");
-    if (!win) return;
-    
+    if (!win) return;  
+};
 
   const section = (children) => (
     <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
