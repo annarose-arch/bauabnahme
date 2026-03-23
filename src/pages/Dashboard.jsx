@@ -112,6 +112,44 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     }
   };
 
+  const renderView = () => {
+    if (openedReport) {
+      return (
+        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <h2 style={{ margin: 0, color: GOLD }}>Rapport Details</h2>
+            <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
+          </div>
+          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
+          <pre style={{ color: MUTED, marginTop: 20, fontSize: 12, overflow: "auto" }}>
+            {JSON.stringify(openedReport, null, 2)}
+          </pre>
+        </section>
+      );
+    }
+
+    return (
+      <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <h2 style={{ color: GOLD }}>Willkommen im Dashboard</h2>
+        <p style={{ color: MUTED }}>Wähle einen Rapport aus oder erstelle einen neuen.</p>
+        {reports.length > 0 ? (
+           <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
+             {reports.map(r => (
+               <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, background: PANEL, borderRadius: 8, cursor: "pointer", border: `1px solid ${BORDER}` }}>
+                 {r.customer || "Unbenannter Rapport"}
+               </div>
+             ))}
+           </div>
+        ) : (
+          <div style={{ padding: 20, textAlign: "center", border: `2px dashed ${BORDER}`, borderRadius: 8, color: MUTED }}>
+            Keine Rapporte gefunden.
+          </div>
+        )}
+      </section>
+    );
+  };
+  // ------------------------------
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -134,4 +172,4 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
       </div>
     </div>
   );
-} 
+}
