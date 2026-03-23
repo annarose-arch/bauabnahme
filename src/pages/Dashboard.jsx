@@ -103,6 +103,24 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   });
   const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
 
+  useEffect(() => {
+    const loadData = async () => {
+      if (!userId) return;
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .eq("user_id", userId)
+        .order("id", { ascending: false });
+
+      if (error) {
+        setNotice("Fehler beim Laden der Daten.");
+      } else {
+        setReports(data || []);
+      }
+    };
+    loadData();
+  }, [userId]);
+  
   const openPDF = (report) => {
     const p = parseReport(report);
     const win = window.open("", "_blank");
