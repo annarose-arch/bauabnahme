@@ -150,35 +150,68 @@ export default function Dashboard({ session, onLogout }) {
       );
     }
 
-    if (["customers", "material", "staff"].includes(view)) {
+   if (["customers", "material", "staff"].includes(view)) {
       const table = view === "customers" ? "customers" : view === "material" ? "materials" : "staff";
       const list = view === "customers" ? customers : view === "material" ? materials : staff;
+
       const addItem = async () => {
         if (!newItemName) return;
+        
         let payload = { name: newItemName, user_id: userId };
-        if (view === "material") payload.description = JSON.stringify({ amount: reportForm.tempMenge, unit: reportForm.tempEinheit, price: reportForm.tempPreis });
+        
+        // Preis/Menge Logik für Material UND Personal
+        if (view === "material" || view === "staff") {
+          payload.description = JSON.stringify({
+            amount: reportForm.tempMenge || "1",
+            unit: reportForm.tempEinheit || "Stk",
+            price: reportForm.tempPreis || "0"
+          });
+        }
+
         const { data, error } = await supabase.from(table).insert([payload]).select();
-        if (!error) window.location.reload();
+        
+        if (error) {
+          setNotice("Fehler: " + error.message);
+        } else if (data) {
+          // Liste sofort aktualisieren ohne Neuladen
+          if (view === "customers") setCustomers([...customers, data[0]]);
+          if (view === "material") setMaterials([...materials, data[0]]);
+          if (view === "staff") setStaff([...staff, data[0]]);
+          setNewItemName("");
+          setNotice("✅ Gespeichert");
+          setTimeout(() => setNotice(""), 2000);
+        }
       };
+
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
-          <h2 style={{ color: GOLD, textTransform: "uppercase" }}>{view}</h2>
+          <h2 style={{ color: GOLD }}>{view === "customers" ? "Kunden" : view === "staff" ? "Personal" : "Material"}</h2>
+          
           <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-            <input style={iStyle} placeholder="Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-            {view === "material" && (
+            <input style={iStyle} placeholder="Name / Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+            
+            {/* Preis-Felder werden jetzt auch bei 'staff' angezeigt */}
+            {(view === "material" || view === "staff") && (
               <div style={{ display: "flex", gap: 5 }}>
-                <input type="number" placeholder="Menge" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
-                <input placeholder="Einh." style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
-                <input type="number" placeholder="Preis" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
+                <input type="number" placeholder="Menge/Std" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
+                <input placeholder="Einheit" style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
+                <input type="number" placeholder="Preis/Lohn" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
               </div>
             )}
+            
             <button onClick={addItem} style={pBtn}>Hinzufügen</button>
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
+
           {list.map(item => (
-            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
+            <div key={item.id} style={{ padding: "10px 0", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
               <span>{item.name}</span>
-              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); window.location.reload(); }} style={{ color: DANGER, background: "none", border: "none" }}>Löschen</button>
+              <button onClick={async () => { 
+                await supabase.from(table).delete().eq("id", item.id);
+                if (view === "customers") setCustomers(customers.filter(c => c.id !== item.id));
+                if (view === "material") setMaterials(materials.filter(m => m.id !== item.id));
+                if (view === "staff") setStaff(staff.filter(s => s.id !== item.id));
+              }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
             </div>
           ))}
         </section>
