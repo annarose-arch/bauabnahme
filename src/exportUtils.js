@@ -6,6 +6,21 @@ export const formatDateCH = (dateStr) => {
   return isNaN(d) ? dateStr : d.toLocaleDateString("de-CH");
 };
 
+export function buildPdfHtml(report, p, meta) {
+  const data = p || {};
+  const r = report || {};
+  return `
+    <html>
+      <head><title>Rapport</title></head>
+      <body style="font-family:sans-serif;padding:20px;">
+        <h1>Rapport</h1>
+        <p>Kunde: ${r.customer || 'Unbekannt'}</p>
+        <hr />
+        <p>Inhalt folgt...</p>
+      </body>
+    </html>`;
+}
+
 export async function generateInvoice(report, discountPct, skontoPct, payDays, skontoDays, meta, p) {
   // 1. Fenster öffnen
   const win = window.open("", "_blank");
