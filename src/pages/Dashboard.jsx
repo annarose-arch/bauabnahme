@@ -320,19 +320,30 @@ export default function Dashboard({ session, onLogout }) {
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
 
-         {/* Liste der Einträge */}
-          {list.map(item => (
-            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-              <span>{item.name}</span>
-              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
-            </div>
-          ))}
+       {/* Liste der Einträge */}
+          <div style={{ display: "grid", gap: 10 }}>
+            {list.map(item => (
+              <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>{item.name}</span>
+                <button 
+                  onClick={async () => { 
+                    await supabase.from(table).delete().eq("id", item.id); 
+                    if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); 
+                    else setStaff(staff.filter(s => s.id !== item.id)); 
+                  }} 
+                  style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}
+                >
+                  Löschen
+                </button>
+              </div>
+            ))}
+          </div>
         </section>
       );
-    } // <--- Schließt den "material/staff" Block
+    } 
 
     return renderHome();
-  }; // <--- Schließt renderView (Das ist die Klammer aus Zeile 131!)
+  }; 
 
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
@@ -346,4 +357,4 @@ export default function Dashboard({ session, onLogout }) {
       </main>
     </div>
   );
-} // <--- Schließt die gesamte Dashboard-Komponente
+} 
