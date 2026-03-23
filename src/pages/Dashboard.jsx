@@ -58,21 +58,32 @@ export default function Dashboard({ session, onLogout }) {
 
   // --- AKTIONEN ---
   const handleSave = async () => {
-    if (!reportForm.customer) return setNotice("Kunde fehlt!");
+    if (!reportForm.customer) return setNotice("Bitte Kunde eingeben!");
+    
+    // Wir bauen das Objekt erst zusammen
+    const payload = {
+      notes: reportForm.notes || "",
+      rows: reportForm.rows || []
+    };
+
     const { error } = await supabase.from("reports").insert([{
       user_id: userId,
       customer: reportForm.customer,
       date: reportForm.date,
-      description: JSON.stringify({ 
-        notes: reportForm.notes, 
-        rows: reportForm.rows 
-      }),
+      // Wir stellen sicher, dass es ein reiner String ist:
+      description: JSON.stringify(payload),
       status: "offen"
     }]);
-    if (error) setNotice(error.message);
-    else {
-      setNotice("Gespeichert!");
-      setTimeout(() => window.location.reload(), 1000);
+
+    if (error) {
+      console.error("Supabase Error:", error);
+      setNotice("Fehler: " + error.message);
+    } else {
+      setNotice("✅ Rapport erfolgreich gespeichert!");
+      // Kurze Pause, damit man die Nachricht sieht, dann zurück
+      setTimeout(() => setView("home"), 1500);
+      // Optional: Daten neu laden statt ganze Seite
+      window.location.reload(); 
     }
   };
 
