@@ -258,3 +258,68 @@ const handleSave = async () => {
         </section>
       );
     }
+// --- STAMMDATEN ANSICHT (Kunden, Material, Mitarbeiter) ---
+    if (["customers", "material", "staff"].includes(view)) {
+      const table = view === "customers" ? "customers" : view === "material" ? "materials" : "staff";
+      const list = view === "customers" ? customers : view === "material" ? materials : staff;
+      const title = view === "customers" ? "Kundenstamm" : view === "material" ? "Materialliste" : "Mitarbeiter";
+
+      const addItem = async () => {
+        if (!newItemName) return;
+        const { data, error } = await supabase.from(table).insert([{ name: newItemName, user_id: userId }]).select();
+        if (!error) {
+          if (view === "customers") setCustomers([...customers, data[0]]);
+          if (view === "material") setMaterials([...materials, data[0]]);
+          if (view === "staff") setStaff([...staff, data[0]]);
+          setNewItemName("");
+        }
+      };
+
+      const deleteItem = async (id) => {
+        const { error } = await supabase.from(table).delete().eq("id", id);
+        if (!error) {
+          if (view === "customers") setCustomers(customers.filter(i => i.id !== id));
+          if (view === "material") setMaterials(materials.filter(i => i.id !== id));
+          if (view === "staff") setStaff(staff.filter(i => i.id !== id));
+        }
+      };
+
+      return (
+        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ color: GOLD, margin: 0 }}>{title}</h2>
+            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+            <input style={iStyle} placeholder="Name..." value={newItemName} onChange={(e) => setNewItemName(e.target.value)} />
+            <button onClick={addItem} style={pBtn}>Hinzufügen</button>
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {list.map(item => (
+              <div key={item.id} style={{ background: PANEL, padding: "12px 15px", borderRadius: 10, display: "flex", justifyContent: "space-between", border: `1px solid ${BORDER}` }}>
+                <span>{item.name}</span>
+                <button onClick={() => deleteItem(item.id)} style={{ background: "none", border: "none", color: DANGER, cursor: "pointer" }}>Löschen</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    // WICHTIG: Wenn keine View aktiv ist, zeige das Home-Grid
+    return renderHome();
+  }; // <--- Schließt renderView
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#f0ece4" }}>
+      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontWeight: 900, color: GOLD, fontSize: 20 }}>PRO-RAPPORT</span>
+        <button onClick={onLogout} style={dBtn}>Logout</button>
+      </header>
+      <main style={{ padding: 20 }}>
+        {notice && <div style={{ background: GOLD, color: "#000", padding: 10, borderRadius: 8, marginBottom: 20 }}>{notice}</div>}
+        {renderView()}
+      </main>
+    </div>
+  );
+} 
