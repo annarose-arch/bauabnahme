@@ -1165,6 +1165,7 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
       </>);
     }
     return null;
+    
 const navItems = [
     {key:"home",label:"Start"},{key:"customers",label:"Kunden"},
     {key:"catalog",label:"Katalog"},{key:"new-report",label:"Neuer Rapport"},
