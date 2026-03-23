@@ -128,11 +128,12 @@ export default function Dashboard({ session, onLogout }) {
     );
   };
 
-  const renderView = () => {
+ const renderView = () => {
     if (openedReport) {
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <h2 style={{ color: GOLD }}>{openedReport.customer}</h2>
+          <p>{openedReport.date}</p>
           <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
         </section>
       );
@@ -152,56 +153,12 @@ export default function Dashboard({ session, onLogout }) {
             <option value="">-- Kunde wählen --</option>
             {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>
-          <table style={{ width: "100%", marginBottom: 15 }}>
-            <thead><tr style={{ color: MUTED, fontSize: 12 }}><th>Name</th><th>Von</th><th>Bis</th><th>P.</th><th>Total</th></tr></thead>
-            <tbody>
-              {reportForm.rows.map((row, idx) => (
-                <tr key={idx}>
-                  <td>
-                    <select style={iStyle} value={row.worker} onChange={e => updateRow(idx, "worker", e.target.value)}>
-                      <option value="">--</option>
-                      {staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                    </select>
-                  </td>
-                  <td><input type="time" style={iStyle} value={row.from} onChange={e => updateRow(idx, "from", e.target.value)} /></td>
-                  <td><input type="time" style={iStyle} value={row.to} onChange={e => updateRow(idx, "to", e.target.value)} /></td>
-                  <td><input type="number" step="0.5" style={iStyle} value={row.pause} onChange={e => updateRow(idx, "pause", e.target.value)} /></td>
-                  <td style={{ color: GOLD }}>{row.total}h</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
           <button onClick={handleSaveReport} style={pBtn}>Speichern</button>
           <button onClick={() => setView("home")} style={{...gBtn, marginLeft: 10}}>Abbrechen</button>
         </section>
       );
     }
 
-   if (["customers", "material", "staff"].includes(view)) {
-      const table = view === "customers" ? "customers" : view === "material" ? "materials" : "staff";
-      const list = view === "customers" ? customers : view === "material" ? materials : staff;
-
-      const addItem = async () => {
-        if (!newItemName) return;
-        
-        let payload = { name: newItemName, user_id: userId };
-        
-        // Preis/Menge Logik für Material UND Personal
-        if (view === "material" || view === "staff") {
-          payload.description = JSON.stringify({
-            amount: reportForm.tempMenge || "1",
-            unit: reportForm.tempEinheit || "Stk",
-            price: reportForm.tempPreis || "0"
-          });
-        }
-
-        const { data, error } = await supabase.from(table).insert([payload]).select();
-        
-        if (error) {
-          setNotice("Fehler: " + error.message);
-        } else if (data) {
-          // Liste sofort aktualisieren ohne Neuladen
-         // --- 1. SPEZIALISIERTER KUNDEN-BLOCK ---
     if (view === "customers") {
       const addItem = async () => {
         if (!newItemName) return;
@@ -216,99 +173,62 @@ export default function Dashboard({ session, onLogout }) {
           setCustomers([...customers, data[0]]);
           setNewItemName("");
           setCustFields({ address: "", contact: "", email: "", phone: "" });
-          setNotice(`✅ Kunde ${newCustNo} angelegt`);
-          setTimeout(() => setNotice(""), 2000);
-        } else { setNotice("Fehler: " + error?.message); }
+          setNotice("✅ Kunde angelegt");
+        }
       };
-
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD, margin: 0 }}>Kundenstamm</h2>
+            <h2 style={{ color: GOLD }}>Kundenstamm</h2>
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
-          <div style={{ background: PANEL, padding: 15, borderRadius: 10, marginBottom: 25, border: `1px solid ${BORDER}`, display: "grid", gap: 10 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <label style={{ fontSize: 12, color: MUTED }}>Präfix:</label>
-              <input style={{...iStyle, width: 80}} value={custNumberPrefix} onChange={e => setCustNumberPrefix(e.target.value)} />
-            </div>
-            <input style={iStyle} placeholder="Firmenname *" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
+            <input style={iStyle} placeholder="Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
             <input style={iStyle} placeholder="Adresse" value={custFields.address} onChange={e => setCustFields({...custFields, address: e.target.value})} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <input style={iStyle} placeholder="Ansprechperson" value={custFields.contact} onChange={e => setCustFields({...custFields, contact: e.target.value})} />
-              <input style={iStyle} placeholder="Telefon" value={custFields.phone} onChange={e => setCustFields({...custFields, phone: e.target.value})} />
+            <button onClick={addItem} style={pBtn}>Speichern</button>
+          </div>
+          {customers.map(c => (
+            <div key={c.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
+              <span>{c.name} ({c.customer_number})</span>
+              <button onClick={async () => { await supabase.from("customers").delete().eq("id", c.id); setCustomers(customers.filter(i => i.id !== c.id)); }} style={{ color: DANGER, background: "none", border: "none" }}>Löschen</button>
             </div>
-            <input style={iStyle} placeholder="E-Mail" value={custFields.email} onChange={e => setCustFields({...custFields, email: e.target.value})} />
-            <button onClick={addItem} style={pBtn}>+ Kunde speichern</button>
-          </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            {customers.map(c => (
-              <div key={c.id} style={{ background: CARD, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                  <b style={{ color: GOLD }}>{c.customer_number}</b>
-                  <button onClick={async () => { await supabase.from("customers").delete().eq("id", c.id); setCustomers(customers.filter(i => i.id !== c.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
-                </div>
-                <div style={{ fontWeight: "bold", marginTop: 5 }}>{c.name}</div>
-                <div style={{ fontSize: 12, color: MUTED }}>{c.address}</div>
-              </div>
-            ))}
-          </div>
+          ))}
         </section>
       );
     }
 
-    // --- 2. MATERIAL & PERSONAL ---
     if (view === "material" || view === "staff") {
       const table = view === "material" ? "materials" : "staff";
       const list = view === "material" ? materials : staff;
-
       const addItem = async () => {
         if (!newItemName) return;
         const payload = { 
           name: newItemName, user_id: userId,
-          description: JSON.stringify({ 
-            amount: reportForm.tempMenge || "1", 
-            unit: reportForm.tempEinheit || "Stk", 
-            price: reportForm.tempPreis || "0" 
-          })
+          description: JSON.stringify({ amount: reportForm.tempMenge, unit: reportForm.tempEinheit, price: reportForm.tempPreis })
         };
         const { data, error } = await supabase.from(table).insert([payload]).select();
         if (!error && data) {
-          if (view === "material") setMaterials([...materials, data[0]]); 
-          else setStaff([...staff, data[0]]);
+          if (view === "material") setMaterials([...materials, data[0]]); else setStaff([...staff, data[0]]);
           setNewItemName("");
           setNotice("✅ Gespeichert");
-          setTimeout(() => setNotice(""), 2000);
         }
       };
-
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD, margin: 0 }}>{view === "material" ? "Materialstamm" : "Personalstamm"}</h2>
+            <h2 style={{ color: GOLD }}>{view === "material" ? "Material" : "Personal"}</h2>
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
-          <div style={{ display: "grid", gap: 10, marginBottom: 25, background: PANEL, padding: 15, borderRadius: 10 }}>
-            <input style={iStyle} placeholder="Bezeichnung / Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-            <div style={{ display: "flex", gap: 5 }}>
-              <input type="number" placeholder="Menge" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
-              <input placeholder="Einh." style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
-              <input type="number" placeholder="Preis" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
+          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
+            <input style={iStyle} placeholder="Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+            <button onClick={addItem} style={pBtn}>Hinzufügen</button>
+          </div>
+          {list.map(item => (
+            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
+              <span>{item.name}</span>
+              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none" }}>Löschen</button>
             </div>
-            <button onClick={addItem} style={pBtn}>+ Hinzufügen</button>
-          </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            {list.map(item => (
-              <div key={item.id} style={{ padding: 12, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: PANEL, borderRadius: 8 }}>
-                <span>{item.name}</span>
-                <button onClick={async () => { 
-                  await supabase.from(table).delete().eq("id", item.id); 
-                  if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); 
-                  else setStaff(staff.filter(s => s.id !== item.id)); 
-                }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
-              </div>
-            ))}
-          </div>
+          ))}
         </section>
       );
     }
@@ -318,12 +238,12 @@ export default function Dashboard({ session, onLogout }) {
 
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
-      <header style={{ padding: "15px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: CARD }}>
-        <span style={{ fontWeight: 900, color: GOLD, fontSize: 18 }}>PRO-RAPPORT</span>
+      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
+        <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
         <button onClick={onLogout} style={dBtn}>Logout</button>
       </header>
-      <main style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
-        {notice && <div style={{ background: GOLD, color: "#000", padding: 10, borderRadius: 8, marginBottom: 20, textAlign: "center" }}>{notice}</div>}
+      <main style={{ padding: 20 }}>
+        {notice && <div style={{ color: GOLD, marginBottom: 20 }}>{notice}</div>}
         {renderView()}
       </main>
     </div>
