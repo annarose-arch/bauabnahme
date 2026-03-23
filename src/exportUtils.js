@@ -6,57 +6,58 @@ export const formatDateCH = (dateStr) => {
   return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("de-CH");
 };
 
-// --- DIESER TEIL IST NEU FÜR DEIN RAPPORT-DESIGN ---
+// In exportUtils.js
 export function buildPdfHtml(report, p, meta) {
-  const data = p || {};
   const r = report || {};
-  const date = formatDateCH(r.date);
-  const notes = data.notes || "Keine Notizen vorhanden";
+  const data = p || {};
+  const rows = data.rows || []; // Deine Arbeitsstunden
 
   return `
-    <!DOCTYPE html>
     <html>
       <head>
-        <meta charset="utf-8">
-        <title>Rapport - ${r.customer || 'Unbekannt'}</title>
         <style>
-          body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #d4a853; padding-bottom: 20px; margin-bottom: 30px; }
-          .brand { font-size: 28px; font-weight: 900; color: #d4a853; }
-          .section { margin-bottom: 30px; }
-          .label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: bold; }
-          .value { font-size: 18px; margin-top: 5px; }
-          .notes-container { 
-            background: #f9f9f9; border: 1px solid #eee; padding: 20px; 
-            border-radius: 8px; min-height: 200px; white-space: pre-wrap; 
-          }
-          .footer { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
-          .sig-box { border-top: 1px solid #333; padding-top: 10px; text-align: center; font-size: 12px; }
-          @media print { .no-print { display: none; } }
+          body { font-family: sans-serif; padding: 40px; }
+          .header { border-bottom: 2px solid #d4a853; margin-bottom: 30px; padding-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background: #f4f4f4; text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+          td { padding: 10px; border-bottom: 1px solid #eee; }
+          .total-row { font-weight: bold; background: #fdfaf3; }
         </style>
       </head>
       <body>
-        <div class="no-print" style="margin-bottom: 20px;">
-          <button onclick="window.print()" style="background:#d4a853; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">🖨️ PDF speichern</button>
-        </div>
         <div class="header">
-          <div class="brand">PRO-RAPPORT</div>
-          <div style="text-align:right">Datum: ${date}</div>
+          <h1 style="color:#d4a853; margin:0;">ARBEITSRAPPORT</h1>
+          <p>Kunde: <strong>${r.customer}</strong> | Datum: ${formatDateCH(r.date)}</p>
         </div>
-        <div class="section">
-          <div class="label">Kunde / Projekt</div>
-          <div class="value">${r.customer || 'Unbekannt'}</div>
-        </div>
-        <div class="section">
-          <div class="label">Arbeitsbericht</div>
-          <div class="notes-container">${notes}</div>
-        </div>
-        <div class="footer">
-          <div class="sig-box">Visum Kunde</div>
-          <div class="sig-box">Visum Auftragnehmer</div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Mitarbeiter</th>
+              <th>Von/Bis</th>
+              <th>Pause</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td>${row.worker || '-'}</td>
+                <td>${row.from || ''} - ${row.to || ''}</td>
+                <td>${row.pause || '0'}h</td>
+                <td>${row.total || '0'}h</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="margin-top:30px;">
+          <strong>Bemerkungen:</strong><br>
+          <p>${data.notes || 'Keine Bemerkungen'}</p>
         </div>
       </body>
-    </html>`;
+    </html>
+  `;
 }
 
 // --- DIESER TEIL BEHÄLT DEINE RECHNUNGS-LOGIK ---
