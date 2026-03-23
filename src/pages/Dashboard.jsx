@@ -467,34 +467,7 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
     const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
     const win = window.open("", "_blank", "width=980,height=760");
     if (!win) return;
-    win.document.write(buildPdfHtml(report, p, firmName, firmLogo, firmAddress, firmContact, firmPhone, firmEmail, isPro, isDemoMode, mailto));
-    win.document.close();
-  };
-
-  const downloadAndEmail = async (report) => {
-    const p = parseReport(report);
-    const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
-    const isDemoMode = !userId || userId === "demo-user";
-    const meta = session?.user?.user_metadata || {};
-    const firmName = meta.company_name || "";
-    const firmLogo = meta.company_logo || "";
-    const firmAddress = meta.address ? `${meta.address}, ${meta.zip||""} ${meta.city||""}` : "";
-    const firmContact = [meta.first_name, meta.last_name].filter(Boolean).join(" ");
-    const firmPhone = meta.phone ? `Tel: ${meta.phone}` : "";
-    const firmEmail = meta.email || userEmail;
-    const name = report.customer || "-";
-    const email = p.customerEmail || "";
-    const subj = `Rapport Nr. ${p.rapportNr||report.id} – ${name} – ${formatDateCH(report.date)}`;
-    const body = `Guten Tag\n\nIm Anhang finden Sie den Abnahmerapport Nr. ${p.rapportNr||"-"}\n\nKunde: ${name}\nDatum: ${formatDateCH(report.date)}\nProjekt: ${p.projectName||"-"}\nTOTAL CHF: ${Number(p.totals?.total||0).toFixed(2)}\n\nFreundliche Grüsse\n${firmContact||firmName}`;
-    const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
-    const win = window.open("", "_blank", "width=980,height=760");
-    if (!win) return;
-    win.document.write(buildPdfHtml(report, p, firmName, firmLogo, firmAddress, firmContact, firmPhone, firmEmail, isPro, isDemoMode, mailto));
-    win.document.close();
-    // Auto-archivierung nach Versand (async)
-    await updateStatus(report.id, "archiviert");
-    showNotice("✅ Rapport gesendet und ins Kundenarchiv verschoben.");
-  };
+    
 
   const section = (children) => (
     <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
@@ -520,7 +493,7 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {["offen","bearbeitet","gesendet","archiviert"].map(s => (
               <button key={s} type="button"
-                onClick={() => updateStatus(openedReport.id, s)}
+               onClick={() => { const p = parseReport(openedReport); const win = window.open("", "_blank"); win.document.write(buildPdfHtml(openedReport, p, {})); win.document.close(); }}
                 style={{
                   minHeight:34, borderRadius:8, padding:"0 14px", fontSize:13, cursor:"pointer",
                   fontWeight: openedReport.status===s ? 700 : 400,
