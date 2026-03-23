@@ -28,23 +28,27 @@ const calculateRowTotal = (from, to, pause) => {
 export default function Dashboard({ session, onLogout }) {
   const userId = session?.user?.id;
 
-  // --- STATES ---
+  // --- HIER MÜSSEN ALLE STATES STEHEN ---
   const [view, setView] = useState("home");
   const [reports, setReports] = useState([]);
   const [notice, setNotice] = useState("");
   const [openedReport, setOpenedReport] = useState(null);
   const [statusFilter, setStatusFilter] = useState("offen");
-  const [reportForm, setReportForm] = useState({
-const [customers, setCustomers] = useState([]);
+
+  // Diese 4 Zeilen müssen HIER hin (innerhalb der Funktion):
+  const [customers, setCustomers] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [staff, setStaff] = useState([]);
   const [newItemName, setNewItemName] = useState(""); 
+
+  const [reportForm, setReportForm] = useState({
     customer: "",
     date: new Date().toISOString().split('T')[0],
     notes: "",
     rows: [{ worker: "", from: "07:00", to: "16:00", pause: "0.5", total: "8.50" }]
   });
 
+  // ... ab hier kommt dein useEffect ...
   // --- DATEN LADEN ---
   useEffect(() => {
     if (!userId) return;
