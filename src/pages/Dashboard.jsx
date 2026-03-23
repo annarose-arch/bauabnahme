@@ -101,7 +101,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [invoices, setInvoices] = useState(() => {
     try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; }
   });
-  const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
+ const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
 
   useEffect(() => {
     const loadData = async () => {
@@ -121,7 +121,6 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     loadData();
   }, [userId]);
 
-  
   const openPDF = (report) => {
     const p = parseReport(report);
     const win = window.open("", "_blank");
@@ -144,59 +143,41 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
       status: "offen"
     }]);
 
+    // --- DIESE ZEILEN FEHLTEN IN DEINEM SCHNIPSEL ---
     if (error) {
-      setNotice("Speichern fehlgeschlagen: " + error.message);
+      setNotice("Fehler beim Speichern: " + error.message);
     } else {
       setNotice("Erfolgreich gespeichert!");
       setView("home");
-      window.location.reload();
+      // Optional: Seite neu laden oder Liste aktualisieren
+      window.location.reload(); 
     }
-  };
+  }; 
 
-const renderView = () => {
-    // 1. DETAILANSICHT (Wenn ein Rapport angeklickt wurde)
+  const renderView = () => {
     if (openedReport) {
       return (
         <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h2 style={{ margin: 0, color: GOLD }}>Rapport Details</h2>
+            <h2 style={{ margin: 0, color: GOLD }}>Details</h2>
             <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
           </div>
           <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
-          <pre style={{ color: MUTED, marginTop: 20, fontSize: 12, overflow: "auto", background: "#000", padding: 10 }}>
-            {JSON.stringify(openedReport, null, 2)}
-          </pre>
+          <pre style={{ color: MUTED, marginTop: 20, fontSize: 12 }}>{JSON.stringify(openedReport, null, 2)}</pre>
         </section>
       );
     }
 
-    // 2. FORMULAR FÜR NEUEN RAPPORT (Wenn "+ Neuer Rapport" geklickt wurde)
     if (view === "new-report") {
       return (
         <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
           <h2 style={{ color: GOLD, marginBottom: 20 }}>Neuer Rapport</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-            <input 
-              style={iStyle} 
-              placeholder="Kunde / Projekt Name" 
-              value={reportForm.customer || ""}
-              onChange={(e) => setReportForm({...reportForm, customer: e.target.value})}
-            />
-            <input 
-              type="date" 
-              style={iStyle} 
-              value={reportForm.date || ""} 
-              onChange={(e) => setReportForm({...reportForm, date: e.target.value})}
-            />
-            <textarea 
-              style={{...iStyle, minHeight: 100, padding: 10}} 
-              placeholder="Bemerkungen..." 
-              value={reportForm.notes || ""}
-              onChange={(e) => setReportForm({...reportForm, notes: e.target.value})}
-            />
-            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <input style={iStyle} placeholder="Kunde" onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
+            <input type="date" style={iStyle} onChange={(e) => setReportForm({...reportForm, date: e.target.value})} />
+            <textarea style={{...iStyle, minHeight: 100}} placeholder="Notizen" onChange={(e) => setReportForm({...reportForm, notes: e.target.value})} />
+            <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
-              {/* Hier ist der Button zum Speichern! */}
               <button onClick={handleSave} style={pBtn}>Speichern</button>
             </div>
           </div>
@@ -204,25 +185,19 @@ const renderView = () => {
       );
     }
 
-    // 3. LISTENANSICHT (Standard Home)
     return (
       <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ color: GOLD, margin: 0 }}>Deine Rapporte</h2>
-          <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+          <h2 style={{ color: GOLD, margin: 0 }}>Rapporte</h2>
+          <button onClick={() => setView("new-report")} style={pBtn}>+ Neu</button>
         </div>
-
         {reports.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", border: `2px dashed ${BORDER}`, borderRadius: 8, color: MUTED }}>
-            <p>Keine Rapporte gefunden oder Fehler beim Laden.</p>
-            <button onClick={() => window.location.reload()} style={{...gBtn, marginTop: 10}}>Neu laden ↻</button>
-          </div>
+          <p style={{ color: MUTED }}>Keine Daten gefunden.</p>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gap: 10 }}>
             {reports.map(r => (
-              <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, border: `1px solid ${BORDER}`, borderRadius: 8, cursor: "pointer", background: PANEL }}>
-                <div style={{ fontWeight: 700 }}>{r.customer || "Kunde unbekannt"}</div>
-                <div style={{ fontSize: 12, color: MUTED }}>{new Date(r.date).toLocaleDateString("de-CH")}</div>
+              <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, background: PANEL, borderRadius: 8, cursor: "pointer", border: `1px solid ${BORDER}` }}>
+                {r.customer}
               </div>
             ))}
           </div>
@@ -231,45 +206,18 @@ const renderView = () => {
     );
   };
 
-    return (
-      <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-        <h2 style={{ color: GOLD }}>Willkommen im Dashboard</h2>
-        <p style={{ color: MUTED }}>Wähle einen Rapport aus oder erstelle einen neuen.</p>
-        {reports.length > 0 ? (
-           <div style={{ display: "grid", gap: 10, marginTop: 20 }}>
-             {reports.map(r => (
-               <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, background: PANEL, borderRadius: 8, cursor: "pointer", border: `1px solid ${BORDER}` }}>
-                 {r.customer || "Unbenannter Rapport"}
-               </div>
-             ))}
-           </div>
-        ) : (
-          <div style={{ padding: 20, textAlign: "center", border: `2px dashed ${BORDER}`, borderRadius: 8, color: MUTED }}>
-            Keine Rapporte gefunden.
-          </div>
-        )}
-      </section>
-    );
-  };
-  // ------------------------------
-
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontWeight: 900, color: GOLD, fontSize: 18 }}>PRO-RAPPORT</span>
+          <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={() => setView("home")} style={gBtn}>Home</button>
             <button onClick={onLogout} style={dBtn}>Logout</button>
           </div>
         </header>
-        
         <main style={{ padding: 20 }}>
-          {notice && (
-            <div style={{ color: GOLD, marginBottom: 12, padding: 10, border: `1px solid ${BORDER}`, borderRadius: 8 }}>
-              {notice}
-            </div>
-          )}
+          {notice && <div style={{ color: GOLD, marginBottom: 12 }}>{notice}</div>}
           {renderView()}
         </main>
       </div>
