@@ -335,15 +335,9 @@ export default function Dashboard({ session, onLogout }) {
       );
     }
 
-    return renderHome();
+     return renderHome();
   };
 
-  return (
-   // WICHTIG: Wenn keine der obigen Ansichten (new-report, customers, etc.) aktiv ist:
-    return renderHome();
-  }; // <--- Schließt die renderView Funktion (Zeile 131)
-
-  // Das eigentliche Haupt-Layout der Seite
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
       <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
