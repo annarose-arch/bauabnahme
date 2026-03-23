@@ -332,12 +332,14 @@ export default function Dashboard({ session, onLogout }) {
             </div>
           ))}
         </section>
-      );
-    }
+     );
+    } // <--- Schließt den Material/Staff Block
 
-     return renderHome();
-  };
+    // Falls keine der obigen Ansichten matcht
+    return renderHome();
+  }; // <--- Schließt renderView (Das ist die Klammer, die Vite in Zeile 131 vermisst!)
 
+  // Das Haupt-Return der Dashboard-Komponente
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
       <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -350,4 +352,4 @@ export default function Dashboard({ session, onLogout }) {
       </main>
     </div>
   );
-} // <--- Schließt die gesamte Dashboard-Komponente (Ganz am Ende der Datei)
+} // <--- Schließt die gesamte Dashboard-Funktion (Ganz am Ende der Datei)
