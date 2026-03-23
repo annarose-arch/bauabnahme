@@ -159,93 +159,140 @@ export default function Dashboard({ session, onLogout }) {
       );
     }
 
+   // --- 1. KUNDENVERWALTUNG (Mit Adresse, Tel, E-Mail & Auto-Nr) ---
     if (view === "customers") {
       const addItem = async () => {
         if (!newItemName) return;
-        const newCustNo = `${custNumberPrefix}${Date.now().toString().slice(-4)}`;
+        
+        // Kundennummer generieren (Präfix + Zufallszahl/Zeit)
+        const newCustNo = `${custNumberPrefix}${Math.floor(1000 + Math.random() * 9000)}`;
+        
         const payload = { 
-          name: newItemName, user_id: userId, customer_number: newCustNo,
-          address: custFields.address, contact_person: custFields.contact,
-          email: custFields.email, phone: custFields.phone
+          name: newItemName, 
+          user_id: userId,
+          customer_number: newCustNo,
+          address: custFields.address,
+          contact_person: custFields.contact,
+          email: custFields.email,
+          phone: custFields.phone
         };
+
         const { data, error } = await supabase.from("customers").insert([payload]).select();
         if (!error && data) {
           setCustomers([...customers, data[0]]);
           setNewItemName("");
           setCustFields({ address: "", contact: "", email: "", phone: "" });
-          setNotice("✅ Kunde angelegt");
+          setNotice(`✅ Kunde ${newCustNo} erstellt`);
+          setTimeout(() => setNotice(""), 2000);
+        } else {
+          setNotice("Fehler: " + error?.message);
         }
       };
+
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD }}>Kundenstamm</h2>
+            <h2 style={{ color: GOLD, margin: 0 }}>Kundenstamm</h2>
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
-          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-            <input style={iStyle} placeholder="Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-            <input style={iStyle} placeholder="Adresse" value={custFields.address} onChange={e => setCustFields({...custFields, address: e.target.value})} />
-            <button onClick={addItem} style={pBtn}>Speichern</button>
-          </div>
-          {customers.map(c => (
-            <div key={c.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-              <span>{c.name} ({c.customer_number})</span>
-              <button onClick={async () => { await supabase.from("customers").delete().eq("id", c.id); setCustomers(customers.filter(i => i.id !== c.id)); }} style={{ color: DANGER, background: "none", border: "none" }}>Löschen</button>
+
+          <div style={{ background: PANEL, padding: 20, borderRadius: 12, marginBottom: 25, border: `1px solid ${BORDER}` }}>
+            <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: MUTED }}>Präfix:</span>
+                <input style={{...iStyle, width: 80}} value={custNumberPrefix} onChange={e => setCustNumberPrefix(e.target.value)} />
+              </div>
+              
+              <input style={iStyle} placeholder="Firmenname / Name *" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+              <input style={iStyle} placeholder="Adresse (Strasse, PLZ, Ort)" value={custFields.address} onChange={e => setCustFields({...custFields, address: e.target.value})} />
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <input style={iStyle} placeholder="Ansprechperson" value={custFields.contact} onChange={e => setCustFields({...custFields, contact: e.target.value})} />
+                <input style={iStyle} placeholder="Telefon" value={custFields.phone} onChange={e => setCustFields({...custFields, phone: e.target.value})} />
+              </div>
+              
+              <input style={iStyle} placeholder="E-Mail" value={custFields.email} onChange={e => setCustFields({...custFields, email: e.target.value})} />
+              <button onClick={addItem} style={pBtn}>+ Kunde speichern</button>
             </div>
-          ))}
+          </div>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            {customers.map(c => (
+              <div key={c.id} style={{ background: PANEL, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                  <b style={{ color: GOLD }}>{c.customer_number}</b>
+                  <button onClick={async () => { await supabase.from("customers").delete().eq("id", c.id); setCustomers(customers.filter(i => i.id !== c.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
+                </div>
+                <div style={{ fontWeight: "bold", fontSize: 16 }}>{c.name}</div>
+                <div style={{ fontSize: 13, color: MUTED }}>{c.address}</div>
+                <div style={{ fontSize: 12, marginTop: 5, color: GOLD }}>📞 {c.phone} | ✉️ {c.email}</div>
+              </div>
+            ))}
+          </div>
         </section>
       );
     }
 
+    // --- 2. MATERIAL & PERSONAL (Mit Preisen/Mengen) ---
     if (view === "material" || view === "staff") {
       const table = view === "material" ? "materials" : "staff";
       const list = view === "material" ? materials : staff;
+      const title = view === "material" ? "Materialliste" : "Mitarbeiter";
+
       const addItem = async () => {
         if (!newItemName) return;
         const payload = { 
-          name: newItemName, user_id: userId,
-          description: JSON.stringify({ amount: reportForm.tempMenge, unit: reportForm.tempEinheit, price: reportForm.tempPreis })
+          name: newItemName, 
+          user_id: userId,
+          description: JSON.stringify({
+            amount: reportForm.tempMenge || "0",
+            unit: reportForm.tempEinheit || (view === "material" ? "Stk" : "Std"),
+            price: reportForm.tempPreis || "0"
+          })
         };
         const { data, error } = await supabase.from(table).insert([payload]).select();
         if (!error && data) {
           if (view === "material") setMaterials([...materials, data[0]]); else setStaff([...staff, data[0]]);
           setNewItemName("");
-          setNotice("✅ Gespeichert");
+          setNotice("✅ Eintrag gespeichert");
+          setTimeout(() => setNotice(""), 2000);
         }
       };
+
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD }}>{view === "material" ? "Material" : "Personal"}</h2>
+            <h2 style={{ color: GOLD, margin: 0 }}>{title}</h2>
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
-          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-            <input style={iStyle} placeholder="Bezeichnung" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-            <button onClick={addItem} style={pBtn}>Hinzufügen</button>
-          </div>
-          {list.map(item => (
-            <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-              <span>{item.name}</span>
-              <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none" }}>Löschen</button>
+
+          <div style={{ background: PANEL, padding: 15, borderRadius: 10, marginBottom: 20, border: `1px solid ${BORDER}` }}>
+            <div style={{ display: "grid", gap: 10 }}>
+              <input style={iStyle} placeholder="Bezeichnung / Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
+              <div style={{ display: "flex", gap: 5 }}>
+                <input type="number" placeholder="Menge" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
+                <input placeholder="Einh." style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
+                <input type="number" placeholder="Preis/Lohn" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
+              </div>
+              <button onClick={addItem} style={pBtn}>+ Hinzufügen</button>
             </div>
-          ))}
+          </div>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            {list.map(item => {
+              let details = { amount: 0, unit: "", price: 0 };
+              try { if(item.description) details = JSON.parse(item.description); } catch(e) {}
+              return (
+                <div key={item.id} style={{ background: PANEL, padding: 12, borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${BORDER}` }}>
+                  <div>
+                    <div style={{ fontWeight: "bold" }}>{item.name}</div>
+                    <div style={{ fontSize: 12, color: GOLD }}>{details.amount} {details.unit} | {details.price} CHF</div>
+                  </div>
+                  <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
+                </div>
+              );
+            })}
+          </div>
         </section>
       );
     }
-
-    return renderHome();
-  };
-
-  return (
-    <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
-      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-        <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
-        <button onClick={onLogout} style={dBtn}>Logout</button>
-      </header>
-      <main style={{ padding: 20 }}>
-        {notice && <div style={{ color: GOLD, marginBottom: 20 }}>{notice}</div>}
-        {renderView()}
-      </main>
-    </div>
-  );
-}
