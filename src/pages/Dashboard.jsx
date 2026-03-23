@@ -65,34 +65,133 @@ export default function Dashboard({ session, onLogout }) {
   };
 
   const handleSaveReport = async () => {
-    if (!reportForm.customer) return setNotice("⚠️ Bitte Kunde wählen!");
-    
-    setNotice("Speichere...");
+    // 1. Die PDF-Funktion (Hier einfügen)
+  const generatePDF = (report) => {
+    const doc = new jsPDF();
+    // ... dein ganzer PDF Code von oben ...
+    doc.save(`Rapport_${report.customer}_${report.date}.pdf`);
+  };
 
-    const { data, error } = await supabase.from("reports").insert([{
+  // 2. Die Speicher-Funktion (Die hast du schon)
+  const handleSaveReport = async () => {
+    if (!reportForm.customer) return setNotice("⚠️ Bitte Kunde wählen!");
+
+    // Den gewählten Kunden finden, um die Adresse mitzuspeichern
+    const selectedCustomerData = customers.find(c => c.name === reportForm.customer);
+
+    const reportPayload = {
       user_id: userId,
       customer: reportForm.customer,
       date: reportForm.date,
-      // Wir senden es als reines Objekt, jsonb in Supabase erledigt den Rest
       description: { 
         notes: reportForm.notes, 
-        rows: reportForm.rows 
+        rows: reportForm.rows,
+        customer_address: selectedCustomerData?.address || "",
+        customer_no: selectedCustomerData?.customer_number || ""
       },
       status: "offen"
-    }]).select();
+    };
+
+    const { data, error } = await supabase.from("reports").insert([reportPayload]).select();
 
     if (error) {
-      console.error("Supabase Error Details:", error);
-      // Zeigt dir genau an, welches Feld Probleme macht:
-      setNotice("❌ Fehler: " + error.message); 
+      setNotice("Fehler: " + error.message);
     } else {
-      setNotice("✅ Rapport erfolgreich gespeichert!");
+      setNotice("✅ Gespeichert & PDF wird erstellt...");
+      // Hier rufen wir die Funktion von oben auf:
+      generatePDF(data[0]); 
+      
       setReports([data[0], ...reports]);
-      setTimeout(() => {
-        setNotice("");
-        setView("home");
-      }, 1500);
+      setTimeout(() => { setView("home"); setNotice(""); }, 1500);
     }
+  };
+    
+   const generatePDF = (report) => {
+    const doc = new jsPDF();
+    const gold = [212, 175, 55];
+    const dark = [30, 30, 30];
+
+    // Briefkopf / Logo Ersatz
+    doc.setFontSize(22);
+    doc.setTextColor(...gold);
+    doc.text("PRO-RAPPORT", 20, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("Dein Firmenname GmbH | Musterstraße 1 | 8000 Zürich", 20, 28);
+    doc.line(20, 32, 190, 32);
+
+    // Kundendaten (Links) & Rapportdaten (Rechts)
+    doc.setTextColor(...dark);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Empfänger:", 20, 45);
+    
+    doc.setFont("helvetica", "normal");
+    // Hier ziehen wir die Daten aus dem 'report' Objekt
+    doc.text(`${report.customer}`, 20, 52);
+    // Falls die Adresse im JSON-Format in 'description' mitgespeichert wurde:
+    if (report.customer_details?.address) {
+      doc.text(report.customer_details.address, 20, 58);
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Rapport-Nr:", 130, 45);
+    doc.text("Datum:", 130, 52);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${report.id.slice(0, 8)}`, 160, 45);
+    doc.text(`${report.date}`, 160, 52);
+
+    // Tabelle für Arbeitszeiten
+    const tableRows = [];
+    let totalHours = 0;
+    
+    // Wir parsen die description, in der die Zeilen liegen
+    const content = typeof report.description === 'string' 
+      ? JSON.parse(report.description) 
+      : report.description;
+
+    content.rows.forEach(row => {
+      tableRows.push([
+        row.worker,
+        row.from,
+        row.to,
+        row.pause + " h",
+        row.total + " h"
+      ]);
+      totalHours += parseFloat(row.total);
+    });
+
+    autoTable(doc, {
+      startY: 75,
+      head: [['Mitarbeiter', 'Von', 'Bis', 'Pause', 'Eff. Std']],
+      body: tableRows,
+      headStyles: { fillColor: gold, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+    });
+
+    // Arbeitsbeschrieb
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFont("helvetica", "bold");
+    doc.text("Arbeitsbeschrieb / Material:", 20, finalY);
+    doc.setFont("helvetica", "normal");
+    
+    const splitNotes = doc.splitTextToSize(content.notes || "Keine Anmerkungen", 170);
+    doc.text(splitNotes, 20, finalY + 7);
+
+    // Total & Unterschrift
+    const footerY = finalY + 40;
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Arbeitsstunden: ${totalHours.toFixed(2)} h`, 120, footerY);
+    
+    doc.line(20, footerY + 20, 80, footerY + 20);
+    doc.line(120, footerY + 20, 180, footerY + 20);
+    doc.setFontSize(9);
+    doc.text("Visum Kunde", 20, footerY + 25);
+    doc.text("Visum Projektleiter", 120, footerY + 25);
+
+    doc.save(`Rapport_${report.customer}_${report.date}.pdf`);
   };
   
   // --- VIEWS ---
