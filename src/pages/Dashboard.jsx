@@ -142,10 +142,13 @@ const handleSave = async () => {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 30 }}>
-            <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
-            <button onClick={() => setView("home")} style={gBtn}>🏠 Home</button>
-        </div>
+        {/* NAVIGATION FÜR STAMMDATEN & NEUER RAPPORT */}
+<div style={{ display: "flex", gap: 10, marginBottom: 30, overflowX: "auto", paddingBottom: 5 }}>
+    <button onClick={() => setView("customers")} style={gBtn}>👥 Kunden</button>
+    <button onClick={() => setView("material")} style={gBtn}>📦 Material</button>
+    <button onClick={() => setView("staff")} style={gBtn}>👷 Mitarbeiter</button>
+    <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
           {filtered.map(r => (
@@ -259,11 +262,102 @@ const handleSave = async () => {
       );
     }
 // --- STAMMDATEN ANSICHT (Kunden, Material, Mitarbeiter) ---
-    if (["customers", "material", "staff"].includes(view)) {
+   if (["customers", "material", "staff"].includes(view)) {
       const table = view === "customers" ? "customers" : view === "material" ? "materials" : "staff";
       const list = view === "customers" ? customers : view === "material" ? materials : staff;
       const title = view === "customers" ? "Kundenstamm" : view === "material" ? "Materialliste" : "Mitarbeiter";
 
+      const addItem = async () => {
+        if (!newItemName) return;
+        
+        // Wir bauen das Daten-Objekt
+        let payload = { name: newItemName, user_id: userId };
+        
+        // Wenn es Material ist, speichern wir die Zusatzinfos in 'description'
+        if (view === "material") {
+          payload.description = JSON.stringify({
+            amount: reportForm.tempMenge || 0,
+            unit: reportForm.tempEinheit || "Stk",
+            price: reportForm.tempPreis || 0
+          });
+        }
+
+        const { data, error } = await supabase.from(table).insert([payload]).select();
+        if (!error) {
+          if (view === "customers") setCustomers([...customers, data[0]]);
+          if (view === "material") setMaterials([...materials, data[0]]);
+          if (view === "staff") setStaff([...staff, data[0]]);
+          setNewItemName(""); // Name zurücksetzen
+        } else {
+          setNotice("Fehler: " + error.message);
+        }
+      };
+
+      const deleteItem = async (id) => {
+        const { error } = await supabase.from(table).delete().eq("id", id);
+        if (!error) {
+          if (view === "customers") setCustomers(customers.filter(i => i.id !== id));
+          if (view === "material") setMaterials(materials.filter(i => i.id !== id));
+          if (view === "staff") setStaff(staff.filter(i => i.id !== id));
+        }
+      };
+
+      return (
+        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+            <h2 style={{ color: GOLD, margin: 0 }}>{title}</h2>
+            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
+          </div>
+
+          {/* EINGABE-BEREICH */}
+          <div style={{ background: PANEL, padding: 15, borderRadius: 10, marginBottom: 25, border: `1px solid ${BORDER}` }}>
+            <div style={{ display: "grid", gap: 10 }}>
+              <input 
+                style={iStyle} 
+                placeholder={view === "material" ? "Material Bezeichnung (z.B. Beton)" : "Name"} 
+                value={newItemName} 
+                onChange={(e) => setNewItemName(e.target.value)} 
+              />
+              
+              {view === "material" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                  <input type="number" placeholder="Menge" style={iStyle} onChange={(e) => setReportForm({...reportForm, tempMenge: e.target.value})} />
+                  <input placeholder="Einh. (m, Stk)" style={iStyle} onChange={(e) => setReportForm({...reportForm, tempEinheit: e.target.value})} />
+                  <input type="number" placeholder="Preis CHF" style={iStyle} onChange={(e) => setReportForm({...reportForm, tempPreis: e.target.value})} />
+                </div>
+              )}
+              
+              <button onClick={addItem} style={pBtn}>+ Hinzufügen</button>
+            </div>
+          </div>
+
+          {/* LISTE DER EINTRÄGE */}
+          <div style={{ display: "grid", gap: 10 }}>
+            {list.map(item => {
+              // Falls Material, versuchen wir die Zusatzinfos zu laden
+              let details = null;
+              if (view === "material" && item.description) {
+                try { details = JSON.parse(item.description); } catch(e) {}
+              }
+
+              return (
+                <div key={item.id} style={{ background: PANEL, padding: "12px 15px", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${BORDER}` }}>
+                  <div>
+                    <div style={{ fontWeight: "bold", color: TEXT }}>{item.name}</div>
+                    {details && (
+                      <div style={{ fontSize: 12, color: GOLD }}>
+                        {details.amount} {details.unit} | Preis: {details.price} CHF
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => deleteItem(item.id)} style={{ background: "none", border: "none", color: DANGER, cursor: "pointer", fontWeight: "bold" }}>Löschen</button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      );
+    }
       const addItem = async () => {
         if (!newItemName) return;
         const { data, error } = await supabase.from(table).insert([{ name: newItemName, user_id: userId }]).select();
