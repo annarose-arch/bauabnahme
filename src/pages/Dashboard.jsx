@@ -132,18 +132,32 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
 
   const renderView = () => {
     if (openedReport) {
-      return (
-        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h2 style={{ margin: 0, color: GOLD }}>Rapport Details</h2>
-            <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
+     // 2. Die normale Listenansicht
+    return (
+      <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ color: GOLD, margin: 0 }}>Deine Rapporte</h2>
+          {/* DER NEUE BUTTON */}
+          <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+        </div>
+
+        {reports.length === 0 ? (
+          <div style={{ padding: 40, textAlign: "center", border: `2px dashed ${BORDER}`, borderRadius: 8, color: MUTED }}>
+            <p>Keine Rapporte gefunden oder Fehler beim Laden.</p>
+            <button onClick={() => window.location.reload()} style={{...gBtn, marginTop: 10}}>Neu laden ↻</button>
           </div>
-          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
-          <pre style={{ color: MUTED, marginTop: 20, fontSize: 12, overflow: "auto" }}>
-            {JSON.stringify(openedReport, null, 2)}
-          </pre>
-        </section>
-      );
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {reports.map(r => (
+              <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, border: `1px solid ${BORDER}`, borderRadius: 8, cursor: "pointer", background: PANEL, transition: "0.2s" }}>
+                <div style={{ fontWeight: 700 }}>{r.customer || "Kunde unbekannt"}</div>
+                <div style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{new Date(r.date).toLocaleDateString("de-CH")}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
     }
 
     return (
