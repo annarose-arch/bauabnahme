@@ -320,10 +320,10 @@ export default function Dashboard({ session, onLogout }) {
             <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
           </div>
 
-       {/* Liste der Einträge */}
+      {/* Liste der Einträge (Material/Personal) */}
           <div style={{ display: "grid", gap: 10 }}>
             {list.map(item => (
-              <div key={item.id} style={{ padding: 10, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div key={item.id} style={{ padding: 12, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: PANEL, borderRadius: 8 }}>
                 <span>{item.name}</span>
                 <button 
                   onClick={async () => { 
@@ -331,7 +331,7 @@ export default function Dashboard({ session, onLogout }) {
                     if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); 
                     else setStaff(staff.filter(s => s.id !== item.id)); 
                   }} 
-                  style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}
+                  style={{ color: DANGER, background: "none", border: "none", cursor: "pointer", fontWeight: "bold" }}
                 >
                   Löschen
                 </button>
@@ -340,21 +340,28 @@ export default function Dashboard({ session, onLogout }) {
           </div>
         </section>
       );
-    } 
+    } // <--- SCHLIESST: if (view === "material" || view === "staff")
 
+    // WICHTIG: Falls keine spezielle View aktiv ist, zeige das Home-Grid
     return renderHome();
-  }; 
+  }; // <--- SCHLIESST: const renderView = () => { (Das fehlte!)
 
+  // Das Haupt-Layout, das immer sichtbar ist (Header + Inhalt)
   return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
-      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontWeight: 900, color: GOLD, fontSize: 20 }}>PRO-RAPPORT</span>
+      <header style={{ padding: "15px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: CARD }}>
+        <span style={{ fontWeight: 900, color: GOLD, fontSize: 18, letterSpacing: 1 }}>PRO-RAPPORT</span>
         <button onClick={onLogout} style={dBtn}>Logout</button>
       </header>
-      <main style={{ padding: 20 }}>
-        {notice && <div style={{ background: GOLD, color: "#000", padding: 10, borderRadius: 8, marginBottom: 20 }}>{notice}</div>}
+      
+      <main style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
+        {notice && (
+          <div style={{ background: GOLD, color: "#000", padding: "10px 15px", borderRadius: 8, marginBottom: 20, fontWeight: "bold", textAlign: "center" }}>
+            {notice}
+          </div>
+        )}
         {renderView()}
       </main>
     </div>
   );
-} 
+} // <--- SCHLIESST: export default function Dashboard
