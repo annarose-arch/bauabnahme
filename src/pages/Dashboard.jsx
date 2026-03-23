@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "../supabase";
-import { buildPdfHtml, formatDateCH } from "./utils/exportUtils";
+import { buildPdfHtml, formatDateCH, generateInvoice } from "./utils/exportUtils";
 
 const BG = "#0a0a0a", PANEL = "#141414", CARD = "#1a1a1a";
 const TEXT = "#f0ece4", MUTED = "#b9b0a3", GOLD = "#d4a853";
@@ -1165,9 +1165,8 @@ ${costs.notes?`<div style="border-left:3px solid #111;padding:10px 14px;font-siz
       </>);
     }
     return null;
-  };
-
-  const navItems = [
+};
+const navItems = [
     {key:"home",label:"Start"},{key:"customers",label:"Kunden"},
     {key:"catalog",label:"Katalog"},{key:"new-report",label:"Neuer Rapport"},
     {key:"reports",label:"Offene Rapporte"},{key:"invoices",label:"Rechnungen"},
