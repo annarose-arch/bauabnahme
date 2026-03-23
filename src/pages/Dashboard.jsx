@@ -92,21 +92,21 @@ function PhotoUpload({ label, value, onChange }) {
 
 export default function Dashboard({ session, onLogout }) {
   const userId = session?.user?.id;
-  
-  // Ansichten-Steuerung
-  const [view, setView] = useState("home"); // home, new-report, customers, material, staff, archive
+
+  // HIER DIE STATES:
+  const [view, setView] = useState("home");
   const [reports, setReports] = useState([]);
   const [notice, setNotice] = useState("");
-
-  // Daten für deine Listen (werden aus Supabase geladen)
-  const [customers, setCustomers] = useState([]);
-  const [material, setMaterial] = useState([]);
-  const [staff, setStaff] = useState([]);
-
-  // Filter für die Anzeige
+  const [openedReport, setOpenedReport] = useState(null); // Das hat gefehlt!
   const [statusFilter, setStatusFilter] = useState("offen");
+  const [reportForm, setReportForm] = useState({
+    customer: "",
+    date: new Date().toISOString().split('T')[0],
+    notes: "",
+    rows: [],
+    materialRows: []
+  });
   
-// 1. Daten laden
   useEffect(() => {
     const loadData = async () => {
       if (!userId) return;
