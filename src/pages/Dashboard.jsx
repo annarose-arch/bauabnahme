@@ -139,159 +139,110 @@ export default function Dashboard({ session, onLogout }) {
       );
     }
 
+   // --- 3. RAPPORT-ERSTELLUNG ---
     if (view === "new-report") {
       const updateRow = (idx, field, val) => {
         const rows = [...reportForm.rows];
         rows[idx][field] = val;
-        rows[idx].total = calculateRowTotal(rows[idx].from, rows[idx].to, rows[idx].pause);
+        // Automatische Berechnung der Stunden
+        if (field === "from" || field === "to" || field === "pause") {
+          rows[idx].total = calculateRowTotal(rows[idx].from, rows[idx].to, rows[idx].pause);
+        }
         setReportForm({ ...reportForm, rows });
       };
-      return (
-        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
-          <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
-          <select style={{...iStyle, marginBottom: 15}} value={reportForm.customer} onChange={e => setReportForm({...reportForm, customer: e.target.value})}>
-            <option value="">-- Kunde wählen --</option>
-            {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-          </select>
-          <button onClick={handleSaveReport} style={pBtn}>Speichern</button>
-          <button onClick={() => setView("home")} style={{...gBtn, marginLeft: 10}}>Abbrechen</button>
-        </section>
-      );
-    }
 
-   // --- 1. KUNDENVERWALTUNG (Mit Adresse, Tel, E-Mail & Auto-Nr) ---
-    if (view === "customers") {
-      const addItem = async () => {
-        if (!newItemName) return;
-        
-        // Kundennummer generieren (Präfix + Zufallszahl/Zeit)
-        const newCustNo = `${custNumberPrefix}${Math.floor(1000 + Math.random() * 9000)}`;
-        
-        const payload = { 
-          name: newItemName, 
-          user_id: userId,
-          customer_number: newCustNo,
-          address: custFields.address,
-          contact_person: custFields.contact,
-          email: custFields.email,
-          phone: custFields.phone
-        };
+      const addRow = () => {
+        setReportForm({
+          ...reportForm,
+          rows: [...reportForm.rows, { worker: "", from: "07:00", to: "16:00", pause: "0.5", total: "8.50" }]
+        });
+      };
 
-        const { data, error } = await supabase.from("customers").insert([payload]).select();
-        if (!error && data) {
-          setCustomers([...customers, data[0]]);
-          setNewItemName("");
-          setCustFields({ address: "", contact: "", email: "", phone: "" });
-          setNotice(`✅ Kunde ${newCustNo} erstellt`);
-          setTimeout(() => setNotice(""), 2000);
-        } else {
-          setNotice("Fehler: " + error?.message);
-        }
+      const removeRow = (idx) => {
+        const rows = reportForm.rows.filter((_, i) => i !== idx);
+        setReportForm({ ...reportForm, rows });
       };
 
       return (
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD, margin: 0 }}>Kundenstamm</h2>
-            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
+            <h2 style={{ color: GOLD, margin: 0 }}>Neuer Arbeitsrapport</h2>
+            <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
           </div>
 
-          <div style={{ background: PANEL, padding: 20, borderRadius: 12, marginBottom: 25, border: `1px solid ${BORDER}` }}>
-            <div style={{ display: "grid", gap: 12 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: MUTED }}>Präfix:</span>
-                <input style={{...iStyle, width: 80}} value={custNumberPrefix} onChange={e => setCustNumberPrefix(e.target.value)} />
+          <div style={{ display: "grid", gap: 15, marginBottom: 25 }}>
+            {/* Kundenwahl & Datum */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 5 }}>Kunde auswählen:</label>
+                <select 
+                  style={iStyle} 
+                  value={reportForm.customer} 
+                  onChange={e => setReportForm({...reportForm, customer: e.target.value})}
+                >
+                  <option value="">-- Bitte wählen --</option>
+                  {customers.map(c => <option key={c.id} value={c.name}>{c.name} ({c.customer_number})</option>)}
+                </select>
               </div>
-              
-              <input style={iStyle} placeholder="Firmenname / Name *" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-              <input style={iStyle} placeholder="Adresse (Strasse, PLZ, Ort)" value={custFields.address} onChange={e => setCustFields({...custFields, address: e.target.value})} />
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <input style={iStyle} placeholder="Ansprechperson" value={custFields.contact} onChange={e => setCustFields({...custFields, contact: e.target.value})} />
-                <input style={iStyle} placeholder="Telefon" value={custFields.phone} onChange={e => setCustFields({...custFields, phone: e.target.value})} />
+              <div>
+                <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 5 }}>Datum:</label>
+                <input type="date" style={iStyle} value={reportForm.date} onChange={e => setReportForm({...reportForm, date: e.target.value})} />
               </div>
-              
-              <input style={iStyle} placeholder="E-Mail" value={custFields.email} onChange={e => setCustFields({...custFields, email: e.target.value})} />
-              <button onClick={addItem} style={pBtn}>+ Kunde speichern</button>
             </div>
-          </div>
 
-          <div style={{ display: "grid", gap: 10 }}>
-            {customers.map(c => (
-              <div key={c.id} style={{ background: PANEL, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                  <b style={{ color: GOLD }}>{c.customer_number}</b>
-                  <button onClick={async () => { await supabase.from("customers").delete().eq("id", c.id); setCustomers(customers.filter(i => i.id !== c.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
-                </div>
-                <div style={{ fontWeight: "bold", fontSize: 16 }}>{c.name}</div>
-                <div style={{ fontSize: 13, color: MUTED }}>{c.address}</div>
-                <div style={{ fontSize: 12, marginTop: 5, color: GOLD }}>📞 {c.phone} | ✉️ {c.email}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    // --- 2. MATERIAL & PERSONAL (Mit Preisen/Mengen) ---
-    if (view === "material" || view === "staff") {
-      const table = view === "material" ? "materials" : "staff";
-      const list = view === "material" ? materials : staff;
-      const title = view === "material" ? "Materialliste" : "Mitarbeiter";
-
-      const addItem = async () => {
-        if (!newItemName) return;
-        const payload = { 
-          name: newItemName, 
-          user_id: userId,
-          description: JSON.stringify({
-            amount: reportForm.tempMenge || "0",
-            unit: reportForm.tempEinheit || (view === "material" ? "Stk" : "Std"),
-            price: reportForm.tempPreis || "0"
-          })
-        };
-        const { data, error } = await supabase.from(table).insert([payload]).select();
-        if (!error && data) {
-          if (view === "material") setMaterials([...materials, data[0]]); else setStaff([...staff, data[0]]);
-          setNewItemName("");
-          setNotice("✅ Eintrag gespeichert");
-          setTimeout(() => setNotice(""), 2000);
-        }
-      };
-
-      return (
-        <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD, margin: 0 }}>{title}</h2>
-            <button onClick={() => setView("home")} style={gBtn}>Zurück</button>
-          </div>
-
-          <div style={{ background: PANEL, padding: 15, borderRadius: 10, marginBottom: 20, border: `1px solid ${BORDER}` }}>
-            <div style={{ display: "grid", gap: 10 }}>
-              <input style={iStyle} placeholder="Bezeichnung / Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} />
-              <div style={{ display: "flex", gap: 5 }}>
-                <input type="number" placeholder="Menge" style={iStyle} onChange={e => setReportForm({...reportForm, tempMenge: e.target.value})} />
-                <input placeholder="Einh." style={iStyle} onChange={e => setReportForm({...reportForm, tempEinheit: e.target.value})} />
-                <input type="number" placeholder="Preis/Lohn" style={iStyle} onChange={e => setReportForm({...reportForm, tempPreis: e.target.value})} />
-              </div>
-              <button onClick={addItem} style={pBtn}>+ Hinzufügen</button>
+            {/* Zeiterfassung Tabelle */}
+            <div style={{ overflowX: "auto", background: PANEL, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}` }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ color: MUTED, fontSize: 12, textAlign: "left" }}>
+                    <th style={{ padding: 5 }}>Mitarbeiter</th>
+                    <th style={{ padding: 5 }}>Von</th>
+                    <th style={{ padding: 5 }}>Bis</th>
+                    <th style={{ padding: 5 }}>Pause</th>
+                    <th style={{ padding: 5 }}>Std.</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportForm.rows.map((row, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: 5 }}>
+                        <select style={iStyle} value={row.worker} onChange={e => updateRow(idx, "worker", e.target.value)}>
+                          <option value="">--</option>
+                          {staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                        </select>
+                      </td>
+                      <td style={{ padding: 5 }}><input type="time" style={iStyle} value={row.from} onChange={e => updateRow(idx, "from", e.target.value)} /></td>
+                      <td style={{ padding: 5 }}><input type="time" style={iStyle} value={row.to} onChange={e => updateRow(idx, "to", e.target.value)} /></td>
+                      <td style={{ padding: 5 }}><input type="number" step="0.5" style={iStyle} value={row.pause} onChange={e => updateRow(idx, "pause", e.target.value)} /></td>
+                      <td style={{ padding: 5, color: GOLD, fontWeight: "bold" }}>{row.total}</td>
+                      <td style={{ padding: 5 }}>
+                        <button onClick={() => removeRow(idx)} style={{ background: "none", border: "none", color: DANGER, cursor: "pointer" }}>✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button onClick={addRow} style={{ ...gBtn, marginTop: 10, width: "100%", borderStyle: "dashed" }}>+ Zeile hinzufügen</button>
             </div>
-          </div>
 
-          <div style={{ display: "grid", gap: 10 }}>
-            {list.map(item => {
-              let details = { amount: 0, unit: "", price: 0 };
-              try { if(item.description) details = JSON.parse(item.description); } catch(e) {}
-              return (
-                <div key={item.id} style={{ background: PANEL, padding: 12, borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${BORDER}` }}>
-                  <div>
-                    <div style={{ fontWeight: "bold" }}>{item.name}</div>
-                    <div style={{ fontSize: 12, color: GOLD }}>{details.amount} {details.unit} | {details.price} CHF</div>
-                  </div>
-                  <button onClick={async () => { await supabase.from(table).delete().eq("id", item.id); if (view === "material") setMaterials(materials.filter(m => m.id !== item.id)); else setStaff(staff.filter(s => s.id !== item.id)); }} style={{ color: DANGER, background: "none", border: "none", cursor: "pointer" }}>Löschen</button>
-                </div>
-              );
-            })}
+            {/* Material & Bemerkungen */}
+            <div>
+              <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 5 }}>Arbeitsbeschrieb / Material / Bemerkungen:</label>
+              <textarea 
+                style={{ ...iStyle, height: 100, padding: 10, resize: "vertical" }} 
+                placeholder="Was wurde gemacht? Welches Material wurde verbraucht?"
+                value={reportForm.notes}
+                onChange={e => setReportForm({...reportForm, notes: e.target.value})}
+              />
+            </div>
+
+            <button 
+              onClick={handleSaveReport} 
+              style={{ ...pBtn, height: 50, fontSize: 16, marginTop: 10 }}
+            >
+              Rapport finalisieren & speichern
+            </button>
           </div>
         </section>
       );
