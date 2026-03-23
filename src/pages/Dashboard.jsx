@@ -90,21 +90,22 @@ function PhotoUpload({ label, value, onChange }) {
   );
 }
 
-export default function Dashboard({ session, onLogout, onNavigate, isDemo = false }) {
+export default function Dashboard({ session, onLogout }) {
   const userId = session?.user?.id;
-  const userEmail = session?.user?.email || "";
-
-  const [view, setView] = useState("home");
+  
+  // Ansichten-Steuerung
+  const [view, setView] = useState("home"); // home, new-report, customers, material, staff, archive
   const [reports, setReports] = useState([]);
   const [notice, setNotice] = useState("");
-  const [openedReport, setOpenedReport] = useState(null);
- const [reportForm, setReportForm] = useState({ 
-    customer: "", 
-    date: new Date().toISOString().split('T')[0], 
-    notes: "" 
-  });
- const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
 
+  // Daten für deine Listen (werden aus Supabase geladen)
+  const [customers, setCustomers] = useState([]);
+  const [material, setMaterial] = useState([]);
+  const [staff, setStaff] = useState([]);
+
+  // Filter für die Anzeige
+  const [statusFilter, setStatusFilter] = useState("offen");
+  
 useEffect(() => {
     const loadData = async () => {
       if (!userId) {
@@ -184,35 +185,79 @@ useEffect(() => {
     }
   };
 
-  const renderView = () => {
-    if (openedReport) {
-      return (
-        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ color: GOLD, margin: 0 }}>Details</h2>
-            <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
+ const renderHome = () => (
+    <>
+      {/* 1. STATUS-KACHELN (Wie im alten Design) */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 25 }}>
+        <div 
+          onClick={() => setStatusFilter("offen")}
+          style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "offen" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}
+        >
+          <div style={{ color: MUTED, fontSize: 12, marginBottom: 5 }}>OFFENE RAPPORTE</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>
+            {reports.filter(r => r.status === "offen").length}
           </div>
-          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
-        </section>
-      );
-    }
+        </div>
+        
+        <div 
+          onClick={() => setStatusFilter("rechnung")}
+          style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "rechnung" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}
+        >
+          <div style={{ color: MUTED, fontSize: 12, marginBottom: 5 }}>RECHNUNGEN</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: TEXT }}>
+            {reports.filter(r => r.status === "rechnung").length}
+          </div>
+        </div>
 
-    if (view === "new-report") {
-      return (
-        <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
-          <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input style={iStyle} placeholder="Kunde" value={reportForm.customer} onChange={(e) => setReportForm({...reportForm, customer: e.target.value})} />
-            <textarea style={{...iStyle, minHeight: 100}} placeholder="Notizen" onChange={(e) => setReportForm({...reportForm, notes: e.target.value})} />
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
-              <button onClick={handleSave} style={pBtn}>Speichern</button>
+        <div 
+          onClick={() => setStatusFilter("archiv")}
+          style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "archiv" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}
+        >
+          <div style={{ color: MUTED, fontSize: 12, marginBottom: 5 }}>ARCHIV / GELÖSCHT</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: DANGER }}>
+            {reports.filter(r => r.status === "archiv").length}
+          </div>
+        </div>
+      </div>
+
+      {/* 2. VERWALTUNGS-MENÜ */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 30, overflowX: "auto", paddingBottom: 10 }}>
+        <button onClick={() => setView("customers")} style={gBtn}>👥 Kunden</button>
+        <button onClick={() => setView("material")} style={gBtn}>📦 Materialliste</button>
+        <button onClick={() => setView("staff")} style={gBtn}>👷 Mitarbeiter</button>
+        <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+      </div>
+
+      {/* 3. DIE RAPPORT-LISTE */}
+      <h3 style={{ color: GOLD, marginBottom: 15 }}>
+        {statusFilter === "offen" ? "Aktuelle Aufträge" : statusFilter === "rechnung" ? "Verrechnete Rapporte" : "Archiv"}
+      </h3>
+      
+      <div style={{ display: "grid", gap: 12 }}>
+        {reports.filter(r => r.status === statusFilter).map(r => (
+          <div 
+            key={r.id} 
+            onClick={() => setOpenedReport(r)}
+            style={{ 
+              background: PANEL, padding: 18, borderRadius: 10, 
+              border: `1px solid ${BORDER}`, cursor: "pointer",
+              display: "flex", justifyContent: "space-between", alignItems: "center"
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 16 }}>{r.customer}</div>
+              <div style={{ color: MUTED, fontSize: 13 }}>{formatDateCH(r.date)}</div>
             </div>
+            <div style={{ color: GOLD }}>➔</div>
           </div>
-        </section>
-      );
-    }
-
+        ))}
+        {reports.filter(r => r.status === statusFilter).length === 0 && (
+          <p style={{ color: MUTED, textAlign: "center", padding: 20 }}>Keine Rapporte in dieser Kategorie.</p>
+        )}
+      </div>
+    </>
+  );
+  
     return (
       <section style={{ background: CARD, padding: 20, borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
