@@ -124,7 +124,7 @@ const handleSave = async () => {
 
   // --- SUB-VIEWS ---
   const renderHome = () => {
-    const [statusFilter, setStatusFilter] = useState("offen");
+   const filtered = reports.filter(r => r.status === (statusFilter || "offen"));
     return (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 25 }}>
