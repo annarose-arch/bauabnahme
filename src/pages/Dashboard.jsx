@@ -161,45 +161,113 @@ export default function Dashboard({ session, onLogout }) {
     }
   };
 
-  // 3. Die Haupt-Ansicht (Dashboard-Feeling)
-  const renderHome = () => (
-    <>
-      {/* STATUS-KACHELN */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 25 }}>
-        <div onClick={() => setStatusFilter("offen")} style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "offen" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}>
-          <div style={{ color: MUTED, fontSize: 11 }}>OFFEN</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: GOLD }}>{reports.filter(r => r.status === "offen").length}</div>
-        </div>
-        <div onClick={() => setStatusFilter("rechnung")} style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "rechnung" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}>
-          <div style={{ color: MUTED, fontSize: 11 }}>RECHNUNG</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: TEXT }}>{reports.filter(r => r.status === "rechnung").length}</div>
-        </div>
-        <div onClick={() => setStatusFilter("archiv")} style={{ background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", border: statusFilter === "archiv" ? `1px solid ${GOLD}` : `1px solid ${BORDER}` }}>
-          <div style={{ color: MUTED, fontSize: 11 }}>ARCHIV</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: DANGER }}>{reports.filter(r => r.status === "archiv").length}</div>
-        </div>
-      </div>
+const renderHome = () => {
+    const filtered = reports.filter(r => r.status === (statusFilter || "offen"));
 
-      {/* NAVIGATION */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 30, overflowX: "auto" }}>
-        <button onClick={() => setView("customers")} style={gBtn}>👥 Kunden</button>
-        <button onClick={() => setView("material")} style={gBtn}>📦 Material</button>
-        <button onClick={() => setView("staff")} style={gBtn}>👷 Mitarbeiter</button>
-        <button onClick={() => setView("new-report")} style={pBtn}>+ Neu</button>
-      </div>
-
-      {/* LISTE */}
-      <div style={{ display: "grid", gap: 10 }}>
-        {reports.filter(r => r.status === (statusFilter || "offen")).map(r => (
-          <div key={r.id} onClick={() => setOpenedReport(r)} style={{ background: PANEL, padding: 15, borderRadius: 10, border: `1px solid ${BORDER}`, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
-            <span>{r.customer}</span>
-            <span style={{ color: MUTED }}>{r.date} ➔</span>
+    return (
+      <>
+        {/* 1. STATUS-KACHELN */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 25 }}>
+          <div 
+            onClick={() => setStatusFilter("offen")}
+            style={{ 
+              background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", 
+              border: statusFilter === "offen" ? `2px solid ${GOLD}` : `1px solid ${BORDER}`,
+              boxShadow: statusFilter === "offen" ? `0 0 10px ${BORDER}` : "none"
+            }}
+          >
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 700 }}>OFFEN</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: GOLD }}>
+              {reports.filter(r => r.status === "offen").length}
+            </div>
           </div>
-        ))}
-      </div>
-    </>
-  );
+          
+          <div 
+            onClick={() => setStatusFilter("rechnung")}
+            style={{ 
+              background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", 
+              border: statusFilter === "rechnung" ? `2px solid ${GOLD}` : `1px solid ${BORDER}`
+            }}
+          >
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 700 }}>RECHNUNG</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: TEXT }}>
+              {reports.filter(r => r.status === "rechnung").length}
+            </div>
+          </div>
 
+          <div 
+            onClick={() => setStatusFilter("archiv")}
+            style={{ 
+              background: CARD, padding: 20, borderRadius: 12, cursor: "pointer", 
+              border: statusFilter === "archiv" ? `2px solid ${DANGER}` : `1px solid ${BORDER}`
+            }}
+          >
+            <div style={{ color: MUTED, fontSize: 11, fontWeight: 700 }}>ARCHIV</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: DANGER }}>
+              {reports.filter(r => r.status === "archiv").length}
+            </div>
+          </div>
+        </div>
+
+        {/* 2. NAVIGATION */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 30, overflowX: "auto", paddingBottom: 5 }}>
+          <button onClick={() => setView("customers")} style={gBtn}>👥 Kunden</button>
+          <button onClick={() => setView("material")} style={gBtn}>📦 Material</button>
+          <button onClick={() => setView("staff")} style={gBtn}>👷 Mitarbeiter</button>
+          <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
+        </div>
+
+        {/* 3. RAPPORT-GRID (DEIN AUFBAU) */}
+        <h3 style={{ color: GOLD, marginBottom: 20 }}>
+          {statusFilter === "offen" ? "Aktuelle Aufträge" : statusFilter === "rechnung" ? "Verrechnete Rapporte" : "Archiv"}
+        </h3>
+        
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", 
+          gap: 20 
+        }}>
+          {filtered.map(r => {
+            const details = parseReport(r);
+            return (
+              <div 
+                key={r.id} 
+                onClick={() => setOpenedReport(r)}
+                style={{ 
+                  background: CARD, padding: 20, borderRadius: 14, 
+                  border: `1px solid ${BORDER}`, cursor: "pointer",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
+                  position: "relative", overflow: "hidden"
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 18, color: GOLD, marginBottom: 5 }}>{r.customer}</div>
+                <div style={{ color: MUTED, fontSize: 12, marginBottom: 15 }}>📅 {r.date}</div>
+                
+                <div style={{ 
+                  fontSize: 14, color: TEXT, opacity: 0.8, height: 40, 
+                  overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" 
+                }}>
+                  {details.notes || "Kein Text erfasst..."}
+                </div>
+
+                <div style={{ marginTop: 15, paddingTop: 12, borderTop: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: GOLD, fontSize: 13, fontWeight: 600 }}>Ansehen ➔</span>
+                  <span style={{ fontSize: 10, color: MUTED }}>ID: #{r.id}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: 50, background: CARD, borderRadius: 15, color: MUTED }}>
+            Keine Rapporte gefunden.
+          </div>
+        )}
+      </>
+    );
+  };
+  
   const renderView = () => {
     if (openedReport) {
       return (
