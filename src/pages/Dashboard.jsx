@@ -120,6 +120,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     };
     loadData();
   }, [userId]);
+
   
   const openPDF = (report) => {
     const p = parseReport(report);
@@ -130,14 +131,84 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     }
   };
 
-  const renderView = () => {
+  const handleSave = async () => {
+    if (!reportForm.customer) {
+      setNotice("Bitte einen Kunden angeben.");
+      return;
+    }
+    const { error } = await supabase.from("reports").insert([{
+      user_id: userId,
+      customer: reportForm.customer,
+      date: reportForm.date,
+      description: JSON.stringify({ notes: reportForm.notes }),
+      status: "offen"
+    }]);
+
+    if (error) {
+      setNotice("Speichern fehlgeschlagen: " + error.message);
+    } else {
+      setNotice("Erfolgreich gespeichert!");
+      setView("home");
+      window.location.reload();
+    }
+  };
+
+const renderView = () => {
+    // 1. DETAILANSICHT (Wenn ein Rapport angeklickt wurde)
     if (openedReport) {
-     // 2. Die normale Listenansicht
+      return (
+        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <h2 style={{ margin: 0, color: GOLD }}>Rapport Details</h2>
+            <button onClick={() => setOpenedReport(null)} style={gBtn}>Zurück</button>
+          </div>
+          <button onClick={() => openPDF(openedReport)} style={pBtn}>📄 PDF öffnen</button>
+          <pre style={{ color: MUTED, marginTop: 20, fontSize: 12, overflow: "auto", background: "#000", padding: 10 }}>
+            {JSON.stringify(openedReport, null, 2)}
+          </pre>
+        </section>
+      );
+    }
+
+    // 2. FORMULAR FÜR NEUEN RAPPORT (Wenn "+ Neuer Rapport" geklickt wurde)
+    if (view === "new-report") {
+      return (
+        <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
+          <h2 style={{ color: GOLD, marginBottom: 20 }}>Neuer Rapport</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+            <input 
+              style={iStyle} 
+              placeholder="Kunde / Projekt Name" 
+              value={reportForm.customer || ""}
+              onChange={(e) => setReportForm({...reportForm, customer: e.target.value})}
+            />
+            <input 
+              type="date" 
+              style={iStyle} 
+              value={reportForm.date || ""} 
+              onChange={(e) => setReportForm({...reportForm, date: e.target.value})}
+            />
+            <textarea 
+              style={{...iStyle, minHeight: 100, padding: 10}} 
+              placeholder="Bemerkungen..." 
+              value={reportForm.notes || ""}
+              onChange={(e) => setReportForm({...reportForm, notes: e.target.value})}
+            />
+            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+              <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
+              {/* Hier ist der Button zum Speichern! */}
+              <button onClick={handleSave} style={pBtn}>Speichern</button>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // 3. LISTENANSICHT (Standard Home)
     return (
       <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ color: GOLD, margin: 0 }}>Deine Rapporte</h2>
-          {/* DER NEUE BUTTON */}
           <button onClick={() => setView("new-report")} style={pBtn}>+ Neuer Rapport</button>
         </div>
 
@@ -149,16 +220,16 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
         ) : (
           <div style={{ display: "grid", gap: 12 }}>
             {reports.map(r => (
-              <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, border: `1px solid ${BORDER}`, borderRadius: 8, cursor: "pointer", background: PANEL, transition: "0.2s" }}>
+              <div key={r.id} onClick={() => setOpenedReport(r)} style={{ padding: 15, border: `1px solid ${BORDER}`, borderRadius: 8, cursor: "pointer", background: PANEL }}>
                 <div style={{ fontWeight: 700 }}>{r.customer || "Kunde unbekannt"}</div>
-                <div style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{new Date(r.date).toLocaleDateString("de-CH")}</div>
+                <div style={{ fontSize: 12, color: MUTED }}>{new Date(r.date).toLocaleDateString("de-CH")}</div>
               </div>
             ))}
           </div>
         )}
       </section>
     );
-    }
+  };
 
     return (
       <section style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20 }}>
