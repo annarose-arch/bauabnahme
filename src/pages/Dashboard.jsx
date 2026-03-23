@@ -133,17 +133,18 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   };
 
   const handleSave = async () => {
-    if (!reportForm.customer) {
-      setNotice("Bitte einen Kunden angeben.");
-      return;
-    }
-    const { error } = await supabase.from("reports").insert([{
-      user_id: userId,
-      customer: reportForm.customer,
-      date: reportForm.date,
-      description: JSON.stringify({ notes: reportForm.notes }),
-      status: "offen"
-    }]);
+    // ... dein restlicher Code ...
+    const { error } = await supabase
+      .from("reports") // <-- PRÜFEN: Auch hier muss "reports" stehen
+      .insert([{
+        user_id: userId,
+        customer: reportForm.customer,
+        date: reportForm.date,
+        description: JSON.stringify({ notes: reportForm.notes }),
+        status: "offen"
+      }]);
+    // ...
+  };
 
     // --- DIESE ZEILEN FEHLTEN IN DEINEM SCHNIPSEL ---
     if (error) {
