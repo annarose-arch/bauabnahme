@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 
 // ACHTUNG: Hier darf kein Tippfehler sein! 
 // Die URL muss mit https:// beginnen und auf .supabase.co enden.
-const supabaseUrl = 'https://xyz-deine-id.supabase.co' 
-const supabaseKey = 'dein-sehr-langer-anon-key'
+const supabaseUrl = 'https://tgtyuxtrrafxalajxenw.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndHl1eHRycmFmeGFsYWp4ZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjMzOTYsImV4cCI6MjA4OTIzOTM5Nn0.ePbGVxCbj_mr_RMLtf4uphnvxdx267QmTfTuMknPhK8'
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
