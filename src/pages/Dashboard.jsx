@@ -35,6 +35,10 @@ export default function Dashboard({ session, onLogout }) {
   const [openedReport, setOpenedReport] = useState(null);
   const [statusFilter, setStatusFilter] = useState("offen");
   const [reportForm, setReportForm] = useState({
+const [customers, setCustomers] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [newItemName, setNewItemName] = useState(""); 
     customer: "",
     date: new Date().toISOString().split('T')[0],
     notes: "",
@@ -44,16 +48,24 @@ export default function Dashboard({ session, onLogout }) {
   // --- DATEN LADEN ---
   useEffect(() => {
     if (!userId) return;
-    const loadReports = async () => {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .eq("user_id", userId)
-        .order("id", { ascending: false });
-      if (error) setNotice(error.message);
-      else setReports(data || []);
+    const loadAllData = async () => {
+      // Rapporte laden
+      const resR = await supabase.from("reports").select("*").eq("user_id", userId).order("id", { ascending: false });
+      if (resR.data) setReports(resR.data);
+
+      // Kunden laden
+      const resC = await supabase.from("customers").select("*").eq("user_id", userId).order("name");
+      if (resC.data) setCustomers(resC.data);
+
+      // Material laden
+      const resM = await supabase.from("materials").select("*").eq("user_id", userId).order("name");
+      if (resM.data) setMaterials(resM.data);
+
+      // Mitarbeiter laden
+      const resS = await supabase.from("staff").select("*").eq("user_id", userId).order("name");
+      if (resS.data) setStaff(resS.data);
     };
-    loadReports();
+    loadAllData();
   }, [userId]);
 
   // --- AKTIONEN ---
@@ -108,7 +120,7 @@ const handleSave = async () => {
 
   // --- SUB-VIEWS ---
   const renderHome = () => {
-    const filtered = reports.filter(r => r.status === statusFilter);
+    const [statusFilter, setStatusFilter] = useState("offen");
     return (
       <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 15, marginBottom: 25 }}>
@@ -156,7 +168,7 @@ const handleSave = async () => {
       );
     }
 
-    if (view === "new-report") {
+   if (view === "new-report") {
       const updateRow = (idx, field, val) => {
         const rows = [...reportForm.rows];
         rows[idx][field] = val;
@@ -168,50 +180,77 @@ const handleSave = async () => {
         <section style={{ background: CARD, padding: 25, borderRadius: 15 }}>
           <h2 style={{ color: GOLD }}>Neuer Rapport</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15, marginBottom: 20 }}>
-            <input style={iStyle} placeholder="Kunde" value={reportForm.customer} onChange={e => setReportForm({...reportForm, customer: e.target.value})} />
-            <input type="date" style={iStyle} value={reportForm.date} onChange={e => setReportForm({...reportForm, date: e.target.value})} />
+            {/* KUNDEN-DROPDOWN */}
+            <div>
+              <label style={{ fontSize: 11, color: MUTED, display: "block", marginBottom: 4 }}>KUNDE</label>
+              <select 
+                style={iStyle} 
+                value={reportForm.customer} 
+                onChange={e => setReportForm({...reportForm, customer: e.target.value})}
+              >
+                <option value="">-- Kunde wählen --</option>
+                {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, color: MUTED, display: "block", marginBottom: 4 }}>DATUM</label>
+              <input type="date" style={iStyle} value={reportForm.date} onChange={e => setReportForm({...reportForm, date: e.target.value})} />
+            </div>
           </div>
 
           <table style={{ width: "100%", marginBottom: 15 }}>
-            <thead><tr style={{ color: MUTED, fontSize: 12 }}><th>Mitarbeiter</th><th>Von</th><th>Bis</th><th>Pause</th><th>Total</th></tr></thead>
+            <thead>
+              <tr style={{ color: MUTED, fontSize: 12, textAlign: "left" }}>
+                <th>Mitarbeiter</th>
+                <th>Von</th>
+                <th>Bis</th>
+                <th>Pause</th>
+                <th>Total</th>
+              </tr>
+            </thead>
             <tbody>
               {reportForm.rows.map((row, idx) => (
                 <tr key={idx}>
-                  <td><input style={iStyle} value={row.worker} onChange={e => updateRow(idx, "worker", e.target.value)} /></td>
+                  {/* MITARBEITER-DROPDOWN IN DER ZEILE */}
+                  <td>
+                    <select 
+                      style={iStyle} 
+                      value={row.worker} 
+                      onChange={e => updateRow(idx, "worker", e.target.value)}
+                    >
+                      <option value="">-- Name --</option>
+                      {staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                    </select>
+                  </td>
                   <td><input type="time" style={iStyle} value={row.from} onChange={e => updateRow(idx, "from", e.target.value)} /></td>
                   <td><input type="time" style={iStyle} value={row.to} onChange={e => updateRow(idx, "to", e.target.value)} /></td>
-                  <td><input type="number" step="0.5" style={iStyle} value={row.pause} onChange={e => updateRow(idx, "pause", e.target.value)} /></td>
-                  <td style={{ color: GOLD }}>{row.total}h</td>
+                  <td><input type="number" step="0.5" style={{...iStyle, width: '60px'}} value={row.pause} onChange={e => updateRow(idx, "pause", e.target.value)} /></td>
+                  <td style={{ color: GOLD, fontWeight: 'bold', paddingLeft: '10px' }}>{row.total}h</td>
                 </tr>
               ))}
             </tbody>
           </table>
           
-          <button onClick={() => setReportForm({...reportForm, rows: [...reportForm.rows, {worker:"", from:"07:00", to:"16:00", pause:"0.5", total:"8.50"}]})} style={{...gBtn, width: "100%", marginBottom: 20}}>+ Zeile</button>
+          <button 
+            onClick={() => setReportForm({...reportForm, rows: [...reportForm.rows, {worker:"", from:"07:00", to:"16:00", pause:"0.5", total:"8.50"}]})} 
+            style={{...gBtn, width: "100%", marginBottom: 20, borderStyle: 'dashed'}}
+          >
+            + Weitere Zeile (Mitarbeiter) hinzufügen
+          </button>
           
-          <textarea style={{...iStyle, minHeight: 100, marginBottom: 20}} placeholder="Notizen..." value={reportForm.notes} onChange={e => setReportForm({...reportForm, notes: e.target.value})} />
+          <label style={{ fontSize: 11, color: MUTED, display: "block", marginBottom: 4 }}>NOTIZEN / MATERIAL / KRANRAPPORT</label>
+          <textarea 
+            style={{...iStyle, minHeight: 120, marginBottom: 20, paddingTop: 10}} 
+            placeholder="Hier Materialliste oder Kranzeiten eintragen..." 
+            value={reportForm.notes} 
+            onChange={e => setReportForm({...reportForm, notes: e.target.value})} 
+          />
           
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={handleSave} style={pBtn}>Speichern</button>
+          <div style={{ display: "flex", gap: 10, justifyContent: 'flex-end' }}>
             <button onClick={() => setView("home")} style={gBtn}>Abbrechen</button>
+            <button onClick={handleSave} style={{...pBtn, padding: '0 30px'}}>Rapport Speichern</button>
           </div>
         </section>
       );
     }
-
-    return renderHome();
-  };
-
-  return (
-    <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
-      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontWeight: 900, color: GOLD, fontSize: 20 }}>PRO-RAPPORT</span>
-        <button onClick={onLogout} style={dBtn}>Logout</button>
-      </header>
-      <main style={{ padding: 20 }}>
-        {notice && <div style={{ background: GOLD, color: "#000", padding: 10, borderRadius: 8, marginBottom: 20 }}>{notice}</div>}
-        {renderView()}
-      </main>
-    </div>
-  );
-}
