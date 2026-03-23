@@ -109,12 +109,13 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     const loadData = async () => {
       if (!userId) return;
       const { data, error } = await supabase
-        .from("reports") // <-- HEISST DEINE TABELLE WIRKLICH "reports"?
+        .from("reports") // <-- PRÜFEN: Muss exakt "reports" heißen
         .select("*")
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .order("id", { ascending: false });
 
       if (error) {
-        setNotice("Datenbank-Fehler: " + error.message); // Zeigt uns den echten Grund
+        setNotice("Fehler: " + error.message);
       } else {
         setReports(data || []);
       }
