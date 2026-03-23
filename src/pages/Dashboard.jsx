@@ -30,14 +30,6 @@ function parseJson(v, fb = {}) { try { return JSON.parse(v) || fb; } catch { ret
 function parseReport(r) { return parseJson(r?.description, {}); }
 function parseCustomerMeta(c) { return parseJson(c?.address, {}); }
 
-
-function formatDateCH(dateStr) {
-  if (!dateStr) return "-";
-  const d = new Date(dateStr + "T00:00:00");
-  if (isNaN(d)) return dateStr;
-  return d.toLocaleDateString("de-CH");
-}
-
 function SignaturePad({ value, onChange }) {
   const ref = useRef(null);
   const drawing = useRef(false);
