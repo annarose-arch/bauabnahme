@@ -339,15 +339,21 @@ export default function Dashboard({ session, onLogout }) {
   };
 
   return (
+   // WICHTIG: Wenn keine der obigen Ansichten (new-report, customers, etc.) aktiv ist:
+    return renderHome();
+  }; // <--- Schließt die renderView Funktion (Zeile 131)
+
+  // Das eigentliche Haupt-Layout der Seite
+  return (
     <div style={{ minHeight: "100vh", background: BG, color: TEXT }}>
-      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between" }}>
-        <span style={{ fontWeight: 900, color: GOLD }}>PRO-RAPPORT</span>
+      <header style={{ padding: 20, borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontWeight: 900, color: GOLD, fontSize: 20 }}>PRO-RAPPORT</span>
         <button onClick={onLogout} style={dBtn}>Logout</button>
       </header>
       <main style={{ padding: 20 }}>
-        {notice && <div style={{ color: GOLD, marginBottom: 20 }}>{notice}</div>}
+        {notice && <div style={{ background: GOLD, color: "#000", padding: 10, borderRadius: 8, marginBottom: 20 }}>{notice}</div>}
         {renderView()}
       </main>
     </div>
   );
-}
+} // <--- Schließt die gesamte Dashboard-Komponente (Ganz am Ende der Datei)
