@@ -81,3 +81,31 @@ export function buildPdfHtml(report, p, meta, isPro, isDemoMode, mailto) {
     </html>
   `;
 }
+// src/utils/exportUtils.js Erweiterung
+
+export async function generateInvoice(report, discountPct, skontoPct, payDays, skontoDays, meta, p) {
+    const invoiceNr = `RE-${Date.now().toString().slice(-6)}`;
+    const subtotal = Number(p.totals?.subtotal || 0);
+    const discountAmt = subtotal * (discountPct / 100);
+    const totalAmount = (subtotal - discountAmt) * 1.081; // Inkl. MwSt
+
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    win.document.write(`
+        <html>
+        <head><title>Rechnung ${invoiceNr}</title></head>
+        <body style="font-family:sans-serif; padding:40px;">
+            <h1>Rechnung ${invoiceNr}</h1>
+            <p>Kunde: ${report.customer}</p>
+            <hr>
+            <p>Subtotal: CHF ${subtotal.toFixed(2)}</p>
+            <p>Rabatt (${discountPct}%): -CHF ${discountAmt.toFixed(2)}</p>
+            <h2 style="color:gold;">Total: CHF ${totalAmount.toFixed(2)}</h2>
+            <p>Zahlbar innert ${payDays} Tagen</p>
+            <button onclick="window.print()">Drucken</button>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
