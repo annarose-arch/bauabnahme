@@ -90,10 +90,36 @@ const iconByKey = {
   hours: Clock3
 };
 
+const STRIPE_PK = "pk_test_51TC4I6Rg5oD5OtbehD1hQOouVhgAqKkK1eyf7c1gzZwvXXCmj8v7gPzGdH24iQHPQNx4YNrCjDSoxkNHR6GZYw0J006HUm8vQS";
+
+// Replace these with your real Stripe Payment Link URLs once created in Stripe Dashboard
+// Go to: Stripe Dashboard → Payment Links → Create link
 const plans = [
-  { name: "Starter", price: "CHF 0", perks: ["5 reports", "2 users", "PDF export"] },
-  { name: "Pro", price: "CHF 29", perks: ["Unlimited reports", "10 users", "Priority support"], featured: true },
-  { name: "Team", price: "CHF 79", perks: ["Unlimited users", "API access", "Dedicated support"] }
+  {
+    name: "Starter",
+    price: "CHF 0",
+    priceAmount: 0,
+    perks: ["5 Rapporte", "1 Benutzer", "PDF Export", "Fotos & Unterschrift"],
+    paymentLink: null,
+    demoLink: "/demo",
+    featured: false
+  },
+  {
+    name: "Pro",
+    price: "CHF 29",
+    priceAmount: 29,
+    perks: ["Unbegrenzte Rapporte", "10 Benutzer", "Prioritäts-Support", "TWINT & Kreditkarte"],
+    paymentLink: "https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02",
+    featured: true
+  },
+  {
+    name: "Team",
+    price: "CHF 79",
+    priceAmount: 79,
+    perks: ["Unbegrenzte Benutzer", "API Zugang", "Dedizierter Support", "TWINT & Kreditkarte"],
+    paymentLink: "https://buy.stripe.com/14A5kDbNgfey4C92s59AA01",
+    featured: false
+  }
 ];
 
 function Landing({ lang, setLang, onNavigate }) {
@@ -227,20 +253,40 @@ function Landing({ lang, setLang, onNavigate }) {
           <h2 style={{ marginBottom: 18 }}>{t.pricingTitle}</h2>
           <div className="pricing-grid" style={{ display: "grid", gap: 14 }}>
             {plans.map((plan) => (
-              <article key={plan.name} style={{ background: colors.card, border: `1px solid ${plan.featured ? colors.gold : colors.border}`, borderRadius: 14, padding: 18 }}>
-                <h3 style={{ marginTop: 0 }}>{plan.name}</h3>
-                <div style={{ fontSize: 30, fontWeight: 800, color: plan.featured ? colors.gold : colors.text }}>
+              <article key={plan.name} style={{ background: colors.card, border: `2px solid ${plan.featured ? colors.gold : colors.border}`, borderRadius: 14, padding: 20, display: "flex", flexDirection: "column" }}>
+                {plan.featured && (
+                  <div style={{ background: colors.gold, color: "#111", fontWeight: 700, fontSize: 11, borderRadius: 6, padding: "3px 10px", alignSelf: "flex-start", marginBottom: 10 }}>⭐ EMPFOHLEN</div>
+                )}
+                <h3 style={{ marginTop: 0, marginBottom: 4 }}>{plan.name}</h3>
+                <div style={{ fontSize: 32, fontWeight: 800, color: plan.featured ? colors.gold : colors.text, marginBottom: 2 }}>
                   {plan.price}
                   <span style={{ fontSize: 14, color: colors.muted, marginLeft: 4 }}>{t.month}</span>
                 </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: "14px 0 0" }}>
+                <ul style={{ listStyle: "none", padding: 0, margin: "14px 0 16px", flex: 1 }}>
                   {plan.perks.map((perk) => (
-                    <li key={perk} style={{ display: "flex", alignItems: "center", gap: 8, color: colors.muted, marginBottom: 8 }}>
-                      <CheckCircle2 size={16} color={colors.gold} />
+                    <li key={perk} style={{ display: "flex", alignItems: "center", gap: 8, color: colors.muted, marginBottom: 8, fontSize: 14 }}>
+                      <CheckCircle2 size={15} color={colors.gold} />
                       {perk}
                     </li>
                   ))}
                 </ul>
+                {plan.paymentLink ? (
+                  <a
+                    href={plan.paymentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "block", textAlign: "center", background: plan.featured ? colors.gold : "transparent", color: plan.featured ? "#111" : colors.gold, border: `1px solid ${colors.gold}`, borderRadius: 10, padding: "11px 0", fontWeight: 700, fontSize: 15, textDecoration: "none", cursor: "pointer" }}
+                  >
+                    Jetzt abonnieren →
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => onNavigate("/login")}
+                    style={{ background: "transparent", color: colors.gold, border: `1px solid ${colors.gold}`, borderRadius: 10, padding: "11px 0", fontWeight: 600, fontSize: 15, cursor: "pointer" }}
+                  >
+                    Jetzt abonnieren →
+                  </button>
+                )}
               </article>
             ))}
           </div>
@@ -343,6 +389,12 @@ export default function App() {
       return <Login lang={lang} setLang={setLang} onNavigate={navigate} />;
     }
     return <Dashboard lang={lang} onNavigate={navigate} onLogout={handleLogout} session={session} />;
+  }
+
+  if (route === "/demo") {
+    // Demo mode - fake session, no login needed
+    const demoSession = { user: { id: "demo-user", email: "demo@bauabnahme.ch" } };
+    return <Dashboard lang={lang} onNavigate={navigate} onLogout={() => navigate("/")} session={demoSession} isDemo={true} />;
   }
 
   return <Landing lang={lang} setLang={setLang} onNavigate={navigate} />;
