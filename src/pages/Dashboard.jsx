@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { supabase } from "../supabase";
-import { BG, PANEL, TEXT, GOLD, BORDER, iStyle, pBtn, gBtn } from "../lib/constants";
-import { toNum, calcHours, parseReport, parseCustomerMeta, formatDateCH } from "../lib/utils";
-import { buildRapportHtml, buildRechnungHtml, buildSwissQR } from "../lib/pdfBuilder";
-import { NoticeBanner, DemoBanner } from "../components/UI";
-import { RechnungModal } from "../features/rechnungen/RechnungenViews";
-import { RenderView } from "./RenderView";
+import { supabase } from "../supabase.js";
+import { BG, PANEL, TEXT, GOLD, BORDER, iStyle, pBtn, gBtn } from "../lib/constants.js";
+import { toNum, calcHours, parseReport, parseCustomerMeta, formatDateCH } from "../lib/utils.js";
+import { buildRapportHtml, buildRechnungHtml, buildSwissQR } from "../lib/pdfBuilder.js";
+import { NoticeBanner, DemoBanner } from "../components/UI.jsx";
+import { RechnungModal } from "../features/rechnungen/RechnungenViews.jsx";
+import { RenderView } from "./RenderView.jsx";
 
 export default function Dashboard({ session, onLogout, onNavigate, isDemo = false }) {
   const userId    = session?.user?.id;
@@ -54,7 +54,9 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const fetchCustomers = async () => { if(!userId) return []; const {data} = await supabase.from("customers").select("*").eq("user_id",userId).order("id",{ascending:false}); setCustomers(data||[]); return data||[]; };
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
   const fetchReports = async () => { if(!userId) return; const{data,error}=await supabase.from("reports").select("*").eq("user_id",userId).neq("status","geloescht").order("id",{ascending:false}); if(error){showNotice("Ladefehler: "+error.message);return;} const all=data||[]; setReports(all.filter(r=>r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); };
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- bootstrap lists from demo storage or Supabase */
   useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); }, [userId,isDemo]);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   const handleCustomerSelect = (id) => { const c=customers.find(x=>String(x.id)===String(id)); if(!c) return; const m=parseCustomerMeta(c); setReportForm(p=>({...p,selectedCustomerId:String(c.id),selectedProjectId:"",customer:c.name||"",customerEmail:c.email||"",address:m.address||"",zip:m.zip||"",city:m.city||""})); };
   const handleSave = async () => {
     if(!reportForm.customer.trim()){showNotice("Bitte Firmenname eingeben.");return;}

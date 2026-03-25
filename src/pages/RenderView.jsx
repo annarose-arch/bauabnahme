@@ -1,13 +1,12 @@
-import { GOLD, BORDER, MUTED } from "../lib/constants";
-import { SectionCard } from "../components/UI";
-import { RapporteListe, RapportDetail, Papierkorb } from "../features/rapporte/RapporteViews";
-import { RapportForm } from "../features/rapporte/RapportForm";
-import { KundenView, KundenDetail } from "../features/kunden/KundenViews";
-import { RechnungenView } from "../features/rechnungen/RechnungenViews";
-import { KatalogView } from "../features/katalog/KatalogView";
-import { EinstellungenView } from "../features/einstellungen/EinstellungenView";
-import { supabase } from "../supabase";
-import { parseReport, toNum } from "../lib/utils";
+import { GOLD, BORDER, MUTED } from "../lib/constants.js";
+import { SectionCard } from "../components/UI.jsx";
+import { RapporteListe, RapportDetail, Papierkorb } from "../features/rapporte/RapporteViews.jsx";
+import { RapportForm } from "../features/rapporte/RapportForm.jsx";
+import { KundenView, KundenDetail } from "../features/kunden/KundenViews.jsx";
+import { RechnungenView } from "../features/rechnungen/RechnungenViews.jsx";
+import { KatalogView } from "../features/katalog/KatalogView.jsx";
+import { EinstellungenView } from "../features/einstellungen/EinstellungenView.jsx";
+import { supabase } from "../supabase.js";
 
 export function RenderView({
   view, openedReport, selectedCustomer, editingReport, isDemo,
@@ -18,7 +17,7 @@ export function RenderView({
   showCustomerSuggestions, setShowCustomerSuggestions,
   session, userEmail, nextRapportNr, setNextRapportNrState, nextInvoiceNr, setNextInvoiceNrState,
   // callbacks
-  setOpenedReport, setSelectedCustomer, startEdit, openPDF, moveToTrash,
+  setOpenedReport, setSelectedCustomer, setEditingReport, startEdit, openPDF, moveToTrash,
   restore, hardDelete, updateStatus, handleCustomerSelect, handleSave,
   saveCustomer, deleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice,
   reopenInvoice, openInvoice, downloadAndEmail, showNotice,
@@ -52,7 +51,6 @@ export function RenderView({
       onPDF={openPDF}
       onInvoice={openInvoice}
       onDeleteReport={async (r) => {
-        const deleted = { ...r, status: "geloescht" };
         if (!isDemo) {
           const { error } = await supabase.from("reports").update({ status: "geloescht" }).eq("id", r.id).eq("user_id", userId);
           if (error) { showNotice("Fehler: " + error.message); return; }
@@ -63,7 +61,6 @@ export function RenderView({
       onReopenInvoice={reopenInvoice}
       onMarkInvoiceSent={inv => { saveInvoiceToStorage({ ...inv, status: "versendet" }); showNotice("✅ Als versendet markiert."); }}
       onDeleteInvoice={deleteInvoice}
-      showNotice={showNotice}
     />
   );
 
@@ -120,7 +117,7 @@ export function RenderView({
       onCustomerSelect={handleCustomerSelect}
       onSave={handleSave}
       onCancel={() => {
-        setEditingReport && setEditingReport(null);
+        setEditingReport(null);
         setReportForm(emptyForm);
         setWorkRows([{ employee: "", from: "", to: "", rate: "" }]);
         setMaterialRows([{ name: "", qty: "", unit: "", price: "" }]);

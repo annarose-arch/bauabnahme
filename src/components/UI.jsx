@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { GOLD, BORDER, PANEL, TEXT, MUTED, gBtn } from "../lib/constants";
+import { GOLD, BORDER, PANEL, TEXT, MUTED, gBtn } from "../lib/constants.js";
 
 // ─── SignaturePad ──────────────────────────────────────────────────────────
 export function SignaturePad({ value, onChange }) {

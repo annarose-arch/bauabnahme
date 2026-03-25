@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants";
-import { SectionCard } from "../../components/UI";
-import { supabase } from "../../supabase";
+import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn } from "../../lib/constants.js";
+import { SectionCard } from "../../components/UI.jsx";
+import { supabase } from "../../supabase.js";
 
 export function EinstellungenView({
   session, userEmail, showNotice, onLogout, onNavigate,

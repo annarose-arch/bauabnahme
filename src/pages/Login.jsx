@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Lock, Globe, Building2, User, MapPin, Phone } from "lucide-react";
-import { supabase } from "../supabase";
+import { supabase } from "../supabase.js";
 
 const COLORS = {
   bg: "#0a0a0a",

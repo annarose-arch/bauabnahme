@@ -1,4 +1,4 @@
-import { toNum, formatDateCH } from "./utils";
+import { formatDateCH } from "./utils.js";
 
 // ─── Swiss QR-Bill ─────────────────────────────────────────────────────────
 export function buildSwissQR(
@@ -114,11 +114,11 @@ ${sig.image ? `<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:
 
 // ─── Rechnung HTML ──────────────────────────────────────────────────────────
 export function buildRechnungHtml({
-  invoiceNr, firmName, firmLogo, firmContact, firmAddress, firmDetails,
+  invoiceNr, firmName, firmLogo, firmContact, firmDetails,
   name, custAddr, custStreet, custZip, custCity,
   validWork, validMat, costs, subtotal, discountPct, discountAmt,
-  subtotalAfterDiscount, vat, totalAmount, skontoPct, skontoAmt,
-  payDays, skontoDays, dueDate, skontoDueDate, qrUrl,
+  vat, totalAmount, skontoPct, skontoAmt,
+  dueDate, skontoDueDate, qrUrl,
   isPro, isDemoMode, reportDate, projectName,
 }) {
   const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");

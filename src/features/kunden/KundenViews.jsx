@@ -1,6 +1,6 @@
-import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants";
-import { parseReport, parseCustomerMeta, toNum, formatDateCH } from "../../lib/utils";
-import { SectionCard } from "../../components/UI";
+import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
+import { parseReport, parseCustomerMeta, toNum, formatDateCH } from "../../lib/utils.js";
+import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Kundenliste + Formular ────────────────────────────────────────────────
 export function KundenView({ customerForm, setCustomerForm, customers, onSave, onSelect, onDelete }) {
@@ -38,7 +38,7 @@ export function KundenView({ customerForm, setCustomerForm, customers, onSave, o
 export function KundenDetail({
   customer, reports, archivedReports, invoices,
   onBack, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport,
-  onReopenInvoice, onMarkInvoiceSent, onDeleteInvoice, showNotice,
+  onReopenInvoice, onMarkInvoiceSent, onDeleteInvoice,
 }) {
   const m = parseCustomerMeta(customer);
   const allCustomerReports = [...reports, ...archivedReports];

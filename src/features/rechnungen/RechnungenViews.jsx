@@ -1,6 +1,6 @@
-import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants";
-import { parseReport, toNum, formatDateCH } from "../../lib/utils";
-import { SectionCard } from "../../components/UI";
+import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
+import { formatDateCH } from "../../lib/utils.js";
+import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Rechnungsliste ────────────────────────────────────────────────────────
 export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {

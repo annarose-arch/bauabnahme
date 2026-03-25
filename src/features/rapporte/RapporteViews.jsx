@@ -1,6 +1,6 @@
-import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants";
-import { parseReport, toNum, formatDateCH } from "../../lib/utils";
-import { SectionCard } from "../../components/UI";
+import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants.js";
+import { parseReport, toNum, formatDateCH } from "../../lib/utils.js";
+import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Offene Rapporte Liste ─────────────────────────────────────────────────
 export function RapporteListe({ reports, archivedReports, onOpen, onEdit, onPDF, onDelete }) {
@@ -45,7 +45,7 @@ export function RapporteListe({ reports, archivedReports, onOpen, onEdit, onPDF,
 // ─── Rapport Detail ────────────────────────────────────────────────────────
 export function RapportDetail({ report, onBack, onEdit, onPDF, onEmail, onInvoice, onStatusChange }) {
   const p = parseReport(report);
-  const { workRows: work = [], materialRows: mat = [], totals: tot = {}, photos = {}, signature: sig = {} } = p;
+  const { totals: tot = {}, photos = {}, signature: sig = {} } = p;
 
   return (
     <SectionCard>
