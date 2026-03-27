@@ -21,7 +21,7 @@ export function calcHours(from, to) {
 export function parseJson(v, fb = {}) {
   try { return JSON.parse(v) || fb; } catch { return fb; }
 }
-export function parseReport(r)       { return parseJson(r?.description, {}); }
+export function parseReport(r) { const d = r?.description; if (!d) return {}; if (typeof d === "object") return d; try { return JSON.parse(d); } catch { return {}; } }
 export function parseCustomerMeta(c) { return parseJson(c?.address, {}); }
 
 // ─── Datum ─────────────────────────────────────────────────────────────────
