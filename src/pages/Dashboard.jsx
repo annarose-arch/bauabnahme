@@ -19,7 +19,18 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [reports, setReports]                 = useState([]);
   const [trashReports, setTrashReports]       = useState([]);
   const [archivedReports, setArchivedReports] = useState([]);
-  const [customers, setCustomers]             = useState([]);
+  const [customers, setCustomersState] = useState([]);
+  const setCustomers = useCallback(
+    (valueOrFn) => {
+      setCustomersState((prev) => {
+        const next = typeof valueOrFn === "function" ? valueOrFn(prev) : valueOrFn;
+        const itemCount = Array.isArray(next) ? next.length : 0;
+        console.log("[Dashboard] setCustomers", { itemCount, userId: userId ?? null, isDemo });
+        return next;
+      });
+    },
+    [userId, isDemo]
+  );
   const [projects, setProjects]               = useState([]);
   const [notice, setNotice]                   = useState("");
   const showNotice = useCallback((msg) => { setNotice(msg); setTimeout(() => setNotice(""), 4000); }, []);
@@ -55,7 +66,19 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
   const fetchReports = async () => { if(!userId) return; const{data,error}=await supabase.from("reports").select("*").eq("user_id",userId).neq("status","geloescht").order("id",{ascending:false}); if(error){showNotice("Ladefehler: "+error.message);return;} const all=data||[]; setReports(all.filter(r=>r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); };
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- bootstrap lists from demo storage or Supabase */
-  useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); }, [userId,isDemo]);
+  useEffect(() => {
+    console.log("[Dashboard] bootstrap data effect", { userId: userId ?? null, isDemo });
+    if (isDemo) {
+      const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
+      setReports(all.filter((r) => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
+      setArchivedReports(all.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
+      setTrashReports(all.filter((r) => r.status === "geloescht"));
+      return;
+    }
+    if (!userId) return;
+    fetchCustomers().then((c) => fetchProjects(c));
+    fetchReports();
+  }, [userId, isDemo]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   const handleCustomerSelect = (id) => { const c=customers.find(x=>String(x.id)===String(id)); if(!c) return; const m=parseCustomerMeta(c); setReportForm(p=>({...p,selectedCustomerId:String(c.id),selectedProjectId:"",customer:c.name||"",customerEmail:c.email||"",address:m.address||"",zip:m.zip||"",city:m.city||""})); };
   const handleSave = async () => {
