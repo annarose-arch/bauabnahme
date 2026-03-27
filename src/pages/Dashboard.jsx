@@ -51,7 +51,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [invoicePayDays, setInvoicePayDays]       = useState("30");
   const [invoiceSkontoDays, setInvoiceSkontoDays] = useState("10");
   const openInvoice = (r) => { setInvoiceDiscount("0"); setInvoiceSkonto("0"); setInvoicePayDays("30"); setInvoiceSkontoDays("10"); setInvoiceModal(r); };
-  const fetchCustomers = async () => { if(!userId) return []; const {data} = await supabase.from("customers").select("*").eq("user_id",userId).order("id",{ascending:false}); setCustomers(data||[]); return data||[]; };
+  const fetchCustomers = async () => { if(!userId) { console.log("fetchCustomers: no userId"); return []; } const {data} = await supabase.from("customers").select("*").eq("user_id",userId).order("id",{ascending:false}); setCustomers(data||[]); return data||[]; };
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
   const fetchReports = async () => { if(!userId) return; const{data,error}=await supabase.from("reports").select("*").eq("user_id",userId).neq("status","geloescht").order("id",{ascending:false}); if(error){showNotice("Ladefehler: "+error.message);return;} const all=data||[]; setReports(all.filter(r=>r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); };
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- bootstrap lists from demo storage or Supabase */
