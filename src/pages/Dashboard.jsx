@@ -97,7 +97,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
       return;
     }
     if (!userId) return;
-    fetchCustomers().then(c => fetchProjects(c));
+    fetchCustomers();
     fetchReports();
   }, [userId, isDemo]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
