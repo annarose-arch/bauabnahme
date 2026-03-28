@@ -19,6 +19,19 @@ function normalizeReportStatus(r) {
 const ACTIVE_TAB_STATUSES = new Set(["offen", "bearbeitet"]);
 const ARCHIVE_TAB_STATUSES = new Set(["archiviert", "gesendet"]);
 
+function normalizeInvoiceStatus(inv) {
+  return String(inv?.status ?? "").trim().toLowerCase();
+}
+
+function mergeReportsAndInvoicesByDate(reports, invoices) {
+  const items = [
+    ...reports.map((r) => ({ kind: "report", r, date: r.date })),
+    ...invoices.map((inv) => ({ kind: "invoice", inv, date: inv.date })),
+  ];
+  items.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  return items;
+}
+
 // ─── Kundenliste + Formular ────────────────────────────────────────────────
 export function KundenView({
   customerForm,
@@ -162,6 +175,55 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
   );
 }
 
+function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onDeleteInvoice }) {
+  const sent = normalizeInvoiceStatus(inv) === "versendet";
+  return (
+    <div
+      style={{
+        border: `1px solid ${sent ? GOLD : BORDER}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        background: "rgba(255,255,255,0.02)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div>
+          <strong style={{ color: GOLD }}>{inv.invoiceNr}</strong>
+          <span style={{ color: MUTED, fontSize: 12, marginLeft: 8 }}>{formatDateCH(inv.date)}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontWeight: 800, color: TEXT }}>CHF {Number(inv.totalAmount).toFixed(2)}</span>
+          <span
+            style={{
+              fontSize: 11,
+              padding: "2px 8px",
+              borderRadius: 4,
+              fontWeight: 700,
+              border: `1px solid ${sent ? GOLD : BORDER}`,
+              color: sent ? GOLD : MUTED,
+            }}
+          >
+            {sent ? "✅ Versendet" : "📝 Entwurf"}
+          </span>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+        <button type="button" onClick={() => onReopenInvoice(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>
+          🖨 Öffnen
+        </button>
+        {!sent && (
+          <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13 }}>
+            ✅ Versendet
+          </button>
+        )}
+        <button type="button" onClick={() => onDeleteInvoice(inv.id)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
+          🗑
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Kunden Detail ─────────────────────────────────────────────────────────
 export function KundenDetail({
   customer,
@@ -190,6 +252,15 @@ export function KundenDetail({
   const linkedArchive = linked.filter((r) => ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(r)));
   const revenue = linked.reduce((s, r) => s + toNum(parseReport(r)?.totals?.total), 0);
   const custInvoices = invoices.filter((inv) => String(inv.customerId) === String(customer.id) || inv.customer === customer.name);
+  const invoicesActive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "entwurf");
+  const invoicesArchive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "versendet");
+  const listForTab = mergeReportsAndInvoicesByDate(
+    detailTab === "active" ? linkedActive : linkedArchive,
+    detailTab === "active" ? invoicesActive : invoicesArchive
+  );
+
+  const countActive = linkedActive.length + invoicesActive.length;
+  const countArchive = linkedArchive.length + invoicesArchive.length;
 
   const tabBtn = (id, label, count) => (
     <button
@@ -212,8 +283,6 @@ export function KundenDetail({
     </button>
   );
 
-  const listForTab = detailTab === "active" ? linkedActive : linkedArchive;
-
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>{customer.name}</h2>
@@ -235,77 +304,43 @@ export function KundenDetail({
         </div>
       </div>
 
-      <h3 style={{ marginBottom: 10 }}>Rapporte</h3>
+      <h3 style={{ marginBottom: 10 }}>Rapporte & Rechnungen</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        {tabBtn("active", "Aktive Rapporte", linkedActive.length)}
-        {tabBtn("archive", "Archiv", linkedArchive.length)}
+        {tabBtn("active", "Aktiv", countActive)}
+        {tabBtn("archive", "Archiv", countArchive)}
       </div>
 
       {listForTab.length === 0 && (
         <p style={{ color: MUTED, fontSize: 13, marginBottom: 14 }}>
-          {detailTab === "active" ? "Keine aktiven Rapporte (offen / bearbeitet)." : "Keine archivierten Rapporte (gesendet / archiviert)."}
+          {detailTab === "active"
+            ? "Keine aktiven Rapporte (offen / bearbeitet) und keine Rechnungsentwürfe."
+            : "Keine archivierten Rapporte (gesendet / archiviert) und keine versendeten Rechnungen."}
         </p>
       )}
       <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-        {listForTab.map((r) => (
-          <ReportRowCard
-            key={r.id}
-            r={r}
-            isArchived={ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(r))}
-            onOpenReport={onOpenReport}
-            onEditReport={onEditReport}
-            onPDF={onPDF}
-            onInvoice={onInvoice}
-            onDeleteReport={onDeleteReport}
-          />
-        ))}
+        {listForTab.map((item) =>
+          item.kind === "report" ? (
+            <ReportRowCard
+              key={`r-${item.r.id}`}
+              r={item.r}
+              isArchived={ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(item.r))}
+              onOpenReport={onOpenReport}
+              onEditReport={onEditReport}
+              onPDF={onPDF}
+              onInvoice={onInvoice}
+              onDeleteReport={onDeleteReport}
+            />
+          ) : (
+            <InvoiceRowCard
+              key={`inv-${item.inv.id}`}
+              inv={item.inv}
+              onReopenInvoice={onReopenInvoice}
+              onMarkInvoiceSent={onMarkInvoiceSent}
+              onDeleteInvoice={onDeleteInvoice}
+            />
+          )
+        )}
       </div>
-
-      {custInvoices.length > 0 && (
-        <>
-          <h3 style={{ marginBottom: 8, marginTop: 4 }}>🧾 Rechnungen ({custInvoices.length})</h3>
-          <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-            {custInvoices.map((inv) => (
-              <div key={inv.id} style={{ border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`, borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div>
-                    <strong style={{ color: GOLD }}>{inv.invoiceNr}</strong>
-                    <span style={{ color: MUTED, fontSize: 12, marginLeft: 8 }}>{formatDateCH(inv.date)}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontWeight: 800, color: TEXT }}>CHF {Number(inv.totalAmount).toFixed(2)}</span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                        fontWeight: 700,
-                        border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`,
-                        color: inv.status === "versendet" ? GOLD : MUTED,
-                      }}
-                    >
-                      {inv.status === "versendet" ? "✅ Versendet" : "📝 Entwurf"}
-                    </span>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-                  <button type="button" onClick={() => onReopenInvoice(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>
-                    🖨 Öffnen
-                  </button>
-                  {inv.status === "entwurf" && (
-                    <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13 }}>
-                      ✅ Versendet
-                    </button>
-                  )}
-                  <button type="button" onClick={() => onDeleteInvoice(inv.id)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
-                    🗑
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, marginTop: 4, marginBottom: 14 }}>Gesamtumsatz CHF {revenue.toFixed(2)}</div>
       <button type="button" onClick={onBack} style={gBtn}>
