@@ -65,6 +65,7 @@ export function KundenView({
           return (
             <div
               key={c.id}
+              onClick={() => onSelect(c)}
               style={{
                 border: `1px solid ${BORDER}`,
                 borderRadius: 10,
@@ -73,30 +74,22 @@ export function KundenView({
                 display: "grid",
                 gap: 8,
                 minHeight: 0,
+                cursor: "pointer",
               }}
             >
-              <button
-                type="button"
-                onClick={() => onSelect(c)}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: TEXT,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textAlign: "left",
-                  fontSize: 15,
-                  padding: 0,
-                  lineHeight: 1.3,
-                }}
-              >
-                {c.name}
-              </button>
+              <div style={{ color: TEXT, fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>{c.name}</div>
               <div style={{ color: MUTED, fontSize: 12 }}>
                 <span style={{ color: MUTED }}>Kundennummer </span>
                 <span style={{ color: GOLD, fontWeight: 600 }}>{m.kundennummer || "—"}</span>
               </div>
-              <button type="button" onClick={() => onDelete(c)} style={{ ...dBtn, minHeight: 32, fontSize: 12, justifySelf: "start" }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(c);
+                }}
+                style={{ ...dBtn, minHeight: 32, fontSize: 12, justifySelf: "start" }}
+              >
                 Löschen
               </button>
             </div>
