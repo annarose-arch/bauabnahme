@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "../supabase.js";
 import { BG, PANEL, TEXT, GOLD, BORDER, iStyle, pBtn, gBtn } from "../lib/constants.js";
 import { toNum, calcHours, parseReport, parseCustomerMeta, formatDateCH } from "../lib/utils.js";
@@ -74,7 +74,19 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     return data || [];
   };
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
-  const fetchReports = async () => { if(!userId) return; const{data,error}=await supabase.from("reports").select("*").eq("user_id",userId).neq("status","geloescht").order("id",{ascending:false}); if(error){showNotice("Ladefehler: "+error.message);return;} const all=data||[]; setReports(all.filter(r=>r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); };
+  const fetchReports = async () => {
+    if (!userId) return;
+    const { data, error } = await supabase.from("reports").select("*").eq("user_id", userId).order("id", { ascending: false });
+    if (error) {
+      showNotice("Ladefehler: " + error.message);
+      return;
+    }
+    const all = data || [];
+    setReports(all.filter((r) => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
+    setArchivedReports(all.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
+    setTrashReports(all.filter((r) => r.status === "geloescht"));
+  };
+  const prevUserIdRef = useRef(undefined);
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- bootstrap lists from demo storage or Supabase */
   useEffect(() => {
     console.log("[Dashboard] bootstrap data effect", { userId: userId ?? null, isDemo });
@@ -85,7 +97,11 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
       setTrashReports(all.filter((r) => r.status === "geloescht"));
       return;
     }
-    if (!userId) return;
+    const prev = prevUserIdRef.current;
+    const now = userId ?? null;
+    const becameAuthenticated = prev == null && now != null;
+    prevUserIdRef.current = now;
+    if (!becameAuthenticated) return;
     fetchCustomers().then((c) => fetchProjects(c));
     fetchReports();
   }, [userId, isDemo]);
@@ -102,7 +118,34 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     setEditingReport(null); setReportForm(emptyForm); setWorkRows([{employee:"",from:"",to:"",rate:""}]); setMaterialRows([{name:"",qty:"",unit:"",price:""}]); showNotice(editingReport?"Rapport aktualisiert.":"Rapport gespeichert."); goTo("reports");
   };
   const startEdit = (r) => { const p=parseReport(r); setReportForm({selectedCustomerId:String(p.customerId||""),selectedProjectId:String(p.projectId||""),customer:r.customer||"",address:p.address||"",zip:p.zip||"",city:p.city||"",orderNo:p.orderNo||"",customerEmail:p.customerEmail||"",date:r.date||emptyForm.date,status:r.status||"offen",expenses:p.costs?.expenses?String(p.costs.expenses):"",notes:p.costs?.notes||"",beforePhoto:p.photos?.before||"",afterPhoto:p.photos?.after||"",signerName:p.signature?.name||"",signatureImage:p.signature?.image||""}); setWorkRows(p.workRows?.length?p.workRows.map(r=>({employee:r.employee||"",from:r.from||"",to:r.to||"",rate:r.rate?String(r.rate):""})):[{employee:"",from:"",to:"",rate:""}]); setMaterialRows(p.materialRows?.length?p.materialRows.map(r=>({name:r.name||"",qty:r.qty?String(r.qty):"",unit:r.unit||"",price:r.price?String(r.price):""})):[{name:"",qty:"",unit:"",price:""}]); setEditingReport(r); setOpenedReport(null); setView("new-report"); };
-  const moveToTrash = async (r) => { if(!window.confirm("Löschen?")) return; const deleted={...r,status:"geloescht"}; if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?deleted:x)));}else{const{error}=await supabase.from("reports").update({status:"geloescht"}).eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setReports(p=>p.filter(x=>x.id!==r.id)); setArchivedReports(p=>p.filter(x=>x.id!==r.id)); setTrashReports(p=>[...p,deleted]); if(openedReport?.id===r.id) setOpenedReport(null); };
+  const moveToTrash = async (r) => {
+    if (!window.confirm("Löschen?")) return;
+    const deleted = { ...r, status: "geloescht" };
+    if (isDemo) {
+      const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
+      localStorage.setItem("demo_reports", JSON.stringify(all.map((x) => (x.id === r.id ? deleted : x))));
+    } else {
+      const { data: updated, error } = await supabase
+        .from("reports")
+        .update({ status: "geloescht" })
+        .eq("id", r.id)
+        .eq("user_id", userId)
+        .select("id")
+        .maybeSingle();
+      if (error) {
+        showNotice("Fehler: " + error.message);
+        return;
+      }
+      if (!updated) {
+        showNotice("Rapport konnte nicht in den Papierkorb verschoben werden (keine Zeile aktualisiert).");
+        return;
+      }
+    }
+    setReports((p) => p.filter((x) => x.id !== r.id));
+    setArchivedReports((p) => p.filter((x) => x.id !== r.id));
+    setTrashReports((p) => [...p, deleted]);
+    if (openedReport?.id === r.id) setOpenedReport(null);
+  };
   const restore = async (r) => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?{...x,status:"offen"}:x)));}else{const{error}=await supabase.from("reports").update({status:"offen"}).eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setTrashReports(p=>p.filter(x=>x.id!==r.id)); setReports(p=>[{...r,status:"offen"},...p]); };
   const hardDelete = async (r) => { if(!window.confirm("Endgültig löschen?")) return; if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]").filter(x=>x.id!==r.id); localStorage.setItem("demo_reports",JSON.stringify(all)); setTrashReports(all.filter(x=>x.status==="geloescht"));}else{const{error}=await supabase.from("reports").delete().eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setTrashReports(p=>p.filter(x=>x.id!==r.id)); showNotice("Gelöscht."); };
   const updateStatus = async (id, status) => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]").map(x=>x.id===id?{...x,status}:x); localStorage.setItem("demo_reports",JSON.stringify(all)); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setOpenedReport(null); return;} const{error}=await supabase.from("reports").update({status}).eq("id",id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;} await fetchReports(); setOpenedReport(null); if(status==="archiviert"||status==="gesendet") showNotice("✅ Rapport zum Kunden verschoben."); };
