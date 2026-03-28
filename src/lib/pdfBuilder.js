@@ -120,9 +120,18 @@ export function buildRechnungHtml({
   vat, totalAmount, skontoPct, skontoAmt,
   dueDate, skontoDueDate, qrUrl,
   isPro, isDemoMode, reportDate, projectName,
+  custEmail,
 }) {
   const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
   const mHtml = validMat.map(r => `<tr><td>${r.name || "-"}</td><td style="text-align:center">${r.qty || 0} ${r.unit || ""}</td><td style="text-align:center">CHF ${Number(r.price || 0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
+  const mailSubject = `Rechnung ${invoiceNr}`;
+  const mailBody = `Rechnungsnummer: ${invoiceNr}\nBetrag: CHF ${Number(totalAmount).toFixed(2)}\nFälligkeitsdatum: ${dueDate}`;
+  const emailTrim = custEmail != null ? String(custEmail).trim() : "";
+  const mailtoHref =
+    emailTrim.length > 0
+      ? `mailto:${emailTrim}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`
+      : "";
+  const escHref = (u) => String(u).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   return `<!doctype html><html><head><meta charset="utf-8"/>
 <title>Rechnung ${invoiceNr}</title>
@@ -158,12 +167,17 @@ tr:nth-child(even) td{background:#f8f8f8}
 .no-iban{background:#f5f5f5;border:2px dashed #999;border-radius:6px;padding:14px;font-size:13px;color:#555;text-align:center}
 .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000}
 .btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
+a.btn{text-decoration:none;display:inline-block}
+.btn-muted{opacity:0.45;cursor:default;pointer-events:none}
 @media print{.noprint{display:none}.qr-section{page-break-inside:avoid}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:20px">
 ${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
-<button class="btn" onclick="window.print()">💾 Drucken / PDF</button>
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+<button type="button" class="btn" onclick="window.print()">Drucken / PDF</button>
+${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 E-Mail</a>` : `<span class="btn btn-muted" title="Keine Kunden-E-Mail hinterlegt">📧 E-Mail</span>`}
+</div>
 </div>
 <div class="header">
   <div>
