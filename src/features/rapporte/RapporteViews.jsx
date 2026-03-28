@@ -1,9 +1,9 @@
 import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { parseReport, formatReportCardSummary, formatDateCH } from "../../lib/utils.js";
+import { parseReport, formatReportCardSummary, formatDateCH, toNum } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Offene Rapporte Liste ─────────────────────────────────────────────────
-export function RapporteListe({ reports, archivedReports, onOpen, onEdit, onPDF, onDelete }) {
+export function RapporteListe({ reports, archivedReports, invoices = [], onOpen, onEdit, onPDF, onDelete }) {
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>Offene Rapporte</h2>
@@ -14,10 +14,37 @@ export function RapporteListe({ reports, archivedReports, onOpen, onEdit, onPDF,
       )}
       {reports.length === 0 && <p style={{ color: MUTED }}>Noch keine Rapporte.</p>}
       <div style={{ display: "grid", gap: 8 }}>
-        {reports.map((r) => (
+        {reports.map((r) => {
+          const pr = parseReport(r);
+          const hasInvoice = invoices.some((inv) => inv.reportData?.rapportNr === pr.rapportNr);
+          const nr = pr.rapportNr != null && String(pr.rapportNr).trim() !== "" ? String(pr.rapportNr).trim() : "—";
+          const project = pr.projectName && String(pr.projectName).trim() ? String(pr.projectName).trim() : "—";
+          const customer = r.customer && String(r.customer).trim() ? String(r.customer).trim() : "—";
+          const date = formatDateCH(r.date);
+          const total = toNum(pr.totals?.total).toFixed(2);
+          return (
           <div key={r.id} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(212,168,83,0.2)`, borderRadius: 10, padding: "12px 14px", display: "grid", gap: 8 }}>
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, flex: "1 1 200px" }}>{formatReportCardSummary(r)}</div>
+              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, flex: "1 1 200px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
+                <span style={{ fontWeight: 600 }}>Nr.{nr}</span>
+                {hasInvoice && (
+                  <span
+                    title="Rechnung erstellt"
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1,
+                      padding: "2px 5px",
+                      borderRadius: 4,
+                      border: `1px solid ${GOLD}`,
+                      color: GOLD,
+                      background: "rgba(212,168,83,0.12)",
+                    }}
+                  >
+                    🧾
+                  </span>
+                )}
+                <span>{` · ${project} · ${customer} · ${date} · CHF ${total}`}</span>
+              </div>
               <span style={{ color: GOLD, fontWeight: 700, fontSize: 13 }}>{r.status}</span>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -35,7 +62,8 @@ export function RapporteListe({ reports, archivedReports, onOpen, onEdit, onPDF,
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </SectionCard>
   );

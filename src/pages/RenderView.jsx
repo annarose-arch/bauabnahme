@@ -132,6 +132,7 @@ export function RenderView({
     <RapporteListe
       reports={reports}
       archivedReports={archivedReports}
+      invoices={invoices}
       onOpen={setOpenedReport}
       onEdit={startEdit}
       onPDF={openPDF}
