@@ -167,7 +167,7 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
 }
 
 /** Same invoice row layout as RechnungenViews.jsx (summary line + badge + actions). */
-function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onDeleteInvoice }) {
+function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onDeleteInvoice }) {
   const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
   const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
   return (
@@ -204,8 +204,13 @@ function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onDeleteInvoi
           🖨 Öffnen / Drucken
         </button>
         {inv.status === "entwurf" && (
-          <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
+          <button type="button" onClick={() => onMarkISent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
             ✅ Als versendet markieren
+          </button>
+        )}
+        {inv.status === "versendet" && (
+          <button type="button" onClick={() => onMarkInvoicePaid(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13, background: "#1a472a", border: "1px solid #2d7a45", color: "#7ddb9a" }}>
+            Bezahlt
           </button>
         )}
         <button type="button" onClick={() => onDeleteInvoice(inv.id)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
@@ -229,7 +234,7 @@ export function KundenDetail({
   onInvoice,
   onDeleteReport,
   onReopenInvoice,
-  onMarkInvoiceSent,
+  onMarkInvoiceSent,  onMarkInvoicePaid,
   onDeleteInvoice,
 }) {
   const [detailTab, setDetailTab] = useState("rapporte-aktiv");
@@ -342,6 +347,7 @@ export function KundenDetail({
               inv={inv}
               onReopenInvoice={onReopenInvoice}
               onMarkInvoiceSent={onMarkInvoiceSent}
+              onMarkInvoicePaid={onMarkInvoicePaid}
               onDeleteInvoice={onDeleteInvoice}
             />
           ))}
