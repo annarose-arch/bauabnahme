@@ -10,9 +10,8 @@ export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
       {invoices.length === 0 && <p style={{ color: MUTED }}>Noch keine Rechnungen erstellt.</p>}
       <div style={{ display: "grid", gap: 10 }}>
         {invoices.map(inv => {
-          const projectName = String(inv.reportData?.projectName ?? "").trim() || "—";
-          const amount = Number(inv.totalAmount).toFixed(2);
-          const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · ${amount}`;
+          const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
+          const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
           return (
           <div key={inv.id} style={{ border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`, borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
@@ -37,7 +36,7 @@ export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
                   ✅ Als versendet markieren
                 </button>
               )}
-              <button type="button" onClick={() => { if (window.confirm("Rechnung löschen?")) onDelete(inv.id); }} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>🗑 Löschen</button>
+              <button type="button" onClick={() => { if (window.confirm("Rechnung in den Papierkorb verschieben?")) onDelete(inv.id); }} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>🗑 Löschen</button>
             </div>
           </div>
           );

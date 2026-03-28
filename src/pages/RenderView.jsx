@@ -10,12 +10,13 @@ import { supabase } from "../supabase.js";
 
 export function RenderView({
   view, openedReport, selectedCustomer, editingReport, isDemo,
-  reports, archivedReports, trashReports, customers, invoices, catalog,
+  reports, archivedReports, trashReports, customers, invoices, trashInvoices, catalog,
   reportForm, setReportForm, workRows, setWorkRows, materialRows, setMaterialRows,
   customerForm, setCustomerForm,
   workSubtotal, materialSubtotal, vat, total,
   showCustomerSuggestions, setShowCustomerSuggestions,
   session, userEmail, nextRapportNr, setNextRapportNrState, nextInvoiceNr, setNextInvoiceNrState,
+  language, onPickLanguage,
   // callbacks
   setOpenedReport, setSelectedCustomer, setEditingReport, startEdit, openPDF, moveToTrash,
   restore, hardDelete, updateStatus, handleCustomerSelect, handleSave,
@@ -147,7 +148,10 @@ export function RenderView({
         saveInvoiceToStorage({ ...inv, status: "versendet" });
         showNotice("✅ Rechnung als versendet markiert.");
       }}
-      onDelete={id => { if (window.confirm("Rechnung löschen?")) deleteInvoice(id); }}
+      onDelete={(id) => {
+        deleteInvoice(id);
+        showNotice("🗑 Rechnung in den Papierkorb verschoben.");
+      }}
     />
   );
 
@@ -155,8 +159,19 @@ export function RenderView({
   if (view === "trash") return (
     <Papierkorb
       trashReports={trashReports}
+      trashInvoices={trashInvoices}
       onRestore={restore}
       onHardDelete={hardDelete}
+      onRestoreInvoice={(inv) => {
+        restoreInvoice(inv);
+        showNotice("✅ Rechnung wiederhergestellt.");
+      }}
+      onHardDeleteInvoice={(id) => {
+        if (window.confirm("Rechnung endgültig löschen?")) {
+          hardDeleteInvoice(id);
+          showNotice("Rechnung endgültig gelöscht.");
+        }
+      }}
     />
   );
 
@@ -181,6 +196,8 @@ export function RenderView({
       setNextRapportNrState={setNextRapportNrState}
       nextInvoiceNr={nextInvoiceNr}
       setNextInvoiceNrState={setNextInvoiceNrState}
+      language={language}
+      onPickLanguage={onPickLanguage}
     />
   );
 

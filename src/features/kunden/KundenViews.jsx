@@ -208,13 +208,7 @@ function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onDeleteInvoi
             ✅ Als versendet markieren
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            if (window.confirm("Rechnung löschen?")) onDeleteInvoice(inv.id);
-          }}
-          style={{ ...dBtn, minHeight: 32, fontSize: 13 }}
-        >
+        <button type="button" onClick={() => onDeleteInvoice(inv.id)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
           🗑 Löschen
         </button>
       </div>

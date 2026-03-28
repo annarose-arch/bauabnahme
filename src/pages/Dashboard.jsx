@@ -26,6 +26,10 @@ function normalizeUiLanguage(raw) {
   return UI_LANG_CODES.has(u) ? u : "DE";
 }
 
+function invoiceIdEq(a, b) {
+  return String(a) === String(b);
+}
+
 /**
  * Stored in `reports.description` only. Matches table columns: user_id, customer, date, status, description.
  * Omits internal UI keys (_customEmployee, etc.) from row spreads.
@@ -117,8 +121,52 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     setUiLanguage((prev) => (prev === stored ? prev : stored));
   }, [view]);
   const [invoices, setInvoices] = useState(() => { try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; } });
-  const saveInvoiceToStorage = (inv) => { const u = [inv, ...invoices.filter(i => i.id !== inv.id)]; setInvoices(u); localStorage.setItem("bauabnahme_invoices", JSON.stringify(u)); };
-  const deleteInvoice = (id) => { const u = invoices.filter(i => i.id !== id); setInvoices(u); localStorage.setItem("bauabnahme_invoices", JSON.stringify(u)); };
+  const saveInvoiceToStorage = useCallback((inv) => {
+    setInvoices((prev) => {
+      const u = [inv, ...prev.filter((i) => i.id !== inv.id)];
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  /** Soft-delete: status `geloescht`, keep in localStorage (Papierkorb). */
+  const moveInvoiceToTrash = useCallback((id) => {
+    setInvoices((prev) => {
+      const u = prev.map((i) =>
+        invoiceIdEq(i.id, id)
+          ? { ...i, status: "geloescht", _preTrashStatus: i.status === "versendet" ? "versendet" : "entwurf" }
+          : i
+      );
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const restoreInvoice = useCallback((inv) => {
+    setInvoices((prev) => {
+      const u = prev.map((i) => {
+        if (!invoiceIdEq(i.id, inv.id)) return i;
+        const back = i._preTrashStatus === "versendet" || i._preTrashStatus === "entwurf" ? i._preTrashStatus : "entwurf";
+        const { _preTrashStatus, ...rest } = i;
+        return { ...rest, status: back };
+      });
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const hardDeleteInvoice = useCallback((id) => {
+    setInvoices((prev) => {
+      const u = prev.filter((i) => !invoiceIdEq(i.id, id));
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const visibleInvoices = useMemo(
+    () => invoices.filter((i) => String(i.status || "").trim().toLowerCase() !== "geloescht"),
+    [invoices]
+  );
+  const trashInvoices = useMemo(
+    () => invoices.filter((i) => String(i.status || "").trim().toLowerCase() === "geloescht"),
+    [invoices]
+  );
   const [nextRapportNr, setNextRapportNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_rapport_nr") || "1001"));
   const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
   const bumpRapportNr = () => { const n = nextRapportNr; setNextRapportNrState(n+1); localStorage.setItem("bauabnahme_next_rapport_nr", String(n+1)); return n; };
@@ -146,7 +194,19 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const openInvoice = (r) => { setInvoiceDiscount("0"); setInvoiceSkonto("0"); setInvoicePayDays("30"); setInvoiceSkontoDays("10"); setInvoiceModal(r); };
   const fetchCustomers = async () => { if(!userId) return []; const {data} = await supabase.from("customers").select("*").eq("user_id",userId).order("id",{ascending:false}); setCustomers(data||[]); return data||[]; };
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
-  const fetchReports = async () => { if(!userId) return; const{data,error}=await supabase.from("reports").select("*").eq("user_id",userId).neq("status","geloescht").order("id",{ascending:false}); if(error){showNotice("Ladefehler: "+error.message);return;} const all=data||[]; setReports(all.filter(r=>r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); };
+  const fetchReports = async () => {
+    if (!userId) return;
+    const { data, error } = await supabase.from("reports").select("*").eq("user_id", userId).order("id", { ascending: false });
+    if (error) {
+      showNotice("Ladefehler: " + error.message);
+      return;
+    }
+    const all = data || [];
+    setTrashReports(all.filter((r) => r.status === "geloescht"));
+    const active = all.filter((r) => r.status !== "geloescht");
+    setReports(active.filter((r) => r.status !== "archiviert" && r.status !== "gesendet"));
+    setArchivedReports(active.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
+  };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap: fetch* recreated each render
   useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); }, [userId,isDemo]);
   const handleCustomerSelect = (id) => {
@@ -273,7 +333,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
         <main style={{padding:20,minWidth:0}}>
           {isDemo&&<DemoBanner onNavigate={onNavigate} pBtn={pBtn} gBtn={gBtn}/>}
           <NoticeBanner message={notice}/>
-          <RenderView view={view} openedReport={openedReport} selectedCustomer={selectedCustomer} editingReport={editingReport} isDemo={isDemo} reports={reports} archivedReports={archivedReports} trashReports={trashReports} customers={customers} invoices={invoices} catalog={catalog} reportForm={reportForm} setReportForm={setReportForm} workRows={workRows} setWorkRows={setWorkRows} materialRows={materialRows} setMaterialRows={setMaterialRows} customerForm={customerForm} setCustomerForm={setCustomerForm} workSubtotal={workSubtotal} materialSubtotal={materialSubtotal} vat={vat} total={total} showCustomerSuggestions={showCustomerSuggestions} setShowCustomerSuggestions={setShowCustomerSuggestions} session={session} userEmail={userEmail} nextRapportNr={nextRapportNr} setNextRapportNrState={setNextRapportNrState} nextInvoiceNr={nextInvoiceNr} setNextInvoiceNrState={setNextInvoiceNrState} language={uiLanguage} onPickLanguage={pickUiLanguage} setOpenedReport={setOpenedReport} setSelectedCustomer={setSelectedCustomer} setEditingReport={setEditingReport} startEdit={startEdit} openPDF={openPDF} moveToTrash={moveToTrash} restore={restore} hardDelete={hardDelete} updateStatus={updateStatus} handleCustomerSelect={handleCustomerSelect} handleSave={handleSave} saveCustomer={saveCustomer} deleteCustomer={deleteCustomer} saveCatalog={saveCatalog} saveInvoiceToStorage={saveInvoiceToStorage} deleteInvoice={deleteInvoice} reopenInvoice={reopenInvoice} openInvoice={openInvoice} downloadAndEmail={downloadAndEmail} showNotice={showNotice} onLogout={onLogout} onNavigate={onNavigate} goTo={goTo} emptyForm={emptyForm} userId={userId}/>
+          <RenderView view={view} openedReport={openedReport} selectedCustomer={selectedCustomer} editingReport={editingReport} isDemo={isDemo} reports={reports} archivedReports={archivedReports} trashReports={trashReports} customers={customers} invoices={visibleInvoices} trashInvoices={trashInvoices} catalog={catalog} reportForm={reportForm} setReportForm={setReportForm} workRows={workRows} setWorkRows={setWorkRows} materialRows={materialRows} setMaterialRows={setMaterialRows} customerForm={customerForm} setCustomerForm={setCustomerForm} workSubtotal={workSubtotal} materialSubtotal={materialSubtotal} vat={vat} total={total} showCustomerSuggestions={showCustomerSuggestions} setShowCustomerSuggestions={setShowCustomerSuggestions} session={session} userEmail={userEmail} nextRapportNr={nextRapportNr} setNextRapportNrState={setNextRapportNrState} nextInvoiceNr={nextInvoiceNr} setNextInvoiceNrState={setNextInvoiceNrState} language={uiLanguage} onPickLanguage={pickUiLanguage} setOpenedReport={setOpenedReport} setSelectedCustomer={setSelectedCustomer} setEditingReport={setEditingReport} startEdit={startEdit} openPDF={openPDF} moveToTrash={moveToTrash} restore={restore} hardDelete={hardDelete} updateStatus={updateStatus} handleCustomerSelect={handleCustomerSelect} handleSave={handleSave} saveCustomer={saveCustomer} deleteCustomer={deleteCustomer} saveCatalog={saveCatalog} saveInvoiceToStorage={saveInvoiceToStorage} deleteInvoice={moveInvoiceToTrash} restoreInvoice={restoreInvoice} hardDeleteInvoice={hardDeleteInvoice} reopenInvoice={reopenInvoice} openInvoice={openInvoice} downloadAndEmail={downloadAndEmail} showNotice={showNotice} onLogout={onLogout} onNavigate={onNavigate} goTo={goTo} emptyForm={emptyForm} userId={userId}/>
         </main>
       </div>
     </div>
