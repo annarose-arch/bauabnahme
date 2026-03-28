@@ -117,7 +117,7 @@ export function KundenView({
   );
 }
 
-function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport }) {
+function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport, invoices = [] }) {
   return (
     <div
       style={{
@@ -155,9 +155,15 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
         <button type="button" onClick={() => onPDF(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>
           🖨 PDF
         </button>
-        <button type="button" onClick={() => onInvoice(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: "#7ddb9a", borderColor: "#2d7a45" }}>
-          🧾 Rechnung
-        </button>
+        {(() => {
+          const rp = parseReport(r);
+          const count = invoices.filter(inv => inv.reportData?.rapportNr === rp.rapportNr).length;
+          return (
+            <button type="button" onClick={() => onInvoice(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: count > 0 ? GOLD : "#7ddb9a", borderColor: count > 0 ? GOLD : "#2d7a45", fontWeight: count > 0 ? 700 : 400 }}>
+              {count > 0 ? "Rechnung " + count : "Rechnung"}
+            </button>
+          );
+        })()}
         <button type="button" onClick={() => onDeleteReport(r)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
           🗑 Löschen
         </button>
