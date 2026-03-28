@@ -8,6 +8,17 @@ function isLinkedReport(r, customer) {
   return String(rp.customerId) === String(customer.id) || r.customer === customer.name;
 }
 
+/** Prefer row.status; fall back to description payload (some rows can be out of sync). */
+function normalizeReportStatus(r) {
+  const top = String(r?.status ?? "").trim().toLowerCase();
+  if (top) return top;
+  const p = parseReport(r);
+  return String(p?.status ?? "").trim().toLowerCase();
+}
+
+const ACTIVE_TAB_STATUSES = new Set(["offen", "bearbeitet"]);
+const ARCHIVE_TAB_STATUSES = new Set(["archiviert", "gesendet"]);
+
 // ─── Kundenliste + Formular ────────────────────────────────────────────────
 export function KundenView({
   customerForm,
@@ -181,10 +192,14 @@ export function KundenDetail({
 }) {
   const [detailTab, setDetailTab] = useState("active");
   const m = parseCustomerMeta(customer);
-  const allCustomerReports = [...reports, ...archivedReports];
-  const linked = allCustomerReports.filter((r) => isLinkedReport(r, customer));
-  const linkedActive = linked.filter((r) => r.status === "offen" || r.status === "bearbeitet");
-  const linkedArchive = linked.filter((r) => r.status === "gesendet" || r.status === "archiviert");
+  const linkedMap = new Map();
+  for (const r of [...reports, ...archivedReports]) {
+    if (!isLinkedReport(r, customer)) continue;
+    linkedMap.set(r.id, r);
+  }
+  const linked = [...linkedMap.values()];
+  const linkedActive = linked.filter((r) => ACTIVE_TAB_STATUSES.has(normalizeReportStatus(r)));
+  const linkedArchive = linked.filter((r) => ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(r)));
   const revenue = linked.reduce((s, r) => s + toNum(parseReport(r)?.totals?.total), 0);
   const custInvoices = invoices.filter((inv) => String(inv.customerId) === String(customer.id) || inv.customer === customer.name);
 
@@ -248,7 +263,7 @@ export function KundenDetail({
           <ReportRowCard
             key={r.id}
             r={r}
-            isArchived={r.status === "archiviert" || r.status === "gesendet"}
+            isArchived={ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(r))}
             onOpenReport={onOpenReport}
             onEditReport={onEditReport}
             onPDF={onPDF}
