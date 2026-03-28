@@ -245,7 +245,8 @@ export function KundenDetail({
   const revenue = linked.reduce((s, r) => s + toNum(parseReport(r)?.totals?.total), 0);
   const custInvoices = invoices.filter((inv) => String(inv.customerId) === String(customer.id) || inv.customer === customer.name);
   const invoicesActive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "entwurf");
-  const invoicesArchive = custInvoices.filter((inv) => ["versendet","bezahlt"].includes(normalizeInvoiceStatus(inv)));
+  const invoicesGesendet = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "versendet");
+  const invoicesArchive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "bezahlt");
 
   const tabBtn = (id, label, count) => (
     <button
@@ -271,7 +272,7 @@ export function KundenDetail({
   const reportListForTab =
     detailTab === "rapporte-aktiv" ? linkedActive : detailTab === "rapporte-archiv" ? linkedArchive : null;
   const invoiceListForTab =
-    detailTab === "rechnungen-offen" ? invoicesActive : detailTab === "rechnungen-archiv" ? invoicesArchive : null;
+    detailTab === "rechnungen-offen" ? invoicesActive : detailTab === "rechnungen-gesendet" ? invoicesGesendet : detailTab === "rechnungen-archiv" ? invoicesArchive : null;
 
   const emptyTabHint =
     detailTab === "rapporte-aktiv"
@@ -310,6 +311,7 @@ export function KundenDetail({
         {tabBtn("rapporte-aktiv", "Rapporte Aktiv", linkedActive.length)}
         {tabBtn("rapporte-archiv", "Rapporte Archiv", linkedArchive.length)}
         {tabBtn("rechnungen-offen", "Rechnungen Offen", invoicesActive.length)}
+        {tabBtn("rechnungen-gesendet", "Rechnungen Gesendet", invoicesGesendet.length)}
         {tabBtn("rechnungen-archiv", "Rechnungen Archiv", invoicesArchive.length)}
       </div>
 
