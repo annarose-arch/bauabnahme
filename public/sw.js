@@ -1,4 +1,4 @@
-const CACHE_NAME = "bauabnahme-v1";
+const CACHE_NAME = "bauabnahme-v3";
 const OFFLINE_URLS = ["/", "/index.html", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
