@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "../supabase.js";
 import { BG, PANEL, TEXT, GOLD, BORDER, iStyle, pBtn, gBtn } from "../lib/constants.js";
 import { toNum, calcHours, parseReport, parseCustomerMeta, formatDateCH } from "../lib/utils.js";
@@ -6,6 +6,85 @@ import { buildRapportHtml, buildRechnungHtml, buildSwissQR } from "../lib/pdfBui
 import { NoticeBanner, DemoBanner } from "../components/UI.jsx";
 import { RechnungModal } from "../features/rechnungen/RechnungenViews.jsx";
 import { RenderView } from "./RenderView.jsx";
+
+/** `reports.date` is Postgres `date` — must be YYYY-MM-DD, not a full ISO timestamp. */
+function toPgDate(value) {
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+  }
+  const d = value instanceof Date ? value : new Date(value);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
+}
+
+const UI_LANG_CODES = new Set(["DE", "FR", "IT", "EN"]);
+function normalizeUiLanguage(raw) {
+  const u = String(raw || "DE").toUpperCase();
+  return UI_LANG_CODES.has(u) ? u : "DE";
+}
+
+/**
+ * Stored in `reports.description` only. Matches table columns: user_id, customer, date, status, description.
+ * Omits internal UI keys (_customEmployee, etc.) from row spreads.
+ */
+function buildReportDescriptionPayload({
+  rapportNr,
+  reportForm,
+  sp,
+  workRows,
+  materialRows,
+  expenses,
+  subtotal,
+  vat,
+  total
+}) {
+  return {
+    rapportNr,
+    customer: reportForm.customer.trim(),
+    customerEmail: (reportForm.customerEmail || "").trim(),
+    address: (reportForm.address || "").trim(),
+    zip: reportForm.zip || "",
+    city: reportForm.city || "",
+    orderNo: (reportForm.orderNo || "").trim(),
+    date: reportForm.date,
+    status: reportForm.status,
+    customerId: reportForm.selectedCustomerId || null,
+    projectId: reportForm.selectedProjectId || null,
+    projectName: sp?.name || reportForm.projectSearch || "",
+    photos: {
+      before: reportForm.beforePhoto || "",
+      after: reportForm.afterPhoto || ""
+    },
+    workRows: workRows.map((r) => ({
+      employee: r.employee || "",
+      from: r.from || "",
+      to: r.to || "",
+      rate: r.rate || "",
+      hours: calcHours(r.from, r.to),
+      total: calcHours(r.from, r.to) * toNum(r.rate)
+    })),
+    materialRows: materialRows.map((r) => ({
+      name: r.name || "",
+      qty: r.qty || "",
+      unit: r.unit || "",
+      price: r.price || "",
+      total: toNum(r.qty) * toNum(r.price)
+    })),
+    costs: { expenses, notes: reportForm.notes || "" },
+    totals: {
+      subtotal: Number.isFinite(subtotal) ? subtotal : 0,
+      vat: Number.isFinite(vat) ? vat : 0,
+      total: Number.isFinite(total) ? total : 0
+    },
+    signature: {
+      name: reportForm.signerName || "",
+      image: reportForm.signatureImage || ""
+    }
+  };
+}
 
 export default function Dashboard({ session, onLogout, onNavigate, isDemo = false }) {
   const userId    = session?.user?.id;
@@ -19,21 +98,24 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [reports, setReports]                 = useState([]);
   const [trashReports, setTrashReports]       = useState([]);
   const [archivedReports, setArchivedReports] = useState([]);
-  const [customers, setCustomersState] = useState([]);
-  const setCustomers = useCallback(
-    (valueOrFn) => {
-      setCustomersState((prev) => {
-        const next = typeof valueOrFn === "function" ? valueOrFn(prev) : valueOrFn;
-        const itemCount = Array.isArray(next) ? next.length : 0;
-        console.log("[Dashboard] setCustomers", { itemCount, userId: userId ?? null, isDemo });
-        return next;
-      });
-    },
-    [userId, isDemo]
-  );
+  const [customers, setCustomers]             = useState([]);
   const [projects, setProjects]               = useState([]);
   const [notice, setNotice]                   = useState("");
   const showNotice = useCallback((msg) => { setNotice(msg); setTimeout(() => setNotice(""), 4000); }, []);
+  const [uiLanguage, setUiLanguage] = useState(() =>
+    normalizeUiLanguage(localStorage.getItem("bauabnahme_language_pref"))
+  );
+  const pickUiLanguage = useCallback((code) => {
+    const next = normalizeUiLanguage(code);
+    setUiLanguage(next);
+    localStorage.setItem("bauabnahme_language_pref", next);
+    window.dispatchEvent(new CustomEvent("bauabnahme-language-change", { detail: next }));
+  }, []);
+  useEffect(() => {
+    if (view !== "settings") return;
+    const stored = normalizeUiLanguage(localStorage.getItem("bauabnahme_language_pref"));
+    setUiLanguage((prev) => (prev === stored ? prev : stored));
+  }, [view]);
   const [invoices, setInvoices] = useState(() => { try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; } });
   const saveInvoiceToStorage = (inv) => { const u = [inv, ...invoices.filter(i => i.id !== inv.id)]; setInvoices(u); localStorage.setItem("bauabnahme_invoices", JSON.stringify(u)); };
   const deleteInvoice = (id) => { const u = invoices.filter(i => i.id !== id); setInvoices(u); localStorage.setItem("bauabnahme_invoices", JSON.stringify(u)); };
@@ -62,85 +144,100 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [invoicePayDays, setInvoicePayDays]       = useState("30");
   const [invoiceSkontoDays, setInvoiceSkontoDays] = useState("10");
   const openInvoice = (r) => { setInvoiceDiscount("0"); setInvoiceSkonto("0"); setInvoicePayDays("30"); setInvoiceSkontoDays("10"); setInvoiceModal(r); };
-  const fetchCustomers = async () => {
-    console.log('fetchCustomers called, userId:', userId);
-    if (!userId) {
-      console.log("fetchCustomers: no userId");
-      return [];
-    }
-    const { data } = await supabase.from("customers").select("*").eq("user_id", userId).order("id", { ascending: false });
-    console.log('fetchCustomers result:', data?.length);
-    setCustomers(data || []);
-    return data || [];
-  };
+  const fetchCustomers = async () => { if(!userId) return []; const {data} = await supabase.from("customers").select("*").eq("user_id",userId).order("id",{ascending:false}); setCustomers(data||[]); return data||[]; };
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
-  const fetchReports = async () => {
-    if (!userId) return;
-    const { data, error } = await supabase.from("reports").select("*").eq("user_id", userId).order("id", { ascending: false });
-    if (error) {
-      showNotice("Ladefehler: " + error.message);
-      return;
-    }
-    const all = data || [];
-    setReports(all.filter((r) => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
-    setArchivedReports(all.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
-    setTrashReports(all.filter((r) => r.status === "geloescht"));
+  const fetchReports = async () => { if(!userId) return; const{data,error}=await supabase.from("reports").select("*").eq("user_id",userId).neq("status","geloescht").order("id",{ascending:false}); if(error){showNotice("Ladefehler: "+error.message);return;} const all=data||[]; setReports(all.filter(r=>r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap: fetch* recreated each render
+  useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); }, [userId,isDemo]);
+  const handleCustomerSelect = (id) => {
+    const c = customers.find((x) => String(x.id) === String(id));
+    if (!c) return;
+    const m = parseCustomerMeta(c);
+    setShowCustomerSuggestions(false);
+    setReportForm((p) => ({
+      ...p,
+      selectedCustomerId: String(c.id),
+      selectedProjectId: "",
+      customer: c.name || "",
+      customerEmail: c.email || "",
+      address: m.address || "",
+      zip: m.zip || "",
+      city: m.city || ""
+    }));
   };
-  const prevUserIdRef = useRef(undefined);
-  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- bootstrap lists from demo storage or Supabase */
-  useEffect(() => {
-    if (isDemo) {
-      const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
-      setReports(all.filter(r => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
-      setArchivedReports(all.filter(r => r.status === "archiviert" || r.status === "gesendet"));
-      setTrashReports(all.filter(r => r.status === "geloescht"));
-      return;
-    }
-    if (!userId) return;
-    fetchCustomers();
-    fetchReports();
-  }, [userId, isDemo]);
-  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-  const handleCustomerSelect = (id) => { const c=customers.find(x=>String(x.id)===String(id)); if(!c) return; const m=parseCustomerMeta(c); setReportForm(p=>({...p,selectedCustomerId:String(c.id),selectedProjectId:"",customer:c.name||"",customerEmail:c.email||"",address:m.address||"",zip:m.zip||"",city:m.city||""})); };
   const handleSave = async () => {
-    if(!reportForm.customer.trim()){showNotice("Bitte Firmenname eingeben.");return;}
-    const sp=customerProjects.find(p=>String(p.id)===String(reportForm.selectedProjectId));
-    const rapportNr=editingReport?(parseReport(editingReport).rapportNr||editingReport.id):bumpRapportNr();
-    const payload={rapportNr,customer:reportForm.customer.trim(),customerEmail:reportForm.customerEmail.trim(),address:reportForm.address.trim(),zip:reportForm.zip||"",city:reportForm.city||"",orderNo:reportForm.orderNo.trim(),date:reportForm.date,status:reportForm.status,customerId:reportForm.selectedCustomerId||null,projectId:reportForm.selectedProjectId||null,projectName:sp?.name||reportForm.projectSearch||"",photos:{before:reportForm.beforePhoto,after:reportForm.afterPhoto},workRows:workRows.map(r=>({...r,hours:calcHours(r.from,r.to),total:calcHours(r.from,r.to)*toNum(r.rate)})),materialRows:materialRows.map(r=>({...r,total:toNum(r.qty)*toNum(r.price)})),costs:{expenses,notes:reportForm.notes},totals:{subtotal,vat,total},signature:{name:reportForm.signerName,image:reportForm.signatureImage}};
-    const row={user_id:userId,customer:reportForm.customer.trim(),date:reportForm.date,status:reportForm.status,description:payload};
-    if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); if(editingReport){const i=all.findIndex(r=>r.id===editingReport.id);if(i>=0)all[i]={...row,id:editingReport.id};}else all.unshift({...row,id:Date.now(),created_at:new Date().toISOString()}); localStorage.setItem("demo_reports",JSON.stringify(all)); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet"));}
-    else{let err; if(editingReport){({error:err}=await supabase.from("reports").update(row).eq("id",editingReport.id).eq("user_id",userId));}else{({error:err}=await supabase.from("reports").insert([row]));} if(err){showNotice("❌ Fehler: "+(err.message||JSON.stringify(err)));return;} await fetchReports(); goTo("reports");}
-    setEditingReport(null); setReportForm(emptyForm); setWorkRows([{employee:"",from:"",to:"",rate:""}]); setMaterialRows([{name:"",qty:"",unit:"",price:""}]); showNotice(editingReport?"Rapport aktualisiert.":"Rapport gespeichert."); goTo("reports");
-  };
-  const startEdit = (r) => { const p=parseReport(r); setReportForm({selectedCustomerId:String(p.customerId||""),selectedProjectId:String(p.projectId||""),customer:r.customer||"",address:p.address||"",zip:p.zip||"",city:p.city||"",orderNo:p.orderNo||"",customerEmail:p.customerEmail||"",date:r.date||emptyForm.date,status:r.status||"offen",expenses:p.costs?.expenses?String(p.costs.expenses):"",notes:p.costs?.notes||"",beforePhoto:p.photos?.before||"",afterPhoto:p.photos?.after||"",signerName:p.signature?.name||"",signatureImage:p.signature?.image||""}); setWorkRows(p.workRows?.length?p.workRows.map(r=>({employee:r.employee||"",from:r.from||"",to:r.to||"",rate:r.rate?String(r.rate):""})):[{employee:"",from:"",to:"",rate:""}]); setMaterialRows(p.materialRows?.length?p.materialRows.map(r=>({name:r.name||"",qty:r.qty?String(r.qty):"",unit:r.unit||"",price:r.price?String(r.price):""})):[{name:"",qty:"",unit:"",price:""}]); setEditingReport(r); setOpenedReport(null); setView("new-report"); };
-  const moveToTrash = async (r) => {
-    if (!window.confirm("Löschen?")) return;
-    const deleted = { ...r, status: "geloescht" };
-    if (isDemo) {
-      const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
-      localStorage.setItem("demo_reports", JSON.stringify(all.map((x) => (x.id === r.id ? deleted : x))));
-    } else {
-      const { data: updated, error } = await supabase
-        .from("reports")
-        .update({ status: "geloescht" })
-        .eq("id", r.id)
-        .eq("user_id", userId)
-        .select("id")
-        .maybeSingle();
-      if (error) {
-        showNotice("Fehler: " + error.message);
-        return;
-      }
-      if (!updated) {
-        showNotice("Rapport konnte nicht in den Papierkorb verschoben werden (keine Zeile aktualisiert).");
-        return;
-      }
+    setShowCustomerSuggestions(false);
+    if (!reportForm.customer.trim()) {
+      showNotice("Bitte Firmenname eingeben.");
+      return;
     }
-    setReports((p) => p.filter((x) => x.id !== r.id));
-    setArchivedReports((p) => p.filter((x) => x.id !== r.id));
-    setTrashReports((p) => [...p, deleted]);
-    if (openedReport?.id === r.id) setOpenedReport(null);
+    if (!isDemo && !userId) {
+      showNotice("Nicht angemeldet.");
+      return;
+    }
+    const sp = customerProjects.find((p) => String(p.id) === String(reportForm.selectedProjectId));
+    const wasEditing = !!editingReport;
+    const rapportNr = editingReport ? (parseReport(editingReport).rapportNr || editingReport.id) : bumpRapportNr();
+    const payload = buildReportDescriptionPayload({
+      rapportNr,
+      reportForm,
+      sp,
+      workRows,
+      materialRows,
+      expenses,
+      subtotal,
+      vat,
+      total
+    });
+    const pgDate = toPgDate(reportForm.date);
+    const statusStr = String(reportForm.status || "offen");
+    const customerStr = reportForm.customer.trim();
+    const insertRow = {
+      user_id: userId,
+      customer: customerStr,
+      date: pgDate,
+      status: statusStr,
+      description: payload
+    };
+    const updateRow = {
+      customer: customerStr,
+      date: pgDate,
+      status: statusStr,
+      description: payload
+    };
+    if (isDemo) {
+      const row = { ...insertRow };
+      const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
+      if (editingReport) {
+        const i = all.findIndex((r) => r.id === editingReport.id);
+        if (i >= 0) all[i] = { ...row, id: editingReport.id };
+      } else {
+        all.unshift({ ...row, id: Date.now(), created_at: new Date().toISOString() });
+      }
+      localStorage.setItem("demo_reports", JSON.stringify(all));
+      setReports(all.filter((r) => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
+    } else {
+      let err;
+      if (editingReport) {
+        ({ error: err } = await supabase.from("reports").update(updateRow).eq("id", editingReport.id).eq("user_id", userId));
+      } else {
+        ({ error: err } = await supabase.from("reports").insert(insertRow));
+      }
+      if (err) {
+        showNotice("❌ Fehler: " + (err.message || JSON.stringify(err)));
+        return;
+      }
+      await fetchReports();
+    }
+    setEditingReport(null);
+    setReportForm(emptyForm);
+    setWorkRows([{ employee: "", from: "", to: "", rate: "" }]);
+    setMaterialRows([{ name: "", qty: "", unit: "", price: "" }]);
+    showNotice(wasEditing ? "Rapport aktualisiert." : "Rapport gespeichert.");
+    goTo("reports");
   };
+  const startEdit = (r) => { const p=parseReport(r); setReportForm({selectedCustomerId:String(p.customerId||""),selectedProjectId:String(p.projectId||""),customer:r.customer||"",address:p.address||"",zip:p.zip||"",city:p.city||"",orderNo:p.orderNo||"",customerEmail:p.customerEmail||"",date:toPgDate(r.date||emptyForm.date),status:r.status||"offen",expenses:p.costs?.expenses?String(p.costs.expenses):"",notes:p.costs?.notes||"",beforePhoto:p.photos?.before||"",afterPhoto:p.photos?.after||"",signerName:p.signature?.name||"",signatureImage:p.signature?.image||""}); setWorkRows(p.workRows?.length?p.workRows.map(r=>({employee:r.employee||"",from:r.from||"",to:r.to||"",rate:r.rate?String(r.rate):""})):[{employee:"",from:"",to:"",rate:""}]); setMaterialRows(p.materialRows?.length?p.materialRows.map(r=>({name:r.name||"",qty:r.qty?String(r.qty):"",unit:r.unit||"",price:r.price?String(r.price):""})):[{name:"",qty:"",unit:"",price:""}]); setEditingReport(r); setOpenedReport(null); setView("new-report"); };
+  const moveToTrash = async (r) => { if(!window.confirm("Löschen?")) return; const deleted={...r,status:"geloescht"}; if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?deleted:x)));}else{const{error}=await supabase.from("reports").update({status:"geloescht"}).eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setReports(p=>p.filter(x=>x.id!==r.id)); setArchivedReports(p=>p.filter(x=>x.id!==r.id)); setTrashReports(p=>[...p,deleted]); if(openedReport?.id===r.id) setOpenedReport(null); };
   const restore = async (r) => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?{...x,status:"offen"}:x)));}else{const{error}=await supabase.from("reports").update({status:"offen"}).eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setTrashReports(p=>p.filter(x=>x.id!==r.id)); setReports(p=>[{...r,status:"offen"},...p]); };
   const hardDelete = async (r) => { if(!window.confirm("Endgültig löschen?")) return; if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]").filter(x=>x.id!==r.id); localStorage.setItem("demo_reports",JSON.stringify(all)); setTrashReports(all.filter(x=>x.status==="geloescht"));}else{const{error}=await supabase.from("reports").delete().eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setTrashReports(p=>p.filter(x=>x.id!==r.id)); showNotice("Gelöscht."); };
   const updateStatus = async (id, status) => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]").map(x=>x.id===id?{...x,status}:x); localStorage.setItem("demo_reports",JSON.stringify(all)); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setOpenedReport(null); return;} const{error}=await supabase.from("reports").update({status}).eq("id",id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;} await fetchReports(); setOpenedReport(null); if(status==="archiviert"||status==="gesendet") showNotice("✅ Rapport zum Kunden verschoben."); };
@@ -149,8 +246,8 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const getFirmMeta = () => { const meta=session?.user?.user_metadata||{}; return {firmName:meta.company_name||"",firmLogo:meta.company_logo||"",firmAddress:meta.address?`${meta.address}, ${meta.zip||""} ${meta.city||""}`:"",firmContact:[meta.first_name,meta.last_name].filter(Boolean).join(" "),firmPhone:meta.phone?`Tel: ${meta.phone}`:"",firmEmail:meta.email||userEmail,firmIban:meta.iban||"",firmZip:meta.zip||"",firmCity:meta.city||""}; };
   const openPDF = (report) => { const p=parseReport(report); const{firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail}=getFirmMeta(); const isPro=localStorage.getItem("bauabnahme_plan")==="pro"||localStorage.getItem("bauabnahme_plan")==="team"; const isDemoMode=!userId; const email=p.customerEmail||""; const subj=`Rapport Nr. ${p.rapportNr||report.id} – ${report.customer||"-"} – ${formatDateCH(report.date)}`; const body=`Guten Tag\n\nIm Anhang finden Sie den Rapport.\n\nKunde: ${report.customer||"-"}\nDatum: ${formatDateCH(report.date)}\nTOTAL CHF: ${Number(p.totals?.total||0).toFixed(2)}\n\nFreundliche Grüsse\n${firmContact||firmName}`; const mailto=`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`; const win=window.open("","_blank","width=980,height=760"); if(!win) return; win.document.write(buildRapportHtml(report,p,firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail,isPro,isDemoMode,mailto,customers,parseCustomerMeta)); win.document.close(); };
   const downloadAndEmail = async (report) => { openPDF(report); await updateStatus(report.id,"archiviert"); showNotice("✅ Rapport gesendet und ins Kundenarchiv verschoben."); };
-  const generateInvoice = async (report, discountPct, skontoPct, payDays, skontoDays) => { setInvoiceModal(null); const p=parseReport(report); const{firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail,firmIban,firmZip,firmCity}=getFirmMeta(); const isPro=localStorage.getItem("bauabnahme_plan")==="pro"||localStorage.getItem("bauabnahme_plan")==="team"; const isDemoMode=!userId; const custRecord=customers.find(c=>String(c.id)===String(p.customerId)||c.name===report.customer); const custMeta=custRecord?parseCustomerMeta(custRecord):{}; const custStreet=p.address||custMeta.address||""; const custZip=p.zip||custMeta.zip||""; const custCity=p.city||custMeta.city||""; const custAddr=[custStreet,[custZip,custCity].filter(Boolean).join(" ")].filter(Boolean).join("\n"); const tot=p.totals||{},costs=p.costs||{}; const invoiceNr=`RE-${bumpInvoiceNr()}`; const validWork=(p.workRows||[]).filter(r=>r.employee||toNum(r.hours)>0); const validMat=(p.materialRows||[]).filter(r=>r.name||toNum(r.qty)>0); const sub=Number(tot.subtotal||0); const discountAmt=sub*(discountPct/100); const subAD=sub-discountAmt; const vatAmt=subAD*0.081; const totalAmount=subAD+vatAmt+toNum(costs.expenses); const skontoAmt=totalAmount*(skontoPct/100); const payDaysNum=parseInt(payDays)||30; const skontoDaysNum=parseInt(skontoDays)||10; const dueDate=formatDateCH(new Date(new Date(report.date).getTime()+payDaysNum*86400000).toISOString().slice(0,10)); const skontoDueDate=formatDateCH(new Date(new Date(report.date).getTime()+skontoDaysNum*86400000).toISOString().slice(0,10)); const qrUrl=firmIban?buildSwissQR(firmIban,totalAmount,firmName||firmContact,firmAddress,firmZip,firmCity,report.customer||"",custAddr,"","","",`Rechnung ${invoiceNr}`):""; const firmDetails=[firmContact&&firmName?firmContact:"",firmAddress,firmPhone,firmEmail].filter(Boolean).join("<br/>"); const win=window.open("","_blank","width=980,height=860"); if(!win) return; win.document.write(buildRechnungHtml({invoiceNr,firmName,firmLogo,firmContact,firmAddress,firmDetails,name:report.customer||"-",custAddr,custStreet,custZip,custCity,validWork,validMat,costs,subtotal:sub,discountPct,discountAmt,subtotalAfterDiscount:subAD,vat:vatAmt,totalAmount,skontoPct,skontoAmt,payDays:payDaysNum,skontoDays:skontoDaysNum,dueDate,skontoDueDate,qrUrl,isPro,isDemoMode,reportDate:report.date,projectName:p.projectName,custEmail:(p.customerEmail||custRecord?.email||"").trim()})); win.document.close(); saveInvoiceToStorage({id:Date.now(),invoiceNr,customer:report.customer,customerId:p.customerId,date:report.date,totalAmount,status:"entwurf",reportData:p}); };
-  const reopenInvoice = (inv) => { const win=window.open("","_blank","width=980,height=860"); if(!win) return; const{firmName,firmLogo,firmContact,firmAddress,firmPhone,firmEmail}=getFirmMeta(); const firmDetails=[firmContact&&firmName?firmContact:"",firmAddress,firmPhone,firmEmail].filter(Boolean).join("<br/>"); const p=inv.reportData||{}; win.document.write(buildRechnungHtml({invoiceNr:inv.invoiceNr,firmName,firmLogo,firmContact,firmAddress,firmDetails,name:inv.customer||"-",custAddr:"",custStreet:p.address||"",custZip:p.zip||"",custCity:p.city||"",validWork:(p.workRows||[]).filter(r=>r.employee||toNum(r.hours)>0),validMat:(p.materialRows||[]).filter(r=>r.name||toNum(r.qty)>0),costs:p.costs||{},subtotal:Number(p.totals?.subtotal||0),discountPct:0,discountAmt:0,subtotalAfterDiscount:Number(p.totals?.subtotal||0),vat:Number(p.totals?.vat||0),totalAmount:inv.totalAmount,skontoPct:0,skontoAmt:0,payDays:30,skontoDays:10,dueDate:"-",skontoDueDate:"-",qrUrl:"",isPro:localStorage.getItem("bauabnahme_plan")==="pro",isDemoMode:!userId,reportDate:inv.date,projectName:p.projectName,custEmail:(p.customerEmail||customers.find(c=>String(c.id)===String(inv.customerId))?.email||"").trim()})); win.document.close(); };
+  const generateInvoice = async (report, discountPct, skontoPct, payDays, skontoDays) => { setInvoiceModal(null); const p=parseReport(report); const{firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail,firmIban,firmZip,firmCity}=getFirmMeta(); const isPro=localStorage.getItem("bauabnahme_plan")==="pro"||localStorage.getItem("bauabnahme_plan")==="team"; const isDemoMode=!userId; const custRecord=customers.find(c=>String(c.id)===String(p.customerId)||c.name===report.customer); const custMeta=custRecord?parseCustomerMeta(custRecord):{}; const custStreet=p.address||custMeta.address||""; const custZip=p.zip||custMeta.zip||""; const custCity=p.city||custMeta.city||""; const custAddr=[custStreet,[custZip,custCity].filter(Boolean).join(" ")].filter(Boolean).join("\n"); const tot=p.totals||{},costs=p.costs||{}; const invoiceNr=`RE-${bumpInvoiceNr()}`; const validWork=(p.workRows||[]).filter(r=>r.employee||toNum(r.hours)>0); const validMat=(p.materialRows||[]).filter(r=>r.name||toNum(r.qty)>0); const sub=Number(tot.subtotal||0); const discountAmt=sub*(discountPct/100); const subAD=sub-discountAmt; const vatAmt=subAD*0.081; const totalAmount=subAD+vatAmt+toNum(costs.expenses); const skontoAmt=totalAmount*(skontoPct/100); const payDaysNum=parseInt(payDays)||30; const skontoDaysNum=parseInt(skontoDays)||10; const dueDate=formatDateCH(new Date(new Date(report.date).getTime()+payDaysNum*86400000).toISOString().slice(0,10)); const skontoDueDate=formatDateCH(new Date(new Date(report.date).getTime()+skontoDaysNum*86400000).toISOString().slice(0,10)); const qrUrl=firmIban?buildSwissQR(firmIban,totalAmount,firmName||firmContact,firmAddress,firmZip,firmCity,report.customer||"",custAddr,"","","",`Rechnung ${invoiceNr}`):""; const firmDetails=[firmContact&&firmName?firmContact:"",firmAddress,firmPhone,firmEmail].filter(Boolean).join("<br/>"); const win=window.open("","_blank","width=980,height=860"); if(!win) return; win.document.write(buildRechnungHtml({invoiceNr,firmName,firmLogo,firmContact,firmAddress,firmDetails,name:report.customer||"-",custAddr,custStreet,custZip,custCity,validWork,validMat,costs,subtotal:sub,discountPct,discountAmt,subtotalAfterDiscount:subAD,vat:vatAmt,totalAmount,skontoPct,skontoAmt,payDays:payDaysNum,skontoDays:skontoDaysNum,dueDate,skontoDueDate,qrUrl,isPro,isDemoMode,reportDate:report.date,projectName:p.projectName,rapportNr:p.rapportNr||String(report.id),custEmail:(p.customerEmail||custRecord?.email||"").trim()})); win.document.close(); saveInvoiceToStorage({id:Date.now(),invoiceNr,customer:report.customer,customerId:p.customerId,date:report.date,totalAmount,status:"entwurf",reportData:p}); };
+  const reopenInvoice = (inv) => { const win=window.open("","_blank","width=980,height=860"); if(!win) return; const{firmName,firmLogo,firmContact,firmAddress,firmPhone,firmEmail}=getFirmMeta(); const firmDetails=[firmContact&&firmName?firmContact:"",firmAddress,firmPhone,firmEmail].filter(Boolean).join("<br/>"); const p=inv.reportData||{}; win.document.write(buildRechnungHtml({invoiceNr:inv.invoiceNr,firmName,firmLogo,firmContact,firmAddress,firmDetails,name:inv.customer||"-",custAddr:"",custStreet:p.address||"",custZip:p.zip||"",custCity:p.city||"",validWork:(p.workRows||[]).filter(r=>r.employee||toNum(r.hours)>0),validMat:(p.materialRows||[]).filter(r=>r.name||toNum(r.qty)>0),costs:p.costs||{},subtotal:Number(p.totals?.subtotal||0),discountPct:0,discountAmt:0,subtotalAfterDiscount:Number(p.totals?.subtotal||0),vat:Number(p.totals?.vat||0),totalAmount:inv.totalAmount,skontoPct:0,skontoAmt:0,payDays:30,skontoDays:10,dueDate:"-",skontoDueDate:"-",qrUrl:"",isPro:localStorage.getItem("bauabnahme_plan")==="pro",isDemoMode:!userId,reportDate:inv.date,projectName:p.projectName,rapportNr:p.rapportNr||"",custEmail:(p.customerEmail||customers.find(c=>String(c.id)===String(inv.customerId))?.email||"").trim()})); win.document.close(); };
   const navItems = [{key:"home",label:"Start"},{key:"customers",label:"Kunden"},{key:"catalog",label:"Katalog"},{key:"new-report",label:"Neuer Rapport"},{key:"reports",label:"Offene Rapporte"},{key:"invoices",label:"Rechnungen"},{key:"trash",label:"Papierkorb"},{key:"settings",label:"Einstellungen"}];
   const activeView = editingReport?"new-report":openedReport?"reports":selectedCustomer?"customers":view;
   return (
@@ -176,7 +273,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
         <main style={{padding:20,minWidth:0}}>
           {isDemo&&<DemoBanner onNavigate={onNavigate} pBtn={pBtn} gBtn={gBtn}/>}
           <NoticeBanner message={notice}/>
-          <RenderView view={view} openedReport={openedReport} selectedCustomer={selectedCustomer} editingReport={editingReport} isDemo={isDemo} reports={reports} archivedReports={archivedReports} trashReports={trashReports} customers={customers} invoices={invoices} catalog={catalog} reportForm={reportForm} setReportForm={setReportForm} workRows={workRows} setWorkRows={setWorkRows} materialRows={materialRows} setMaterialRows={setMaterialRows} customerForm={customerForm} setCustomerForm={setCustomerForm} workSubtotal={workSubtotal} materialSubtotal={materialSubtotal} vat={vat} total={total} showCustomerSuggestions={showCustomerSuggestions} setShowCustomerSuggestions={setShowCustomerSuggestions} session={session} userEmail={userEmail} nextRapportNr={nextRapportNr} setNextRapportNrState={setNextRapportNrState} nextInvoiceNr={nextInvoiceNr} setNextInvoiceNrState={setNextInvoiceNrState} setOpenedReport={setOpenedReport} setSelectedCustomer={setSelectedCustomer} setEditingReport={setEditingReport} startEdit={startEdit} openPDF={openPDF} moveToTrash={moveToTrash} restore={restore} hardDelete={hardDelete} updateStatus={updateStatus} handleCustomerSelect={handleCustomerSelect} handleSave={handleSave} saveCustomer={saveCustomer} deleteCustomer={deleteCustomer} saveCatalog={saveCatalog} saveInvoiceToStorage={saveInvoiceToStorage} deleteInvoice={deleteInvoice} reopenInvoice={reopenInvoice} openInvoice={openInvoice} downloadAndEmail={downloadAndEmail} showNotice={showNotice} onLogout={onLogout} onNavigate={onNavigate} goTo={goTo} emptyForm={emptyForm} userId={userId}/>
+          <RenderView view={view} openedReport={openedReport} selectedCustomer={selectedCustomer} editingReport={editingReport} isDemo={isDemo} reports={reports} archivedReports={archivedReports} trashReports={trashReports} customers={customers} invoices={invoices} catalog={catalog} reportForm={reportForm} setReportForm={setReportForm} workRows={workRows} setWorkRows={setWorkRows} materialRows={materialRows} setMaterialRows={setMaterialRows} customerForm={customerForm} setCustomerForm={setCustomerForm} workSubtotal={workSubtotal} materialSubtotal={materialSubtotal} vat={vat} total={total} showCustomerSuggestions={showCustomerSuggestions} setShowCustomerSuggestions={setShowCustomerSuggestions} session={session} userEmail={userEmail} nextRapportNr={nextRapportNr} setNextRapportNrState={setNextRapportNrState} nextInvoiceNr={nextInvoiceNr} setNextInvoiceNrState={setNextInvoiceNrState} language={uiLanguage} onPickLanguage={pickUiLanguage} setOpenedReport={setOpenedReport} setSelectedCustomer={setSelectedCustomer} setEditingReport={setEditingReport} startEdit={startEdit} openPDF={openPDF} moveToTrash={moveToTrash} restore={restore} hardDelete={hardDelete} updateStatus={updateStatus} handleCustomerSelect={handleCustomerSelect} handleSave={handleSave} saveCustomer={saveCustomer} deleteCustomer={deleteCustomer} saveCatalog={saveCatalog} saveInvoiceToStorage={saveInvoiceToStorage} deleteInvoice={deleteInvoice} reopenInvoice={reopenInvoice} openInvoice={openInvoice} downloadAndEmail={downloadAndEmail} showNotice={showNotice} onLogout={onLogout} onNavigate={onNavigate} goTo={goTo} emptyForm={emptyForm} userId={userId}/>
         </main>
       </div>
     </div>

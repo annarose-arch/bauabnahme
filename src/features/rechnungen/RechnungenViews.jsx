@@ -9,28 +9,24 @@ export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
       <h2 style={{ marginTop: 0 }}>🧾 Rechnungen</h2>
       {invoices.length === 0 && <p style={{ color: MUTED }}>Noch keine Rechnungen erstellt.</p>}
       <div style={{ display: "grid", gap: 10 }}>
-        {invoices.map(inv => (
+        {invoices.map(inv => {
+          const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
+          const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
+          return (
           <div key={inv.id} style={{ border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`, borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-              <div>
-                <div style={{ fontWeight: 700, color: GOLD, fontSize: 15 }}>{inv.invoiceNr}</div>
-                <div style={{ color: TEXT, fontSize: 14 }}>{inv.customer}</div>
-                <div style={{ color: MUTED, fontSize: 12, marginTop: 2 }}>
-                  {formatDateCH(inv.date)}{inv.reportData?.projectName && ` · ${inv.reportData.projectName}`}
-                </div>
+              <div style={{ minWidth: 0, flex: "1 1 200px" }}>
+                <div style={{ fontWeight: 700, color: GOLD, fontSize: 14, lineHeight: 1.45, wordBreak: "break-word" }}>{summaryLine}</div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: 800, fontSize: 17, color: TEXT }}>CHF {Number(inv.totalAmount).toFixed(2)}</div>
-                <div style={{ marginTop: 4 }}>
-                  <span style={{
-                    fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 700,
-                    background: inv.status === "versendet" ? "rgba(212,168,83,0.15)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`,
-                    color: inv.status === "versendet" ? GOLD : MUTED,
-                  }}>
-                    {inv.status === "versendet" ? "✅ Versendet" : "📝 Entwurf"}
-                  </span>
-                </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <span style={{
+                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 700,
+                  background: inv.status === "versendet" ? "rgba(212,168,83,0.15)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`,
+                  color: inv.status === "versendet" ? GOLD : MUTED,
+                }}>
+                  {inv.status === "versendet" ? "✅ Versendet" : "📝 Entwurf"}
+                </span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
@@ -43,7 +39,8 @@ export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
               <button type="button" onClick={() => { if (window.confirm("Rechnung löschen?")) onDelete(inv.id); }} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>🗑 Löschen</button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </SectionCard>
   );
