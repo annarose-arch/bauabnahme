@@ -97,11 +97,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
       setTrashReports(all.filter((r) => r.status === "geloescht"));
       return;
     }
-    const prev = prevUserIdRef.current;
-    const now = userId ?? null;
-    const becameAuthenticated = prev == null && now != null;
-    prevUserIdRef.current = now;
-    if (!becameAuthenticated) return;
+    if (!userId) return;
     fetchCustomers().then((c) => fetchProjects(c));
     fetchReports();
   }, [userId, isDemo]);
