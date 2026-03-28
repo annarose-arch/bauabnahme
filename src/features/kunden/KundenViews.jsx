@@ -166,49 +166,56 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
   );
 }
 
+/** Same invoice row layout as RechnungenViews.jsx (summary line + badge + actions). */
 function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onDeleteInvoice }) {
-  const sent = normalizeInvoiceStatus(inv) === "versendet";
+  const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
+  const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
   return (
     <div
       style={{
-        border: `1px solid ${sent ? GOLD : BORDER}`,
+        border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`,
         borderRadius: 10,
         padding: "12px 14px",
         background: "rgba(255,255,255,0.02)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div>
-          <strong style={{ color: GOLD }}>{inv.invoiceNr}</strong>
-          <span style={{ color: MUTED, fontSize: 12, marginLeft: 8 }}>{formatDateCH(inv.date)}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+        <div style={{ minWidth: 0, flex: "1 1 200px" }}>
+          <div style={{ fontWeight: 700, color: GOLD, fontSize: 14, lineHeight: 1.45, wordBreak: "break-word" }}>{summaryLine}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontWeight: 800, color: TEXT }}>CHF {Number(inv.totalAmount).toFixed(2)}</span>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
           <span
             style={{
               fontSize: 11,
               padding: "2px 8px",
               borderRadius: 4,
               fontWeight: 700,
-              border: `1px solid ${sent ? GOLD : BORDER}`,
-              color: sent ? GOLD : MUTED,
+              background: inv.status === "versendet" ? "rgba(212,168,83,0.15)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`,
+              color: inv.status === "versendet" ? GOLD : MUTED,
             }}
           >
-            {sent ? "✅ Versendet" : "📝 Entwurf"}
+            {inv.status === "versendet" ? "✅ Versendet" : "📝 Entwurf"}
           </span>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-        <button type="button" onClick={() => onReopenInvoice(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>
-          🖨 Öffnen
+        <button type="button" onClick={() => onReopenInvoice(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13 }}>
+          🖨 Öffnen / Drucken
         </button>
-        {!sent && (
-          <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13 }}>
-            ✅ Versendet
+        {inv.status === "entwurf" && (
+          <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
+            ✅ Als versendet markieren
           </button>
         )}
-        <button type="button" onClick={() => onDeleteInvoice(inv.id)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
-          🗑
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm("Rechnung löschen?")) onDeleteInvoice(inv.id);
+          }}
+          style={{ ...dBtn, minHeight: 32, fontSize: 13 }}
+        >
+          🗑 Löschen
         </button>
       </div>
     </div>
