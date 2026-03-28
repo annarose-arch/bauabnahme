@@ -89,16 +89,15 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const prevUserIdRef = useRef(undefined);
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- bootstrap lists from demo storage or Supabase */
   useEffect(() => {
-    console.log("[Dashboard] bootstrap data effect", { userId: userId ?? null, isDemo });
     if (isDemo) {
       const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
-      setReports(all.filter((r) => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
-      setArchivedReports(all.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
-      setTrashReports(all.filter((r) => r.status === "geloescht"));
+      setReports(all.filter(r => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
+      setArchivedReports(all.filter(r => r.status === "archiviert" || r.status === "gesendet"));
+      setTrashReports(all.filter(r => r.status === "geloescht"));
       return;
     }
     if (!userId) return;
-    fetchCustomers().then((c) => fetchProjects(c));
+    fetchCustomers().then(c => fetchProjects(c));
     fetchReports();
   }, [userId, isDemo]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
