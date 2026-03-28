@@ -245,7 +245,7 @@ export function KundenDetail({
   const revenue = linked.reduce((s, r) => s + toNum(parseReport(r)?.totals?.total), 0);
   const custInvoices = invoices.filter((inv) => String(inv.customerId) === String(customer.id) || inv.customer === customer.name);
   const invoicesActive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "entwurf");
-  const invoicesArchive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "versendet");
+  const invoicesArchive = custInvoices.filter((inv) => ["versendet","bezahlt"].includes(normalizeInvoiceStatus(inv)));
 
   const tabBtn = (id, label, count) => (
     <button
