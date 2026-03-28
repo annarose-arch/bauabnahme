@@ -1,5 +1,5 @@
 import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { parseReport, toNum, formatDateCH } from "../../lib/utils.js";
+import { parseReport, toNum, formatReportCardSummary } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Offene Rapporte Liste ─────────────────────────────────────────────────
@@ -15,19 +15,12 @@ export function RapporteListe({ reports, archivedReports, onOpen, onEdit, onPDF,
       {reports.length === 0 && <p style={{ color: MUTED }}>Noch keine Rapporte.</p>}
       <div style={{ display: "grid", gap: 8 }}>
         {reports.map(r => {
-          const p = parseReport(r);
           return (
             <div key={r.id} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(212,168,83,0.2)`, borderRadius: 10, padding: "12px 14px", display: "grid", gap: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <strong>{r.customer || "-"}</strong>
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, flex: "1 1 200px" }}>{formatReportCardSummary(r)}</div>
                 <span style={{ color: GOLD, fontWeight: 700, fontSize: 13 }}>{r.status}</span>
               </div>
-              <div style={{ color: MUTED, fontSize: 13 }}>
-                <strong style={{ color: GOLD }}>Nr. {p.rapportNr || "—"}</strong>
-                {p.projectName && <span style={{ color: TEXT }}> · {p.projectName}</span>}
-                <span> · {formatDateCH(r.date)}</span>
-              </div>
-              <div style={{ color: GOLD, fontWeight: 700 }}>CHF {toNum(p.totals?.total).toFixed(2)}</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button type="button" onClick={() => onOpen(r)} style={{ ...pBtn, minHeight: 34 }}>Öffnen</button>
                 <button type="button" onClick={() => onEdit(r)} style={{ ...gBtn, minHeight: 34 }}>✏️</button>
@@ -50,10 +43,8 @@ export function RapportDetail({ report, onBack, onEdit, onPDF, onEmail, onInvoic
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>Rapport Details</h2>
+      <p style={{ color: MUTED, fontSize: 14, lineHeight: 1.5, marginTop: 0, marginBottom: 12 }}>{formatReportCardSummary(report)}</p>
       <div style={{ display: "grid", gap: 5, marginBottom: 12 }}>
-        <div><b>Rapport-Nr:</b> <span style={{ color: GOLD }}>{p.rapportNr || "-"}</span></div>
-        <div><b>Kunde:</b> {report.customer || "-"}</div>
-        <div><b>Datum:</b> {report.date || "-"}</div>
         <div><b>Auftrag-Nr:</b> {p.orderNo || "-"}</div>
         <div><b>Status:</b> <span style={{ color: GOLD }}>{report.status}</span></div>
       </div>
@@ -119,8 +110,7 @@ export function Papierkorb({ trashReports, onRestore, onHardDelete }) {
       {trashReports.length === 0 && <p style={{ color: MUTED }}>Papierkorb ist leer.</p>}
       {trashReports.map(r => (
         <div key={r.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
-          <strong>{r.customer || "-"}</strong>
-          <div style={{ color: MUTED, fontSize: 13 }}>{r.date || "-"}</div>
+          <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, marginBottom: 8 }}>{formatReportCardSummary(r)}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button type="button" onClick={() => onRestore(r)} style={pBtn}>Wiederherstellen</button>
             <button type="button" onClick={() => onHardDelete(r)} style={dBtn}>Endgültig löschen</button>

@@ -32,6 +32,17 @@ export function formatDateCH(dateStr) {
   return d.toLocaleDateString("de-CH");
 }
 
+/** Einheitliche Rapport-Zeile für Listen & Karten (parseReport für Nr., Projekt, Total). */
+export function formatReportCardSummary(r) {
+  const p = parseReport(r);
+  const nr = p.rapportNr != null && String(p.rapportNr).trim() !== "" ? String(p.rapportNr).trim() : "—";
+  const project = (p.projectName && String(p.projectName).trim()) ? String(p.projectName).trim() : "—";
+  const customer = (r.customer && String(r.customer).trim()) ? String(r.customer).trim() : "—";
+  const date = formatDateCH(r.date);
+  const total = toNum(p.totals?.total).toFixed(2);
+  return `Nr.${nr} · ${project} · ${customer} · ${date} · CHF ${total}`;
+}
+
 // ─── localStorage Nummern ──────────────────────────────────────────────────
 export function getNextNr(key, fallback = 1001) {
   return parseInt(localStorage.getItem(key) || String(fallback));

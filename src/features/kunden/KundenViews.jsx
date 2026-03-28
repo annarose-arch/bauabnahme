@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { parseReport, parseCustomerMeta, toNum, formatDateCH } from "../../lib/utils.js";
+import { parseReport, parseCustomerMeta, toNum, formatDateCH, formatReportCardSummary } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 function isLinkedReport(r, customer) {
@@ -114,7 +114,6 @@ export function KundenView({
 }
 
 function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport }) {
-  const rp = parseReport(r);
   return (
     <div
       style={{
@@ -129,31 +128,20 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
         onClick={() => onOpenReport(r)}
         style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", marginBottom: 10, padding: 0 }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 6 }}>
-          <div>
-            <div style={{ marginBottom: 3 }}>
-              <strong style={{ color: GOLD, fontSize: 15 }}>Nr. {rp.rapportNr || "—"}</strong>
-              <span style={{ color: MUTED, fontSize: 13 }}> · {formatDateCH(r.date)}</span>
-            </div>
-            {rp.projectName && (
-              <div style={{ color: TEXT, fontSize: 13, fontWeight: 500 }}>📋 {rp.projectName}</div>
-            )}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-            <span
-              style={{
-                fontSize: 12,
-                color: isArchived ? GOLD : MUTED,
-                border: `1px solid ${isArchived ? GOLD : BORDER}`,
-                borderRadius: 4,
-                padding: "2px 8px",
-                fontWeight: 700,
-              }}
-            >
-              {r.status}
-            </span>
-            <span style={{ fontWeight: 800, color: GOLD, fontSize: 15 }}>CHF {toNum(rp.totals?.total).toFixed(2)}</span>
-          </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, flex: "1 1 200px" }}>{formatReportCardSummary(r)}</div>
+          <span
+            style={{
+              fontSize: 12,
+              color: isArchived ? GOLD : MUTED,
+              border: `1px solid ${isArchived ? GOLD : BORDER}`,
+              borderRadius: 4,
+              padding: "2px 8px",
+              fontWeight: 700,
+            }}
+          >
+            {r.status}
+          </span>
         </div>
       </button>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
