@@ -23,15 +23,6 @@ function normalizeInvoiceStatus(inv) {
   return String(inv?.status ?? "").trim().toLowerCase();
 }
 
-function mergeReportsAndInvoicesByDate(reports, invoices) {
-  const items = [
-    ...reports.map((r) => ({ kind: "report", r, date: r.date })),
-    ...invoices.map((inv) => ({ kind: "invoice", inv, date: inv.date })),
-  ];
-  items.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-  return items;
-}
-
 // ─── Kundenliste + Formular ────────────────────────────────────────────────
 export function KundenView({
   customerForm,
@@ -240,7 +231,7 @@ export function KundenDetail({
   onMarkInvoiceSent,
   onDeleteInvoice,
 }) {
-  const [detailTab, setDetailTab] = useState("active");
+  const [detailTab, setDetailTab] = useState("rapporte-aktiv");
   const m = parseCustomerMeta(customer);
   const linkedMap = new Map();
   for (const r of [...reports, ...archivedReports]) {
@@ -254,13 +245,6 @@ export function KundenDetail({
   const custInvoices = invoices.filter((inv) => String(inv.customerId) === String(customer.id) || inv.customer === customer.name);
   const invoicesActive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "entwurf");
   const invoicesArchive = custInvoices.filter((inv) => normalizeInvoiceStatus(inv) === "versendet");
-  const listForTab = mergeReportsAndInvoicesByDate(
-    detailTab === "active" ? linkedActive : linkedArchive,
-    detailTab === "active" ? invoicesActive : invoicesArchive
-  );
-
-  const countActive = linkedActive.length + invoicesActive.length;
-  const countArchive = linkedArchive.length + invoicesArchive.length;
 
   const tabBtn = (id, label, count) => (
     <button
@@ -268,12 +252,12 @@ export function KundenDetail({
       key={id}
       onClick={() => setDetailTab(id)}
       style={{
-        flex: 1,
+        flex: "1 1 160px",
         minHeight: 40,
         borderRadius: 8,
         cursor: "pointer",
         fontWeight: detailTab === id ? 700 : 500,
-        fontSize: 13,
+        fontSize: 12,
         border: `1px solid ${detailTab === id ? GOLD : BORDER}`,
         background: detailTab === id ? "rgba(212,168,83,0.12)" : "transparent",
         color: detailTab === id ? GOLD : MUTED,
@@ -282,6 +266,22 @@ export function KundenDetail({
       {label} ({count})
     </button>
   );
+
+  const reportListForTab =
+    detailTab === "rapporte-aktiv" ? linkedActive : detailTab === "rapporte-archiv" ? linkedArchive : null;
+  const invoiceListForTab =
+    detailTab === "rechnungen-offen" ? invoicesActive : detailTab === "rechnungen-archiv" ? invoicesArchive : null;
+
+  const emptyTabHint =
+    detailTab === "rapporte-aktiv"
+      ? "Keine Rapporte mit Status offen oder bearbeitet."
+      : detailTab === "rapporte-archiv"
+        ? "Keine Rapporte mit Status archiviert oder gesendet."
+        : detailTab === "rechnungen-offen"
+          ? "Keine offenen Rechnungen (Entwurf)."
+          : "Keine versendeten Rechnungen.";
+
+  const currentTabItems = reportListForTab != null ? reportListForTab : invoiceListForTab;
 
   return (
     <SectionCard>
@@ -305,42 +305,45 @@ export function KundenDetail({
       </div>
 
       <h3 style={{ marginBottom: 10 }}>Rapporte & Rechnungen</h3>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        {tabBtn("active", "Aktiv", countActive)}
-        {tabBtn("archive", "Archiv", countArchive)}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {tabBtn("rapporte-aktiv", "Rapporte Aktiv", linkedActive.length)}
+        {tabBtn("rapporte-archiv", "Rapporte Archiv", linkedArchive.length)}
+        {tabBtn("rechnungen-offen", "Rechnungen Offen", invoicesActive.length)}
+        {tabBtn("rechnungen-archiv", "Rechnungen Archiv", invoicesArchive.length)}
       </div>
 
-      {listForTab.length === 0 && (
-        <p style={{ color: MUTED, fontSize: 13, marginBottom: 14 }}>
-          {detailTab === "active"
-            ? "Keine aktiven Rapporte (offen / bearbeitet) und keine Rechnungsentwürfe."
-            : "Keine archivierten Rapporte (gesendet / archiviert) und keine versendeten Rechnungen."}
-        </p>
+      {currentTabItems.length === 0 && (
+        <p style={{ color: MUTED, fontSize: 13, marginBottom: 14 }}>{emptyTabHint}</p>
       )}
-      <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-        {listForTab.map((item) =>
-          item.kind === "report" ? (
+      {reportListForTab && reportListForTab.length > 0 && (
+        <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
+          {reportListForTab.map((r) => (
             <ReportRowCard
-              key={`r-${item.r.id}`}
-              r={item.r}
-              isArchived={ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(item.r))}
+              key={r.id}
+              r={r}
+              isArchived={ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(r))}
               onOpenReport={onOpenReport}
               onEditReport={onEditReport}
               onPDF={onPDF}
               onInvoice={onInvoice}
               onDeleteReport={onDeleteReport}
             />
-          ) : (
+          ))}
+        </div>
+      )}
+      {invoiceListForTab && invoiceListForTab.length > 0 && (
+        <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
+          {invoiceListForTab.map((inv) => (
             <InvoiceRowCard
-              key={`inv-${item.inv.id}`}
-              inv={item.inv}
+              key={inv.id}
+              inv={inv}
               onReopenInvoice={onReopenInvoice}
               onMarkInvoiceSent={onMarkInvoiceSent}
               onDeleteInvoice={onDeleteInvoice}
             />
-          )
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, marginTop: 4, marginBottom: 14 }}>Gesamtumsatz CHF {revenue.toFixed(2)}</div>
       <button type="button" onClick={onBack} style={gBtn}>
