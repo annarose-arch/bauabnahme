@@ -8,18 +8,11 @@ function isLinkedReport(r, customer) {
   return String(rp.customerId) === String(customer.id) || r.customer === customer.name;
 }
 
-function revenueForCustomer(customer, reports, archivedReports) {
-  const all = [...reports, ...archivedReports];
-  return all.filter((r) => isLinkedReport(r, customer)).reduce((s, r) => s + toNum(parseReport(r)?.totals?.total), 0);
-}
-
 // ─── Kundenliste + Formular ────────────────────────────────────────────────
 export function KundenView({
   customerForm,
   setCustomerForm,
   customers,
-  reports = [],
-  archivedReports = [],
   onSave,
   onSelect,
   onDelete,
@@ -34,6 +27,20 @@ export function KundenView({
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>Kunden</h2>
+      <div style={{ marginBottom: 14 }}>
+        <input
+          type="search"
+          placeholder="Kunden suchen (Name)…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ ...iStyle, width: "100%", maxWidth: 420 }}
+        />
+        {search.trim() && (
+          <div style={{ color: MUTED, fontSize: 12, marginTop: 6 }}>
+            {filteredCustomers.length} von {customers.length} Kunden
+          </div>
+        )}
+      </div>
       <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
         <input placeholder="Firmenname *" value={customerForm.company} onChange={(e) => setCustomerForm((p) => ({ ...p, company: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -52,25 +59,9 @@ export function KundenView({
         </button>
       </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <input
-          type="search"
-          placeholder="Kunden suchen (Name)…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ ...iStyle, width: "100%", maxWidth: 420 }}
-        />
-        {search.trim() && (
-          <div style={{ color: MUTED, fontSize: 12, marginTop: 6 }}>
-            {filteredCustomers.length} von {customers.length} Kunden
-          </div>
-        )}
-      </div>
-
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
         {filteredCustomers.map((c) => {
           const m = parseCustomerMeta(c);
-          const rev = revenueForCustomer(c, reports, archivedReports);
           return (
             <div
               key={c.id}
@@ -102,9 +93,8 @@ export function KundenView({
                 {c.name}
               </button>
               <div style={{ color: MUTED, fontSize: 12 }}>
+                <span style={{ color: MUTED }}>Kundennummer </span>
                 <span style={{ color: GOLD, fontWeight: 600 }}>{m.kundennummer || "—"}</span>
-                <span> · Umsatz </span>
-                <span style={{ color: GOLD, fontWeight: 700 }}>CHF {rev.toFixed(2)}</span>
               </div>
               <button type="button" onClick={() => onDelete(c)} style={{ ...dBtn, minHeight: 32, fontSize: 12, justifySelf: "start" }}>
                 Löschen

@@ -90,8 +90,6 @@ export function RenderView({
       customerForm={customerForm}
       setCustomerForm={setCustomerForm}
       customers={customers}
-      reports={reports}
-      archivedReports={archivedReports}
       onSave={saveCustomer}
       onSelect={setSelectedCustomer}
       onDelete={deleteCustomer}
