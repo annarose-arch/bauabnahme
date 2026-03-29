@@ -4,13 +4,14 @@ import { RapporteListe, RapportDetail, Papierkorb } from "../features/rapporte/R
 import { RapportForm } from "../features/rapporte/RapportForm.jsx";
 import { KundenView, KundenDetail } from "../features/kunden/KundenViews.jsx";
 import { RechnungenView } from "../features/rechnungen/RechnungenViews.jsx";
+import { RechnungForm } from "../features/rechnungen/RechnungForm.jsx";
 import { KatalogView } from "../features/katalog/KatalogView.jsx";
 import { EinstellungenView } from "../features/einstellungen/EinstellungenView.jsx";
 import { supabase } from "../supabase.js";
 
 export function RenderView({
   view, openedReport, selectedCustomer, editingReport, isDemo,
-  reports, archivedReports, trashReports, customers, invoices, trashInvoices, catalog,
+  reports, archivedReports, trashReports, customers, invoices, trashInvoices, catalog, editingInvoice, onSaveInvoice,
   reportForm, setReportForm, workRows, setWorkRows, materialRows, setMaterialRows,
   customerForm, setCustomerForm,
   workSubtotal, materialSubtotal, vat, total,
@@ -142,6 +143,14 @@ export function RenderView({
   );
 
   // ── Rechnungen ──────────────────────────────────────────────────────────
+  if (view === "edit-invoice") return (
+    <RechnungForm
+      invoice={editingInvoice}
+      onSave={onSaveInvoice}
+      onCancel={() => goTo("invoices")}
+    />
+  );
+
   if (view === "invoices") return (
     <RechnungenView
       invoices={invoices}
