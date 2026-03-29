@@ -77,7 +77,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-        <input placeholder="Rabatt %" type="number" vaue={form.discount} onChange={e => set("discount", e.target.value)} style={iStyle} />
+        <input placeholder="Rabatt %" type="number" value={form.discount} onChange={e => set("discount", e.target.value)} style={iStyle} />
         <input placeholder="Zahlungsziel (Tage)" type="number" value={form.paymentDays} onChange={e => set("paymentDays", e.target.value)} style={iStyle} />
         <input placeholder="Skonto %" type="number" value={form.skontoPct} onChange={e => set("skontoPct", e.target.value)} style={iStyle} />
         <input placeholder="Skonto Tage" type="number" value={form.skontoDays} onChange={e => set("skontoDays", e.target.value)} style={iStyle} />
