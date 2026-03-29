@@ -187,6 +187,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const vat      = subtotal * 0.081;
   const total    = subtotal + vat;
   const [invoiceModal, setInvoiceModal]           = useState(null);
+  const [editingInvoice, setEditingInvoice] = useState(null);
   const [invoiceDiscount, setInvoiceDiscount]     = useState("0");
   const [invoiceSkonto, setInvoiceSkonto]         = useState("0");
   const [invoicePayDays, setInvoicePayDays]       = useState("30");
