@@ -24,6 +24,13 @@ function normalizeInvoiceStatus(inv) {
 }
 
 // ─── Kundenliste + Formular ────────────────────────────────────────────────
+function formatCHF(amount) {
+  const n = Number(amount) || 0;
+  const parts = n.toFixed(2).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return parts.join(".");
+}
+
 export function KundenView({
   customerForm,
   setCustomerForm,
@@ -117,7 +124,7 @@ export function KundenView({
   );
 }
 
-function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport }) {
+function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport, showInvoiceButton = true }) {
   return (
     <div
       style={{
@@ -354,7 +361,12 @@ export function KundenDetail({
         </div>
       )}
 
-      <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, marginTop: 4, marginBottom: 14 }}>Gesamtumsatz CHF {revenue.toFixed(2)}</div>
+      <div style={{ marginTop: 8, marginBottom: 14, display: "grid", gap: 4 }}>
+        <div style={{ color: MUTED, fontSize: 13 }}>Umsatz aus Rapporten: <strong style={{ color: TEXT }}>CHF {formatCHF(revenue)}</strong></div>
+        <div style={{ color: MUTED, fontSize: 13 }}>Gesamt fakturiert: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
+        <div style={{ color: MUTED, fontSize: 13 }}>Gesamt bezahlt: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.filter(i => i.status === "bezahlt").reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
+        <div style={{ color: GOLD, fontWeight: 800, fontSize: 18 }}>Gesamtumsatz CHF {formatCHF(revenue)}</div>
+      </div>
       <button type="button" onClick={onBack} style={gBtn}>
         Zurück
       </button>
