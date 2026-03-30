@@ -20,7 +20,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
   const [form, setForm] = useState({
     customerName: invoice?.customerName || invoice?.customer || "",
     customerAddress: rd.address ? `${rd.address}, ${rd.zip || ""} ${rd.city || ""}`.trim() : "",
-    projektbezeichnung: invoice?.projektbezeichnung || rd.projectName || invoice?.reportData?.projectName || "",
+    projektbezeichnung: invoice?.projektbezeichnung || invoice?.reportData?.projectName || rd.projectName || "",
     rapportRef: invoice?.reportData?.rapportNr || "",
     paymentDays: invoice?.paymentDays || 30,
     skontoPct: invoice?.skontoPct || 0,
