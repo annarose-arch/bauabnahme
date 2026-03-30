@@ -168,7 +168,7 @@ function invoiceTrashSummary(inv) {
 }
 
 // ─── Papierkorb ────────────────────────────────────────────────────────────
-export function Papierkorb({ trashReports = [], trashInvoices = [], onRestore, onHardDelete, onRestoreInvoice, onHardDeleteInvoice }) {
+export function Papierkorb({ trashReports = [], trashInvoices = [], trashCustomers = [], onRestore, onHardDelete, onRestoreInvoice, onHardDeleteInvoice, onRestoreCustomer, onHardDeleteCustomer }) {
   const empty = trashReports.length === 0 && trashInvoices.length === 0;
   return (
     <SectionCard>
@@ -210,6 +210,20 @@ export function Papierkorb({ trashReports = [], trashInvoices = [], onRestore, o
           ))}
         </>
       )}
+{trashCustomers.length > 0 && (
+  <div style={{ marginTop: 16 }}>
+    <h3 style={{ color: GOLD }}>Kunden</h3>
+    {trashCustomers.map(c => (
+      <div key={c.id} style={{ border: "1px solid " + BORDER, borderRadius: 8, padding: "10px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ color: TEXT }}>{c.name}</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" onClick={() => onRestoreCustomer && onRestoreCustomer(c)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>Wiederherstellen</button>
+          <button type="button" onClick={() => onHardDeleteCustomer && onHardDeleteCustomer(c)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>Endg. loeschen</button>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
     </SectionCard>
   );
 }
