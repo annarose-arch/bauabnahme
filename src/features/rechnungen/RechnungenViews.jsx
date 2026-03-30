@@ -30,7 +30,7 @@ export function RechnungenView({ invoices, onReopen, onEdit, onMarkSent, onDelet
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-              <button type="button" onClick={() => onEdit && onEdit(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>✏️ Bearbeiten</button>
+              <button type="button" onClick={() => onEdit && onEdit(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>✏️ Bearbeiten </button>
               <button type="button" onClick={() => onReopen(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>🖨 PDF</button>
               {inv.status === "entwurf" && (
                 <button type="button" onClick={() => onMarkSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
