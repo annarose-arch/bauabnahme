@@ -174,7 +174,7 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
 }
 
 /** Same invoice row layout as RechnungenViews.jsx (summary line + badge + actions). */
-function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onDeleteInvoice }) {
+function InvoiceRowCard({ inv, onReopenInvoice, onPreviewInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onDeleteInvoice }) {
   const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
   const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
   return (
@@ -207,9 +207,8 @@ function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onMarkInvoice
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-        <button type="button" onClick={() => onReopenInvoice(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13 }}>
-          🖨 Öffnen / Drucken
-        </button>
+        <button type="button" onClick={() => onReopenInvoice(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>Bearbeiten</button>
+        <button type="button" onClick={() => onPreviewInvoice && onPreviewInvoice(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>PDF</button>
         {inv.status === "entwurf" && (
           <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
             ✅ Als versendet markieren
@@ -240,7 +239,7 @@ export function KundenDetail({
   onPDF,
   onInvoice,
   onDeleteReport,
-  onReopenInvoice,
+  onReopenInvoice, onPreviewInvoice,
   onMarkInvoiceSent,  onMarkInvoicePaid,
   onDeleteInvoice,
 }) {
@@ -354,6 +353,7 @@ export function KundenDetail({
               key={inv.id}
               inv={inv}
               onReopenInvoice={onReopenInvoice}
+              onPreviewInvoice={onPreviewInvoice}
               onMarkInvoiceSent={onMarkInvoiceSent}
               onMarkInvoicePaid={onMarkInvoicePaid}
               onDeleteInvoice={onDeleteInvoice}
