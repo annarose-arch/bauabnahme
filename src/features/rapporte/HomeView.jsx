@@ -1,4 +1,7 @@
 Inhalte sind nutzergeneriert und ungeprüft.
+Anpassen
+
+
 import os
 path = os.path.expanduser('~/Desktop/bauabnahme/src/features/rapporte/HomeView.jsx')
 code = r"""import { useState } from "react";
@@ -71,3 +74,6 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
 with open(path, 'w', encoding='utf-8') as f:
     f.write(code)
 print("Done! Written to:", path)
+Inhalte sind nutzergeneriert und ungeprüft.
+	1.	
+	1.	
