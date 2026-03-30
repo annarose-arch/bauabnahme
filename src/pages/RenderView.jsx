@@ -150,6 +150,7 @@ export function RenderView({
     <RechnungenView
       invoices={invoices}
       onReopen={reopenInvoice}
+      onEdit={(inv) => { setEditingInvoice(inv); goTo("edit-invoice"); }}
       onMarkSent={inv => {
         saveInvoiceToStorage({ ...inv, status: "versendet" });
         showNotice("✅ Rechnung als versendet markiert.");
