@@ -211,7 +211,7 @@ function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onMarkInvoice
           🖨 Öffnen / Drucken
         </button>
         {inv.status === "entwurf" && (
-          <button type="button" onClick={() => onMarkISent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
+          <button type="button" onClick={() => onMarkInvoiceSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
             ✅ Als versendet markieren
           </button>
         )}
