@@ -9,7 +9,7 @@ export function RechnungenView({ invoices, onReopen, onEdit, onMarkSent, onDelet
       <h2 style={{ marginTop: 0 }}>🧾 Rechnungen</h2>
       {invoices.length === 0 && <p style={{ color: MUTED }}>Noch keine Rechnungen erstellt.</p>}
       <div style={{ display: "grid", gap: 10 }}>
-        {invoices.map(inv => {
+        {invoices.filter(inv => inv.status === "entwurf").map(inv => {
           const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
           const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
           return (
