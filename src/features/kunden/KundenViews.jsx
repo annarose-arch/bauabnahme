@@ -342,6 +342,7 @@ export function KundenDetail({
               onPDF={onPDF}
               onInvoice={onInvoice}
               onDeleteReport={onDeleteReport}
+              showInvoiceButton={detailTab === "rapporte-archiv"}
             />
           ))}
         </div>
