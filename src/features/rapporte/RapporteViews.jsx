@@ -48,9 +48,6 @@ export function RapporteListe({ reports, archivedReports, invoices = [], onOpen,
               <span style={{ color: GOLD, fontWeight: 700, fontSize: 13 }}>{r.status}</span>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" onClick={() => onOpen(r)} style={{ ...pBtn, minHeight: 34 }}>
-                Öffnen
-              </button>
               <button type="button" onClick={() => onEdit(r)} style={{ ...gBtn, minHeight: 34 }}>
                 ✏️
               </button>
