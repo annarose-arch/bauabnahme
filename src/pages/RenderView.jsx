@@ -3,6 +3,7 @@ import { SectionCard } from "../components/UI.jsx";
 import { RapporteListe, RapportDetail, Papierkorb } from "../features/rapporte/RapporteViews.jsx";
 import { RapportForm } from "../features/rapporte/RapportForm.jsx";
 import { KundenView, KundenDetail } from "../features/kunden/KundenViews.jsx";
+import { HomeView } from "../features/rapporte/HomeView.jsx";
 import { RechnungenView } from "../features/rechnungen/RechnungenViews.jsx";
 import { RechnungForm } from "../features/rechnungen/RechnungForm.jsx";
 import { KatalogView } from "../features/katalog/KatalogView.jsx";
@@ -67,24 +68,16 @@ export function RenderView({
     />
   );
 
-  // ── Home ────────────────────────────────────────────────────────────────
+  // -- Home
   if (view === "home") return (
-    <SectionCard>
-      <h2 style={{ marginTop: 0 }}>Start</h2>
-      <p style={{ color: MUTED }}>Willkommen, {userEmail || "Demo"}</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-        {[
-          { l: "Rapporte", v: reports.length },
-          { l: "Offen", v: reports.filter(r => r.status === "offen").length },
-          { l: "Kunden", v: customers.length },
-        ].map(s => (
-          <div key={s.l} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14 }}>
-            <div style={{ color: MUTED, fontSize: 13 }}>{s.l}</div>
-            <strong style={{ fontSize: 26, color: GOLD }}>{s.v}</strong>
-          </div>
-        ))}
-      </div>
-    </SectionCard>
+    <HomeView
+      customers={customers}
+      reports={reports}
+      archivedReports={archivedReports}
+      invoices={invoices}
+      onSelectCustomer={setSelectedCustomer}
+      goTo={goTo}
+    />
   );
 
   // ── Kunden Liste ────────────────────────────────────────────────────────

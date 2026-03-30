@@ -15,7 +15,7 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
     const results = [];
     customers.forEach(c => {
       const m = parseCustomerMeta(c);
-     �s(q) || m.kundennummer?.toLowerCase().includes(q)) {
+     �s(q) || m.kundennummer?.toLowerCase().includes(q)) {
         results.push({ type: "kunde", label: c.name, sub: m.kundennummer || "", item: c });
       }
     });
@@ -26,7 +26,7 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
       }
     });
     [...reports, ...archivedReports].forEach(r => {
-   �  if (rp.projectName?.toLowerCase().includes(q) || String(rp.rapportNr)?.includes(q)) {
+   �  if (rp.projectName?.toLowerCase().includes(q) || String(rp.rapportNr)?.includes(q)) {
         const c = customers.find(c => String(c.id) === String(rp.customerId));
         results.push({ type: "rapport", label: `Nr. ${rp.rapportNr} - ${rp.projectName || r.customer}`, sub: r.customer, item: c || null });
       }
@@ -50,13 +50,13 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
             {searchResults.map((r, i)ck={() => { if (r.item) { onSelectCustomer(r.item); setSearch(""); } }}
                 style={{ border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 14px", cursor: r.item ? "pointer" : "default", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-              �order: `1px solid ${GOLD}`, borderRadius: 4, padding: "1px 6px", marginRight: 8 }}>
+              �order: `1px solid ${GOLD}`, borderRadius: 4, padding: "1px 6px", marginRight: 8 }}>
                     {r.type === "kunde" ? "Kunde" : r.type === "rechnuRapport"}
                   </span>
                   <span style={{ color: TEXT, fontWeight: 600 }}>{r.label}</span>
                 </div>
                 <span style={{ color: MUTED, fontSize: 12 }}>{r.sub}</span>
-      �ard>
+      �ard>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <SectionCard>
@@ -81,7 +81,7 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
               onClick={() => { if (c) onSelectCustomer(c); }}
               style={{ border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 14px", marginBottom: 8, cursor: "pointer", display: "flex", justifyContent: "s    <div style={{ color: TEXT, fontWeight: 600 }}>Nr. {rp.rapportNr} · {rp.projectName || r.customer}</div>
                 <div style={{ color: MUTED, fontSize: 12 }}>{r.customer} · {formatDateCH(r.date)}</div>
-            �{ color: GOLD, fontWeight: 700 }}>CHF {toNum(rp.totals?.total).toFixed(2)}</div>
+            �{ color: GOLD, fontWeight: 700 }}>CHF {toNum(rp.totals?.total).toFixed(2)}</div>
             </div>
           );
         })}
