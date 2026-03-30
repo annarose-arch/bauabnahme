@@ -50,3 +50,10 @@ export function getNextNr(key, fallback = 1001) {
 export function setNextNr(key, value) {
   localStorage.setItem(key, String(value));
 }
+
+export function formatCHF(amount) {
+  const n = Number(amount) || 0;
+  const parts = n.toFixed(2).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return parts.join(".");
+}
