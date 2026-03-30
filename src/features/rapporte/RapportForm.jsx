@@ -1,5 +1,5 @@
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { calcHours, toNum } from "../../lib/utils.js";
+import { calcHours, toNum, formatCHF } from "../../lib/utils.js";
 import { SignaturePad, PhotoUpload, SectionCard } from "../../components/UI.jsx";
 
 export function RapportForm({
