@@ -12,7 +12,7 @@ import { supabase } from "../supabase.js";
 
 export function RenderView({
   view, openedReport, selectedCustomer, editingReport, isDemo,
-  reports, archivedReports, trashReports, customers, invoices, trashInvoices, catalog, editingInvoice, onSaveInvoice,
+  reports, archivedReports, trashReports, trashCustomers, customers, invoices, trashInvoices, catalog, editingInvoice, onSaveInvoice,
   reportForm, setReportForm, workRows, setWorkRows, materialRows, setMaterialRows,
   customerForm, setCustomerForm,
   workSubtotal, materialSubtotal, vat, total,
@@ -166,6 +166,7 @@ export function RenderView({
     <Papierkorb
       trashReports={trashReports}
       trashInvoices={trashInvoices}
+      trashCustomers={trashCustomers}
       onRestore={restore}
       onHardDelete={hardDelete}
       onRestoreInvoice={(inv) => {
