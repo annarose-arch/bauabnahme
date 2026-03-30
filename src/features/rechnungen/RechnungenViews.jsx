@@ -3,7 +3,7 @@ import { formatDateCH, formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Rechnungsliste ────────────────────────────────────────────────────────
-export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
+export function RechnungenView({ invoices, onReopen, onEdit, onMarkSent, onDelete }) {
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>🧾 Rechnungen</h2>
@@ -30,7 +30,8 @@ export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-              <button type="button" onClick={() => onReopen(inv)} style={{ ...pBtn, minHeight: 32, fontSize: 13 }}>🖨 Öffnen / Drucken</button>
+              <button type="button" onClick={() => onEdit && onEdit(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>✏️ Bearbeiten</button>
+              <button type="button" onClick={() => onReopen(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>🖨 PDF</button>
               {inv.status === "entwurf" && (
                 <button type="button" onClick={() => onMarkSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
                   ✅ Als versendet markieren
