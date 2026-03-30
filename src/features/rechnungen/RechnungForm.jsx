@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
+import { formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
