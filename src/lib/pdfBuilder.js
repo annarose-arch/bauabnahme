@@ -11,7 +11,7 @@ export function buildSwissQR(
     "K", creditorName || "", creditorAddress || "",
     `${creditorZip || ""} ${creditorCity || ""}`.trim(), "", "", "CH", "",
     "", "", "", "", "", "", "",
-    amount ? Number(amount).toFixed(2) : "0.00", "CHF",
+    amount ? Number(amount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2}) : "0.00", "CHF",
     "K", debtorName || "", debtorAddress || "",
     `${debtorZip || ""} ${debtorCity || ""}`.trim(), "", "", "CH", "",
     "NON", "", message || "", "EPD", "",
@@ -39,10 +39,10 @@ export function buildRapportHtml(
   const custFullAddr = custZipCity ? `${custStreet}, ${custZipCity}` : custStreet;
 
   const wHtml = work
-    .map((r, i) => `<tr><td>${i + 1}</td><td>${r.employee || "-"}</td><td>${r.from || "-"}–${r.to || "-"}</td><td>${Number(r.hours || 0).toFixed(2)}</td><td>CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`)
+    .map((r, i) => `<tr><td>${i + 1}</td><td>${r.employee || "-"}</td><td>${r.from || "-"}–${r.to || "-"}</td><td>${Number(r.hours || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td>CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`)
     .join("");
   const mHtml = mat
-    .map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "-"}</td><td>${r.qty || 0} ${r.unit || ""}</td><td>CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`)
+    .map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "-"}</td><td>${r.qty || 0} ${r.unit || ""}</td><td>CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`)
     .join("");
 
   return `<!doctype html><html><head><meta charset="utf-8"/>
@@ -102,11 +102,11 @@ ${photos.before || photos.after ? `<div class="card"><h3>Fotos</h3><div style="d
 <div class="card"><h3>Arbeitsstunden</h3><table><thead><tr><th>#</th><th>Mitarbeiter</th><th>Zeit</th><th>Stunden</th><th>Total</th></tr></thead><tbody>${wHtml || "<tr><td colspan='5'>Keine Daten</td></tr>"}</tbody></table></div>
 <div class="card"><h3>Material / Kranrapport</h3><table><thead><tr><th>#</th><th>Bezeichnung</th><th>Menge</th><th>Total</th></tr></thead><tbody>${mHtml || "<tr><td colspan='4'>Keine Daten</td></tr>"}</tbody></table></div>
 <div class="card">
-  <div><b>Spesen:</b> CHF ${Number(costs.expenses || 0).toFixed(2)}</div>
+  <div><b>Spesen:</b> CHF ${Number(costs.expenses || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
   ${costs.notes ? `<div><b>Notizen:</b> ${costs.notes}</div>` : ""}
-  <div><b>Subtotal:</b> CHF ${Number(tot.subtotal || 0).toFixed(2)}</div>
-  <div><b>MwSt 8.1%:</b> CHF ${Number(tot.vat || 0).toFixed(2)}</div>
-  <div class="total">TOTAL CHF ${Number(tot.total || 0).toFixed(2)}</div>
+  <div><b>Subtotal:</b> CHF ${Number(tot.subtotal || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+  <div><b>MwSt 8.1%:</b> CHF ${Number(tot.vat || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+  <div class="total">TOTAL CHF ${Number(tot.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
 </div>
 ${sig.image ? `<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4px"><b>${sig.name || "-"}</b></div><img src="${sig.image}" style="width:280px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/></div>` : ""}
 </body></html>`;
@@ -128,10 +128,10 @@ export function buildRechnungHtml({
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-  const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toFixed(2)} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
-  const mHtml = validMat.map(r => `<tr><td>${r.name || "-"}</td><td style="text-align:center">${r.qty || 0} ${r.unit || ""}</td><td style="text-align:center">CHF ${Number(r.price || 0).toFixed(2)}</td><td style="text-align:right">CHF ${Number(r.total || 0).toFixed(2)}</td></tr>`).join("");
+  const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
+  const mHtml = validMat.map(r => `<tr><td>${r.name || "-"}</td><td style="text-align:center">${r.qty || 0} ${r.unit || ""}</td><td style="text-align:center">CHF ${Number(r.price || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td style="text-align:right">CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
   const mailSubject = `Rechnung ${invoiceNr}`;
-  const mailBody = `Rechnungsnummer: ${invoiceNr}\nBetrag: CHF ${Number(totalAmount).toFixed(2)}\nFälligkeitsdatum: ${dueDate}`;
+  const mailBody = `Rechnungsnummer: ${invoiceNr}\nBetrag: CHF ${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}\nFälligkeitsdatum: ${dueDate}`;
   const emailTrim = custEmail != null ? String(custEmail).trim() : "";
   const mailtoHref =
     emailTrim.length > 0
@@ -215,11 +215,11 @@ ${projectName ? `<div class="project-line">Projekt: ${projectName}</div>` : ""}
 ${wHtml ? `<div class="section-title">Arbeitsstunden</div><table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
 ${mHtml ? `<div class="section-title">Material</div><table><thead><tr><th>Bezeichnung</th><th style="text-align:center">Menge</th><th style="text-align:center">Preis</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
 <div class="totals-box"><div class="totals-inner">
-  <div class="totals-row"><span>Subtotal</span><span>CHF ${subtotal.toFixed(2)}</span></div>
-  ${discountPct > 0 ? `<div class="totals-discount"><span>Rabatt ${discountPct}%</span><span>− CHF ${discountAmt.toFixed(2)}</span></div>` : ""}
-  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${vat.toFixed(2)}</span></div>
-  ${costs.expenses ? `<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses).toFixed(2)}</span></div>` : ""}
-  <div class="totals-total"><span>TOTAL CHF</span><span>${totalAmount.toFixed(2)}</span></div>
+  <div class="totals-row"><span>Subtotal</span><span>CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+  ${discountPct > 0 ? `<div class="totals-discount"><span>Rabatt ${discountPct}%</span><span>− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
+  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+  ${costs.expenses ? `<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
+  <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
 </div></div>
 ${skontoPct > 0 ? `<div class="skonto-box">Bei Zahlung bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
 <div class="qr-section">
