@@ -61,7 +61,7 @@ export function RenderView({
         setSelectedCustomer(prev => prev);
         showNotice("🗑 Rapport in den Papierkorb verschoben.");
       }}
-      onReopenInvoice={reopenInvoice}
+      onReopenInvoice={(inv) => { setEditingInvoice(inv); goTo("edit-invoice"); }}
       onPreviewInvoice={reopenInvoice}
       onMarkInvoiceSent={inv => { saveInvoiceToStorage({ ...inv, status: "versendet" }); showNotice("✅ Als versendet markiert."); }}
       onMarkInvoicePaid={inv => { saveInvoiceToStorage({ ...inv, status: "bezahlt" }); showNotice("✅ Rechnung als bezahlt markiert."); }}
