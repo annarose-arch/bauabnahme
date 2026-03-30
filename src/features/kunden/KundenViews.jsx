@@ -201,7 +201,7 @@ function InvoiceRowCard({ inv, onReopenInvoice, onPreviewInvoice, onMarkInvoiceS
               color: inv.status === "versendet" ? GOLD : MUTED,
             }}
           >
-            {inv.status === "versendet" ? "✅ Versendet" : "📝 Entwurf"}
+            {inv.status === "bezahlt" ? "✅ Erledigt" : inv.status === "versendet" ? "📤 Versendet" : "📝 Entwurf"}
           </span>
         </div>
       </div>
