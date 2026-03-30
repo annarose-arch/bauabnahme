@@ -62,7 +62,7 @@ export function RenderView({
         showNotice("🗑 Rapport in den Papierkorb verschoben.");
       }}
       onReopenInvoice={reopenInvoice}
-      onMarkInvoiceSent={inv => { saveInvoiceToStorage({ ...inv, status: "versendet" }); setSelectedCustomer(null); setTimeout(() => setSelectedCustomer(c => c), 10); showNotice("✅ Als versendet markiert."); }}
+      onMarkInvoiceSent={inv => { saveInvoiceToStorage({ ...inv, status: "versendet" }); showNotice("✅ Als versendet markiert."); }}
       onMarkInvoicePaid={inv => { saveInvoiceToStorage({ ...inv, status: "bezahlt" }); showNotice("✅ Rechnung als bezahlt markiert."); }}
       onDeleteInvoice={deleteInvoice}
     />
