@@ -21,7 +21,7 @@ export function RapporteListe({ reports, archivedReports, invoices = [], onOpen,
           const project = pr.projectName && String(pr.projectName).trim() ? String(pr.projectName).trim() : "—";
           const customer = r.customer && String(r.customer).trim() ? String(r.customer).trim() : "—";
           const date = formatDateCH(r.date);
-          const total = toNum(pr.totals?.total).toFixed(2);
+          const total = formatCHF(toNum(pr.totals?.total));
           return (
           <div key={r.id} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(212,168,83,0.2)`, borderRadius: 10, padding: "12px 14px", display: "grid", gap: 8 }}>
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>

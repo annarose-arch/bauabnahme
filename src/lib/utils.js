@@ -39,7 +39,7 @@ export function formatReportCardSummary(r) {
   const project = (p.projectName && String(p.projectName).trim()) ? String(p.projectName).trim() : "—";
   const customer = (r.customer && String(r.customer).trim()) ? String(r.customer).trim() : "—";
   const date = formatDateCH(r.date);
-  const total = toNum(p.totals?.total).toFixed(2);
+  const total = formatCHF(toNum(p.totals?.total));
   return `Nr.${nr} · ${project} · ${customer} · ${date} · CHF ${total}`;
 }
 
