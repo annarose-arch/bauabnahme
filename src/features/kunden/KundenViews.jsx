@@ -124,7 +124,7 @@ export function KundenView({
   );
 }
 
-function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport, showInvoiceButton = true }) {
+function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport, showInvoiceButton = true, invoices = [] }) {
   return (
     <div
       style={{
@@ -153,6 +153,7 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
           >
             {r.status}
           </span>
+          {(() => { const rp = parseReport(r); const cnt = invoices.filter(inv => inv.reportData && String(inv.reportData.rapportNr) === String(rp.rapportNr)).length; return cnt > 0 ? <span style={{ marginLeft: 6, background: GOLD, color: "#111", borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{cnt}</span> : null; })()}
         </div>
       </button>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
@@ -340,6 +341,7 @@ export function KundenDetail({
               onInvoice={onInvoice}
               onDeleteReport={onDeleteReport}
               showInvoiceButton={detailTab === "rapporte-archiv"}
+              invoices={invoices}
             />
           ))}
         </div>
