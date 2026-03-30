@@ -52,7 +52,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
       <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
         <input placeholder="Kundenname *" value={form.customerName} onChange={e => set("customerName", e.target.value)} style={iStyle} />
         <input placeholder="Adresse" value={form.customerAddress} onChange={e => set("customerAddress", e.target.value)} style={iStyle} />
-        <input placeholder="Projektbezeichnung" value={form.projektbezeichnung} onChange={e => set("projektbezeichnung", e.target.value)} style={iStyle} />
+        <input placeholder="Projektname" value={form.projektbezeichnung} onChange={e => set("projektbezeichnung", e.target.value)} style={iStyle} />
         <input placeholder="Bezug Rapport Nr." value={form.rapportRef} onChange={e => set("rapportRef", e.target.value)} style={iStyle} />
       </div>
 
