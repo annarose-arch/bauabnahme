@@ -1,5 +1,5 @@
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { formatDateCH } from "../../lib/utils.js";
+import { formatDateCH, formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Rechnungsliste ────────────────────────────────────────────────────────
