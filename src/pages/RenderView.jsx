@@ -140,7 +140,7 @@ export function RenderView({
     <RechnungForm
       invoice={editingInvoice}
       onSave={onSaveInvoice}
-      onPreview={(inv) => { reopenInvoice(inv); }}
+      onPreview={(inv) => { console.log("preview called", inv); reopenInvoice(inv); }}
       onCancel={() => goTo("invoices")}
     />
   );
