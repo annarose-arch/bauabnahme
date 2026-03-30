@@ -86,11 +86,11 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
       </div>
 
       <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 12, marginBottom: 14 }}>
-        <div style={{ color: MUTED }}>Subtotal: CHF {subtotal.toFixed(2)}</div>
-        {Number(form.discount) > 0 && <div style={{ color: MUTED }}>Rabatt {form.discount}%: -CHF {discountAmt.toFixed(2)}</div>}
-        <div style={{ color: MUTED }}>MwSt 8.1%: CHF {vat.toFixed(2)}</div>
-        {Number(form.skontoPct) > 0 && <div style={{ color: MUTED }}>Skonto {form.skontoPct}% ({form.skontoDays} Tage): -CHF {skontoAmt.toFixed(2)}</div>}
-        <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, marginTop: 8 }}>Total CHF {total.toFixed(2)}</div>
+        <div style={{ color: MUTED }}>Subtotal: CHF {formatCHF(subtotal)}</div>
+        {Number(form.discount) > 0 && <div style={{ color: MUTED }}>Rabatt {form.discount}%: -CHF {formatCHF(discountAmt)}</div>}
+        <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
+        {Number(form.skontoPct) > 0 && <div style={{ color: MUTED }}>Skonto {form.skontoPct}% ({form.skontoDays} Tage): -CHF {formatCHF(skontoAmt)}</div>}
+        <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, marginTop: 8 }}>Total CHF {formatCHF(total)}</div>
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

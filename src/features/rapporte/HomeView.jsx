@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, gBtn } from "../../lib/constants.js";
 import { SectionCard } from "../../components/UI.jsx";
-import { parseReport, parseCustomerMeta, toNum } from "../../lib/utils.js";
+import { parseReport, formatCHF, parseCustomerMeta, toNum } from "../../lib/utils.js";
 
 export function HomeView({ customers = [], reports = [], archivedReports = [], invoices = [], onSelectCustomer, goTo }) {
   const [search, setSearch] = useState("");
@@ -48,7 +48,7 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
         </SectionCard>
         <SectionCard>
           <div style={{ color: MUTED, fontSize: 12 }}>Ausstehende Rechnungen</div>
-          <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, margin: "4px 0" }}>CHF {total.toFixed(2)}</div>
+          <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, margin: "4px 0" }}>CHF {formatCHF(total)}</div>
           <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>{pending.length} Rechnungen</div>
           <button type="button" onClick={() => goTo("invoices")} style={gBtn}>Anzeigen</button>
         </SectionCard>

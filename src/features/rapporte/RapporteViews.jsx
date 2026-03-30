@@ -1,5 +1,5 @@
 import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { parseReport, formatReportCardSummary, formatDateCH, toNum } from "../../lib/utils.js";
+import { parseReport, formatCHF, formatReportCardSummary, formatDateCH, toNum } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Offene Rapporte Liste ─────────────────────────────────────────────────
@@ -135,9 +135,9 @@ export function RapportDetail({ report, onBack, onEdit, onPDF, onEmail, onInvoic
 
       <div style={{ marginBottom: 12 }}>
         <div>
-          <b>MwSt 8.1%:</b> CHF {Number(tot.vat || 0).toFixed(2)}
+          <b>MwSt 8.1%:</b> CHF {formatCHF(tot.vat || 0)}
         </div>
-        <div style={{ color: GOLD, fontWeight: 800, fontSize: 22 }}>Total CHF {Number(tot.total || 0).toFixed(2)}</div>
+        <div style={{ color: GOLD, fontWeight: 800, fontSize: 22 }}>Total CHF {formatCHF(tot.total || 0)}</div>
       </div>
       {sig.image && <img src={sig.image} alt="Unterschrift" style={{ width: 280, border: `1px solid ${BORDER}`, borderRadius: 8, marginBottom: 12 }} />}
 
@@ -164,7 +164,7 @@ export function RapportDetail({ report, onBack, onEdit, onPDF, onEmail, onInvoic
 
 function invoiceTrashSummary(inv) {
   const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
-  return `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
+  return `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
 }
 
 // ─── Papierkorb ────────────────────────────────────────────────────────────

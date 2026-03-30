@@ -150,8 +150,8 @@ export function RapportForm({
         <input placeholder="Name des Unterzeichners" value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={iStyle} />
         <SignaturePad value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
 
-        <div style={{ color: MUTED }}>MwSt 8.1%: CHF {vat.toFixed(2)}</div>
-        <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {total.toFixed(2)}</div>
+        <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
+        <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {formatCHF(total)}</div>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={onSave} style={pBtn}>{editingReport ? "Änderungen speichern" : "Rapport speichern"}</button>
           {editingReport && <button type="button" onClick={onCancel} style={gBtn}>Abbrechen</button>}

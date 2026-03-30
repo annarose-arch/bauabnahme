@@ -11,7 +11,7 @@ export function RechnungenView({ invoices, onReopen, onMarkSent, onDelete }) {
       <div style={{ display: "grid", gap: 10 }}>
         {invoices.map(inv => {
           const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
-          const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
+          const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
           return (
           <div key={inv.id} style={{ border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`, borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>

@@ -176,7 +176,7 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
 /** Same invoice row layout as RechnungenViews.jsx (summary line + badge + actions). */
 function InvoiceRowCard({ inv, onReopenInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onDeleteInvoice }) {
   const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
-  const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
+  const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
   return (
     <div
       style={{
