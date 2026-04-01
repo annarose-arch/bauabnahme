@@ -194,7 +194,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
           </div>
           {matCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>Noch keine Materialien hinterlegt.</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-            {catalog.materials.map((mat) => (
+            {[...catalog.materials].sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((mat) => (
               <div
                 key={mat.id}
                 style={{
