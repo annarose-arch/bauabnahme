@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
+import { GOLD, isMobile, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
+const mobile = typeof window !== "undefined" && window.innerWidth < 600;
 import { formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
@@ -58,7 +59,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
 
       <h3 style={{ color: GOLD, marginBottom: 8 }}>Positionen</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr 1fr auto", gap: 6 }}>
+        <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "3fr 1fr 1fr 1fr auto", gap: 6 }}>
           <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Beschreibung</div>
           <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Menge</div>
           <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Einheit</div>
@@ -66,7 +67,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
           <span></span>
         </div>
         {rows.map((row, i) => (
-          <div key={i} style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr 1fr auto", gap: 6 }}>
+          <div key={i} style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "3fr 1fr 1fr 1fr auto", gap: 6 }}>
             <input placeholder="Beschreibung" value={row.description} onChange={e => updateRow(i, "description", e.target.value)} style={iStyle} />
             <input placeholder="1" type="number" value={row.qty} onChange={e => updateRow(i, "qty", e.target.value)} style={iStyle} />
             <input placeholder="St" value={row.unit} onChange={e => updateRow(i, "unit", e.target.value)} style={iStyle} />
@@ -77,7 +78,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
         <button type="button" onClick={addRow} style={gBtn}>+ Position hinzufügen</button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "repeat(2,1fr)", gap: 8, marginBottom: 14 }}>
         <div><div style={{ fontSize: 12, color: "#b9b0a3", marginBottom: 2 }}>Rabatt %</div><input placeholder="0" type="number" value={form.discount} onChange={e => set("discount", e.target.value)} style={iStyle} /></div>
         <div><div style={{ fontSize: 12, color: "#b9b0a3", marginBottom: 2 }}>Zahlungsziel (Tage)</div><input placeholder="30" type="number" value={form.paymentDays} onChange={e => set("paymentDays", e.target.value)} style={iStyle} /></div>
         <div><div style={{ fontSize: 12, color: "#b9b0a3", marginBottom: 2 }}>Skonto %</div><input placeholder="0" type="number" value={form.skontoPct} onChange={e => set("skontoPct", e.target.value)} style={iStyle} /></div>

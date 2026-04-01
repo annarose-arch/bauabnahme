@@ -29,3 +29,5 @@ export const dBtn = {
   border: `1px solid ${DANGER}`, background: "transparent",
   color: DANGER, cursor: "pointer", padding: "0 10px", fontSize: 13,
 };
+
+export const isMobile = () => window.innerWidth < 600;
