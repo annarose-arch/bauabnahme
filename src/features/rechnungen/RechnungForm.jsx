@@ -58,7 +58,7 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
 
       <h3 style={{ color: GOLD, marginBottom: 8 }}>Positionen</h3>
       <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr 1fr auto", gap: 6, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr 1fr auto", gap: 6 }}>
           <div style={{ color: MUTED, fontSize: 12 }}>Beschreibung</div>
           <div style={{ color: MUTED, fontSize: 12 }}>Menge</div>
           <div style={{ color: MUTED, fontSize: 12 }}>Einheit</div>
