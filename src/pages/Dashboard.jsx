@@ -121,7 +121,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     const stored = normalizeUiLanguage(localStorage.getItem("bauabnahme_language_pref"));
     setUiLanguage((prev) => (prev === stored ? prev : stored));
   }, [view]);
-  const [invoices, setInvoices] = useState(() => { try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; } });
+  const [invoices, setInvoices] = useState([]);
    const saveInvoiceToStorage = useCallback(async (inv) => {
 if (!isDemo && userId) {
       const row = { id: inv.id, user_id: userId, invoice_nr: inv.invoiceNr, customer: inv.customer, customer_id: String(inv.customerId||""), date: inv.date, total_amount: Number(inv.totalAmount||0), status: inv.status||"entwurf", report_data: inv.reportData||{}, line_items: inv.lineItems||[], subtotal: Number(inv.subtotal||0), vat: Number(inv.vat||0), total: Number(inv.totalAmount||0), discount: Number(inv.discount||0), discount_amt: Number(inv.discountAmt||0), skonto_pct: Number(inv.skontoPct||0), skonto_amt: Number(inv.skontoAmt||0), payment_days: Number(inv.paymentDays||30), skonto_days: Number(inv.skontoDays||10), iban: inv.iban||"", notes: inv.notes||"", projektbezeichnung: inv.projektbezeichnung||"", rapport_ref: String(inv.rapportRef||"") };
