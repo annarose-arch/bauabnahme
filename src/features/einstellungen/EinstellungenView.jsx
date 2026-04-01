@@ -51,37 +51,40 @@ return (
         <div style={{ marginTop: 12 }}>
           <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>IBAN:</div>
           <div style={{ display: "flex", gap: 8 }}>
-            <input placeholder="CH56 0483 5012 3456 7800 9" defaultValue={meta.iban || ""} id="iban-input" style={{ ...iStyle, width: 120, fontFamily: "monospace", fontSize: 13 }} />
+            <input placeholder="CH56 0483 5012 3456 7800 9" defaultValue={meta.iban || ""} id="iban-input" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
             <button type="button" style={pBtn} onClick={async () => { const v = document.getElementById("iban-input").value.trim(); await saveMeta({ iban: v }); showNotice("IBAN gespeichert!"); }}>Speichern</button>
           </div>
           {meta.iban && <div style={{ color: GOLD, fontSize: 12, marginTop: 4 }}>{meta.iban}</div>}
         </div>
-  <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ color: MUTED, fontSize: 12, width: 140 }}>Naechste Rapport-Nr:</div>
-            <input type="number" defaultValue={nextRapportNr} id="next-rapport-nr" style={{ ...iStyle, width: 80, fontFamily: "monospace", fontSize: 13 }} />
-            <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-rapport-nr").value) || 1001; setNextRapportNrState(v); localStorage.setItem("bauabnahme_next_rapport_nr", String(v)); showNotice("Rapport-Nr gespeichert!"); }}>OK</button>
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: 10 }}>
+          <div>
+            <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Naechste Rapport-Nr:</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" defaultValue={nextRapportNr} id="next-rapport-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
+              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-rapport-nr").value) || 1001; setNextRapportNrState(v); localStorage.setItem("bauabnahme_next_rapport_nr", String(v)); showNotice("Rapport-Nr gespeichert!"); }}>OK</button>
+            </div>
+          </div>
+          <div>
+            <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Naechste Rechnungs-Nr:</div>
+          <div>
+            <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Naechste Kunden-Nr:</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" defaultValue={localStorage.getItem("bauabnahme_next_customer_nr") || 1} id="next-customer-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
+              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-customer-nr").value) || 1; localStorage.setItem("bauabnahme_next_customer_nr", String(v)); showNotice("Kunden-Nr gespeichert!"); }}>OK</button>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ color: MUTED, fontSize: 12, width: 140 }}>Naechste Rechnungs-Nr:</div>
-            <input type="number" defaultValue={nextInvoiceNr} id="next-invoice-nr" style={{ ...iStyle, width: 80, fontFamily: "monospace", fontSize: 13 }} />
-            <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-invoice-nr").value) || 1001; setNextInvoiceNrState(v); localStorage.setItem("bauabnahme_next_invoice_nr", String(v)); showNotice("Rechnungs-Nr gespeichert!"); }}>OK</button>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ color: MUTED, fontSize: 12, width: 140 }}>Naechste Kunden-Nr:</div>
-            <input type="number" defaultValue={localStorage.getItem("bauabnahme_next_customer_nr") || 1} id="next-customer-nr" style={{ ...iStyle, width: 80, fontFamily: "monospace", fontSize: 13 }} />
-            <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-customer-nr").value) || 1; localStorage.setItem("bauabnahme_next_customer_nr", String(v)); showNotice("Kunden-Nr gespeichert!"); }}>OK</button>
-          </div>
-        </div>
+                <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" defaultValue={nextInvoiceNr} id="next-invoice-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
+              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-invoice-nr").value) || 1001; setNextInvoiceNrState(v); localStorage.setItem("bauabnahme_next_invoice_nr", String(v)); showNotice("Rechnungs-Nr gespeichert!"); }}>OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
 <div style={{ marginBottom: 16, border: "1px solid " + BORDER, borderRadius: 10, padding: 14 }}>
         <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Aktueller Plan</div>
         <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
           {[{ n: "Starter", p: "CHF 0", link: null }, { n: "Pro", p: "CHF 29/Mt", link: "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06" }, { n: "Team", p: "CHF 79/Mt", link: "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07" }].map(pl => (
-         </div>
-        </div>
-      </div>
-
-          <div key={pl.n} style={{ border: "2px solid " + (pl.n.toLowerCase() === currentPlan ? GOLD : BORDER), borderRadius: 8, padding: 10, background: pl.n.toLowerCase() === currentPlan ? "rgba(212,168,83,0.1)" : "transparent" }}>
+            <div key={pl.n} style={{ border: "2px solid " + (pl.n.toLowerCase() === currentPlan ? GOLD : BORDER), borderRadius: 8, padding: 10, background: pl.n.toLowerCase() === currentPlan ? "rgba(212,168,83,0.1)" : "transparent" }}>
               <div style={{ fontWeight: 700, color: pl.n.toLowerCase() === currentPlan ? GOLD : TEXT }}>{pl.n}</div>
               <div style={{ color: MUTED, fontSize: 13 }}>{pl.p}</div>
               {pl.link && <a href={pl.link} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: 6, color: GOLD, fontSize: 12, textDecoration: "none" }}>Abonnieren</a>}
