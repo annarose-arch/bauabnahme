@@ -145,15 +145,17 @@ if (!isDemo && userId) {
       return u;
     });
   }, []);
-  const restoreInvoice = useCallback((inv) => {
-    setInvoices((prev) => {
-      const u = prev.map((i) => {
-        if (!invoiceIdEq(i.id, inv.id)) return i;
-        const back = i._preTrashStatus === "versendet" || i._preTrashStatus === "entwurf" ? i._preTrashStatus : "entwurf";
-        const { _preTrashStatus, ...rest } = i;
-        return { ...rest, status: back };
-      });
-      
+    const restoreInvoice = useCallback(async (inv) => {
+    const back = inv._preTrashStatus === "versendet" ? "versendet" : "entwurf";
+    if (!isDemo && userId) {
+      await supabase.from("invoices").update({ status: back }).eq("id", inv.id);
+    }
+    setInvoices((prev) => prev.map((i) => {
+      if (!invoiceIdEq(i.id, inv.id)) return i;
+      const { _preTrashStatus, ...rest } = i;
+      return { ...rest, status: back };
+    }));
+  }, [userId, isDemo]);      
       return u;
     });
   }, []);
