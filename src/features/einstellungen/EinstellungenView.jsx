@@ -56,7 +56,8 @@ return (
           </div>
           {meta.iban && <div style={{ color: GOLD, fontSize: 12, marginTop: 4 }}>{meta.iban}</div>}
         </div>
-        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr", gap: 10
+
           <div>
             <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Naechste Rapport-Nr:</div>
             <div style={{ display: "flex", gap: 6 }}>
