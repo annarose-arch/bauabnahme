@@ -53,14 +53,7 @@ export function RenderView({
       onEditReport={r => { setSelectedCustomer(null); startEdit(r); }}
       onPDF={openPDF}
       onInvoice={openInvoice}
-      onDeleteReport={async (r) => {
-        if (!isDemo) {
-          const { error } = await supabase.from("reports").update({ status: "geloescht" }).eq("id", r.id).eq("user_id", userId);
-          if (error) { showNotice("Fehler: " + error.message); return; }
-        }
-        setSelectedCustomer(prev => prev);
-        showNotice("🗑 Rapport in den Papierkorb verschoben.");
-      }}
+      onDeleteReport={(r) => { moveToTrash(r); }}
       onReopenInvoice={(inv) => { setEditingInvoice(inv); goTo("edit-invoice"); }}
       onPreviewInvoice={reopenInvoice}
       onMarkInvoiceSent={inv => { saveInvoiceToStorage({ ...inv, status: "versendet" }); showNotice("✅ Als versendet markiert."); }}
