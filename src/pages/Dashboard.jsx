@@ -155,10 +155,7 @@ if (!isDemo && userId) {
       const { _preTrashStatus, ...rest } = i;
       return { ...rest, status: back };
     }));
-  }, [userId, isDemo]);      
-      return u;
-    });
-  }, []);
+    }, [userId, isDemo]);
   const hardDeleteInvoice = useCallback((id) => {
     setInvoices((prev) => {
       const u = prev.filter((i) => !invoiceIdEq(i.id, id));
