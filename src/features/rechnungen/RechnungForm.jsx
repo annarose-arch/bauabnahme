@@ -59,10 +59,10 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
       <h3 style={{ color: GOLD, marginBottom: 8 }}>Positionen</h3>
       <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
         <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr 1fr auto", gap: 6 }}>
-          <div style={{ color: MUTED, fontSize: 12, paddingLeft: 10 }}>Beschreibung</div>
-          <div style={{ color: MUTED, fontSize: 12, paddingLeft: 10 }}>Menge</div>
-          <div style={{ color: MUTED, fontSize: 12, paddingLeft: 10 }}>Einheit</div>
-          <div style={{ color: MUTED, fontSize: 12, paddingLeft: 10 }}>Preis CHF</div>
+          <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Beschreibung</div>
+          <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Menge</div>
+          <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Einheit</div>
+          <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Preis CHF</div>
           <span></span>
         </div>
         {rows.map((row, i) => (
