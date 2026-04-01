@@ -97,7 +97,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
           </div>
           {empCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>Noch keine Mitarbeiter hinterlegt.</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-            {catalog.employees.map((emp, i) => (
+            {[...catalog.employees].sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((emp, i) => (
               <div
                 key={emp.id}
                 style={{
