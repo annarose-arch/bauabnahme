@@ -40,7 +40,7 @@ export function RapportForm({
         </div>
 
         <input placeholder="Adresse (Strasse)" value={reportForm.address} onChange={e => setReportForm(p => ({ ...p, address: e.target.value }))} style={iStyle} />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
           <input placeholder="PLZ" value={reportForm.zip || ""} onChange={e => setReportForm(p => ({ ...p, zip: e.target.value }))} style={iStyle} />
           <input placeholder="Ort" value={reportForm.city || ""} onChange={e => setReportForm(p => ({ ...p, city: e.target.value }))} style={iStyle} />
         </div>
@@ -90,7 +90,7 @@ export function RapportForm({
                 )}
                 <button type="button" onClick={() => setWorkRows(p => p.filter((_, j) => j !== i))} style={{ ...dBtn, minWidth: 34 }} disabled={workRows.length === 1}>✕</button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8 }}>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Von (HH:MM)</div><input placeholder="07:00" value={row.from} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} style={iStyle} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Bis (HH:MM)</div><input placeholder="17:00" value={row.to} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} style={iStyle} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Stunden</div><input readOnly value={h.toFixed(2)} style={{ ...iStyle, color: GOLD }} /></div>
@@ -131,7 +131,7 @@ export function RapportForm({
                 )}
                 <button type="button" onClick={() => setMaterialRows(p => p.filter((_, j) => j !== i))} style={{ ...dBtn, minWidth: 34 }} disabled={materialRows.length === 1}>✕</button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8 }}>
                 <input placeholder="Menge" value={row.qty} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, qty: e.target.value } : r))} style={iStyle} />
                 <input placeholder="Einheit" value={row.unit} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} style={iStyle} />
                 <input placeholder="CHF Preis" value={row.price} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, price: e.target.value } : r))} style={iStyle} />
