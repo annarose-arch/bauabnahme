@@ -66,7 +66,14 @@ return (
           </div>
           <div>
             <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Naechste Rechnungs-Nr:</div>
-            <div style={{ display: "flex", gap: 6 }}>
+          <div>
+            <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Naechste Kunden-Nr:</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input type="number" defaultValue={localStorage.getItem("bauabnahme_next_customer_nr") || 1} id="next-customer-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
+              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-customer-nr").value) || 1; localStorage.setItem("bauabnahme_next_customer_nr", String(v)); showNotice("Kunden-Nr gespeichert!"); }}>OK</button>
+            </div>
+          </div>
+                <div style={{ display: "flex", gap: 6 }}>
               <input type="number" defaultValue={nextInvoiceNr} id="next-invoice-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
               <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-invoice-nr").value) || 1001; setNextInvoiceNrState(v); localStorage.setItem("bauabnahme_next_invoice_nr", String(v)); showNotice("Rechnungs-Nr gespeichert!"); }}>OK</button>
             </div>
