@@ -22,7 +22,7 @@ export function RenderView({
   // callbacks
   setOpenedReport, setSelectedCustomer, setEditingReport, startEdit, openPDF, moveToTrash,
   restore, hardDelete, updateStatus, handleCustomerSelect, handleSave,
-  saveCustomer, deleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice,
+  saveCustomer, deleteCustomer, restoreCustomer, hardDeleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice,
   reopenInvoice, openInvoice, downloadAndEmail, showNotice,
   onLogout, onNavigate, goTo, setEditingInvoice, hardDeleteInvoice,
   emptyForm,
@@ -167,7 +167,7 @@ export function RenderView({
     <Papierkorb
       trashReports={trashReports}
       trashInvoices={trashInvoices}
-      trashCustomers={trashCustomers}
+      trashCustomers={trashCustomers} onRestoreCustomer={restoreCustomer} onHardDeleteCustomer={hardDeleteCustomer}
       onRestore={restore}
       onHardDelete={hardDelete}
       onRestoreInvoice={(inv) => {
