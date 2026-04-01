@@ -176,8 +176,9 @@ if (!isDemo && userId) {
   const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
   const bumpRapportNr = () => { const n = nextRapportNr; setNextRapportNrState(n+1); localStorage.setItem("bauabnahme_next_rapport_nr", String(n+1)); return n; };
   const bumpInvoiceNr = () => { const n = nextInvoiceNr; setNextInvoiceNrState(n+1); localStorage.setItem("bauabnahme_next_invoice_nr", String(n+1)); return n; };
-  const [catalog, setCatalog] = useState(() => { try { return JSON.parse(localStorage.getItem("bauabnahme_catalog") || '{"employees":[],"materials":[]}'); } catch { return {employees:[],materials:[]}; } });
-  const saveCatalog = (u) => { setCatalog(u); localStorage.setItem("bauabnahme_catalog", JSON.stringify(u)); };
+  const [catalog, setCatalog] = useState({employees:[],materials:[]});
+const saveCatalog = async (u) => { setCatalog(u); if(!userId) return; const emps = u.employees||[]; const mats = u.materials||[]; for(const e of emps){ await supabase.from("staff").upsert({id:e.id,user_id:userId,name:e.name||"",description:e.role||"",rate:Number(e.rate||0)}); } for(const m of mats){ await supabase.from("materials").upsert({id:m.id,user_id:userId,name:m.name||"",description:m.description||"",unit:m.unit||"St",price:Number(m.price||0)}); } };
+const fetchCatalog = async () => { if(!userId) return; const {data:staff} = await supabase.from("staff").select("*").eq("user_id",userId); const {data:mats} = await supabase.from("materials").select("*").eq("user_id",userId); setCatalog({employees:(staff||[]).map(e=>({id:e.id,name:e.name,role:e.description,rate:e.rate})),materials:(mats||[]).map(m=>({id:m.id,name:m.name,description:m.description,unit:m.unit,price:m.price}))}); };
   const emptyForm = { selectedCustomerId:"", selectedProjectId:"", customer:"", address:"", zip:"", city:"", orderNo:"", customerEmail:"", date: new Date().toISOString().slice(0,10), status:"offen", expenses:"", notes:"", beforePhoto:"", afterPhoto:"", signerName:"", signatureImage:"" };
   const [customerForm, setCustomerForm] = useState({ company:"", firstName:"", lastName:"", address:"", zip:"", city:"", phone:"", email:"" });
   const [reportForm, setReportForm]     = useState(emptyForm);
