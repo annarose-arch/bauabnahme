@@ -147,3 +147,17 @@ return (
     </SectionCard>
   );
 }
+function LanguageSwitcher() {
+  const [lang, setLang] = useState(() => localStorage.getItem("bauabnahme_language_pref") || "DE");
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{ color: MUTED, fontSize: 11 }}>Sprache:</span>
+      {["DE", "FR", "IT", "EN"].map(code => (
+        <button key={code} type="button" onClick={() => { setLang(code); localStorage.setItem("bauabnahme_language_pref", code); }}
+          style={{ padding: "3px 9px", borderRadius: 6, cursor: "pointer", border: "1px solid " + (lang === code ? GOLD : BORDER), background: lang === code ? "rgba(212,168,83,0.15)" : "transparent", color: lang === code ? GOLD : MUTED, fontSize: 12, fontWeight: lang === code ? 700 : 400 }}>
+          {code}
+        </button>
+      ))}
+    </div>
+  );
+}
