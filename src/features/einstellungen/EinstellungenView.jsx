@@ -112,3 +112,38 @@ return (
           <button type="button" onClick={() => setShowDeleteModal(true)} style={{ ...gBtn, fontSize: 12, minHeight: 32, color: "#e05c5c", borderColor: "#e05c5c" }}>Konto loeschen</button>
         </div>
       </div>
+<LanguageSwitcher />
+
+      {showDeleteModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#1a1a1a", border: "1px solid #e05c5c", borderRadius: 14, padding: 24, maxWidth: 480, width: "100%" }}>
+            <h3 style={{ color: "#e05c5c", marginTop: 0 }}>Konto endgueltig loeschen</h3>
+            <p style={{ color: MUTED }}>Unwiderruflich! Alle Kunden, Rapporte und Rechnungen werden geloescht.</p>
+            <p style={{ color: MUTED }}>Tippe <strong style={{ color: "#e05c5c" }}>LOESCHEN</strong>:</p>
+            <input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="LOESCHEN" style={{ ...iStyle, width: "100%", marginBottom: 16, borderColor: "#e05c5c" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(""); }} style={{ ...gBtn, flex: 1 }}>Abbrechen</button>
+              <button type="button" onClick={handleDelete} disabled={deleteConfirmText !== "LOESCHEN"} style={{ ...gBtn, flex: 1, color: "#e05c5c", borderColor: "#e05c5c", opacity: deleteConfirmText === "LOESCHEN" ? 1 : 0.4 }}>Endgueltig loeschen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLegal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setShowLegal(null)}>
+          <div style={{ background: "#1a1a1a", border: "1px solid " + BORDER, borderRadius: 14, padding: 24, maxWidth: 640, width: "100%", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0, color: GOLD }}>{showLegal === "impressum" ? "Impressum" : showLegal === "agb" ? "AGB" : "Datenschutz"}</h2>
+              <button onClick={() => setShowLegal(null)} style={gBtn}>X</button>
+            </div>
+            <div style={{ color: MUTED, lineHeight: 1.8, fontSize: 13 }}>
+              {showLegal === "impressum" && <><p><strong style={{ color: TEXT }}>Anbieterin</strong><br />Anna Rose, Anna Rose Office Services<br />Seilerhof 9, 6344 Meierskappel, Schweiz</p><p><strong style={{ color: TEXT }}>Kontakt</strong><br />anna.rose@gmx.ch | www.bauabnahme.app</p><p><strong style={{ color: TEXT }}>Urheberrecht</strong><br />Alle Rechte vorbehalten.</p><p style={{ fontSize: 12 }}>Stand: Maerz 2026</p></>}
+              {showLegal === "datenschutz" && <><p><strong style={{ color: TEXT }}>Verantwortlich</strong><br />Anna Rose, Seilerhof 9, 6344 Meierskappel | anna.rose@gmx.ch</p><p><strong style={{ color: TEXT }}>Daten</strong><br />E-Mail, Firmendaten, Kundendaten, Rapporte, Rechnungen.</p><p><strong style={{ color: TEXT }}>Speicherung</strong><br />Supabase (EU), Vercel, Stripe, Sentry. Keine Weitergabe.</p><p><strong style={{ color: TEXT }}>Rechte (Art. 25 DSG)</strong><br />Auskunft, Berichtigung, Loeschung: anna.rose@gmx.ch</p><p style={{ fontSize: 12 }}>Stand: Maerz 2026</p></>}
+              {showLegal === "agb" && <><p><strong style={{ color: TEXT }}>1. Geltungsbereich</strong><br />Anna Rose Office Services, Seilerhof 9, 6344 Meierskappel.</p><p><strong style={{ color: TEXT }}>2. Abonnements</strong><br />Starter: CHF 0 | Pro: CHF 29/Mt | Team: CHF 79/Mt. Kuendigung jederzeit zum Monatsende.</p><p><strong style={{ color: TEXT }}>3. Haftung</strong><br />Haftung fuer leichte Fahrlaessigkeit ausgeschlossen. Schweizer Recht. Gerichtsstand Luzern.</p><p style={{ fontSize: 12 }}>Stand: Maerz 2026</p></>}
+            </div>
+          </div>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
