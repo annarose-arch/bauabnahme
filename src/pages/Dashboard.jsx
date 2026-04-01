@@ -145,7 +145,7 @@ if (!isDemo && userId) {
       return u;
     });
   }, []);
-    const restoreInvoice = useCallback(async (inv) => {
+  const restoreInvoice = useCallback(async (inv) => {
     const back = inv._preTrashStatus === "versendet" ? "versendet" : "entwurf";
     if (!isDemo && userId) {
       await supabase.from("invoices").update({ status: back }).eq("id", inv.id);
