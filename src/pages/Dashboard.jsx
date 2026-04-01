@@ -129,7 +129,7 @@ if (!isDemo && userId) {
     }
      setInvoices((prev) => {
       const u = [inv, ...prev.filter((i) => i.id !== inv.id)];
-      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      
       return u;
     });
    }, [userId, isDemo]);
@@ -141,7 +141,7 @@ if (!isDemo && userId) {
           ? { ...i, status: "geloescht", _preTrashStatus: i.status === "versendet" ? "versendet" : "entwurf" }
           : i
       );
-      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      
       return u;
     });
   }, []);
@@ -153,14 +153,14 @@ if (!isDemo && userId) {
         const { _preTrashStatus, ...rest } = i;
         return { ...rest, status: back };
       });
-      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      
       return u;
     });
   }, []);
   const hardDeleteInvoice = useCallback((id) => {
     setInvoices((prev) => {
       const u = prev.filter((i) => !invoiceIdEq(i.id, id));
-      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      
       return u;
     });
   }, []);
