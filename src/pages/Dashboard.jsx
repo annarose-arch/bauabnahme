@@ -215,7 +215,10 @@ if (!isDemo && userId) {
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap: fetch* recreated each render
   useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); }, [userId,isDemo]);
-  const handleCustomerSelect = (id) => {
+  const fetchInvoices = async () => { 
+    if(!userId) return;
+    const {data} = await supabase.from("invoices").select("*").eq("user_id",userId).order("id",{ascending:false});
+    if(data) setInvoices(data.map(r=>({id:r.id,invoiceNr:r.invoice_nr,customer:r.customer,customerId:r.customer_id,date:r.date,totalAmount:Number(r.total_amount),status:r.status,reportData:r.report_data,lineItems:r.line_items,subtotal:Number(r.subtotal),vat:Number(r.vat),total:Number(r.total),discount:Number(r.discount),discountAmt:Number(r.discount_amt),skontoPct:Number(r.skonto_pct),skontoAmt:Number(r.skonto_amt),paymentDays:Number(r.payment_days),skontoDays:Number(r.skonto_days),iban:r.iban,notes:r.notes,projektbezeichnung:r.projektbezeichnung,rapportRef:r.rapport_ref}))); };  const handleCustomerSelect = (id) => {
     const c = customers.find((x) => String(x.id) === String(id));
     if (!c) return;
     const m = parseCustomerMeta(c);
