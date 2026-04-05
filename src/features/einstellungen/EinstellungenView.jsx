@@ -81,7 +81,11 @@ return (
           </div>
         </div>
       </div>
-<div style={{ marginBottom: 16, border: "1px solid " + BORDER, borderRadius: 10, padding: 14 }}>
+ <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Team</div>
+        <TeamManager session={session} showNotice={showNotice} />
+   </div>
+   <div style={{ marginBottom: 16, border: "1px solid " + BORDER, borderRadius: 10, padding: 14 }}>
         <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Aktueller Plan</div>
         <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
           {[{ n: "Starter", p: "CHF 0", link: null }, { n: "Pro", p: "CHF 29/Mt", link: "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06" }, { n: "Team", p: "CHF 79/Mt", link: "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07" }].map(pl => (
@@ -93,12 +97,8 @@ return (
           ))}
         </div>
         <button type="button" onClick={() => { localStorage.setItem("bauabnahme_plan", "pro"); showNotice("Pro Plan aktiviert!"); }} style={{ ...gBtn, fontSize: 12, color: GOLD, borderColor: GOLD, minHeight: 30 }}>Pro Plan aktivieren (nach Zahlung)</button>
-      </div>
-
-      <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-        <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Team</div>
-        <TeamManager session={session} showNotice={showNotice} />
-      </div>
+      </div>  
+   
       <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Support</div>
         <a href="mailto:support@bauabnahme.app" style={{ ...pBtn, textDecoration: "none", display: "inline-flex" }}>support@bauabnahme.app</a>
@@ -111,7 +111,10 @@ return (
           <button type="button" onClick={() => setShowLegal("agb")} style={{ ...gBtn, fontSize: 12, minHeight: 32 }}>AGB</button>
         </div>
       </div>
-
+  <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Support</div>
+        <a href="mailto:support@bauabnahme.app" style={{ ...pBtn, textDecoration: "none", display: "inline-flex" }}>support@bauabnahme.app</a>
+      </div>
       <div style={{ border: "1px solid #7f1d1d", borderRadius: 10, padding: 14, marginBottom: 16, background: "rgba(127,29,29,0.05)" }}>
         <div style={{ color: "#e05c5c", fontWeight: 700, marginBottom: 8 }}>Konto-Verwaltung</div>
         <div style={{ color: MUTED, fontSize: 13, marginBottom: 12, lineHeight: 1.6 }}>
