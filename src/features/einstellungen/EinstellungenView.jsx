@@ -75,7 +75,8 @@ return (
           </div>
         </div>
         </div>
-      </div>
+      </div>   
+  </div>
  <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Team</div>
         <TeamManager session={session} showNotice={showNotice} />
