@@ -234,6 +234,39 @@ if (!isDemo && userId) {
       city: m.city || ""
     }));
   };
+    const checkLimit = async (type) => {
+    const plan = localStorage.getItem("bauabnahme_plan") || "starter";
+    if (plan !== "starter") return true;
+    const month = new Date().toISOString().slice(0, 7);
+    const { data } = await supabase.from("usage_limits").select("*").eq("user_id", userId).single();
+    if (!data || data.month_year !== month) {
+      await supabase.from("usage_limits").upsert({ user_id: userId, reports_this_month: 0, invoices_this_month: 0, month_year: month });
+      return true;
+    }
+    if (type === "report" && data.reports_this_month >= 15) {
+      showNotice("⚠️ Limit erreicht! Max 15 Rapporte/Monat im Starter Plan. Bitte auf Pro upgraden.");
+      goTo("settings");
+      return false;
+    }
+    if (type === "invoice" && data.invoices_this_month >= 15) {
+      showNotice("⚠️ Limit erreicht! Max 15 Rechnungen/Monat im Starter Plan. Bitte auf Pro upgraden.");
+      goTo("settings");
+      return false;
+    }
+    return true;
+  };
+
+  const bumpUsage = async (type) => {
+    const plan = localStorage.getItem("bauabnahme_plan") || "starter";
+    if (plan !== "starter") return;
+    const month = new Date().toISOString().slice(0, 7);
+    const { data } = await supabase.from("usage_limits").select("*").eq("user_id", userId).single();
+    if (data && data.month_year === month) {
+      const update = type === "report" ? { reports_this_month: (data.reports_this_month||0) + 1 } : { invoices_this_month: (data.invoices_this_month||0) + 1 };
+      await supabase.from("usage_limits").update(update).eq("user_id", userId);
+    }
+  };
+
   const handleSave = async () => {
     setShowCustomerSuggestions(false);
     if (!reportForm.customer.trim()) {
