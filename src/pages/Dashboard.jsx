@@ -336,6 +336,7 @@ if (!isDemo && userId) {
     setReportForm(emptyForm);
     setWorkRows([{ employee: "", from: "", to: "", rate: "" }]);
     setMaterialRows([{ name: "", qty: "", unit: "", price: "" }]);
+    if (!wasEditing) await bumpUsage("report");
     showNotice(wasEditing ? "Rapport aktualisiert." : "Rapport gespeichert.");
     goTo("reports");
   };
