@@ -266,6 +266,8 @@ if (!isDemo && userId) {
       await supabase.from("usage_limits").update(update).eq("user_id", userId);
     }
   };
+const ok = await checkLimit("report");
+if (!ok) return;
 
   const handleSave = async () => {
     setShowCustomerSuggestions(false);
