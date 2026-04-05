@@ -131,8 +131,9 @@ export function RenderView({
 
   // ── Rechnungen ──────────────────────────────────────────────────────────
   if (view === "edit-invoice") return (
-    <RechnungForm
+       <RechnungForm
       invoice={editingInvoice}
+      catalog={catalog}
       onSave={onSaveInvoice}
       onPreview={(inv) => { const w = window.open("","_blank","width=980,height=860"); if(w) reopenInvoice(inv, w); }}
       onCancel={() => goTo("invoices")}
