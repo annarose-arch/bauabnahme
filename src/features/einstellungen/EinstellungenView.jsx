@@ -74,7 +74,7 @@ return (
             <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => { const v = parseInt(document.getElementById("next-customer-nr").value) || 1; localStorage.setItem("bauabnahme_next_customer_nr", String(v)); showNotice("Kunden-Nr gespeichert!"); }}>OK</button>
           </div>
         </div>
-        </div>
+
       </div>   
   </div>
  <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
