@@ -24,7 +24,7 @@ export function RenderView({
   restore, hardDelete, updateStatus, handleCustomerSelect, handleSave,
   saveCustomer, deleteCustomer, restoreCustomer, hardDeleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice,
   reopenInvoice, openInvoice, downloadAndEmail, showNotice,
-  onLogout, onNavigate, goTo, setEditingInvoice, hardDeleteInvoice,
+  onLogout, onNavigate, goTo, setEditingInvoice, hardDeleteInvoice, isAdmin = true,
   emptyForm,
   userId,
 }) {
