@@ -363,6 +363,25 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
         <p style={{ textAlign: "center", color: COLORS.muted, fontSize: 12, marginTop: 16 }}>
           🇨🇭 Swiss Made · Sicher & DSGVO-konform
         </p>
+    </div>
+
+      <div style={{ maxWidth: 860, margin: "32px auto 0", padding: "0 16px 40px" }}>
+        <div style={{ textAlign: "center", color: COLORS.muted, fontSize: 13, marginBottom: 20 }}>Unsere Pläne</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+          {[
+            { name: "Starter", price: "CHF 0", color: COLORS.muted, features: ["1 Benutzer", "15 Rapporte/Monat", "15 Rechnungen/Monat", "QR-Rechnung"] },
+            { name: "Pro", price: "CHF 29/Mt", color: COLORS.gold, features: ["1 Admin + 5 Mitarbeiter", "Unlimitierte Rapporte", "Unlimitierte Rechnungen", "QR-Rechnung"] },
+            { name: "Team", price: "CHF 79/Mt", color: COLORS.gold, features: ["Unlimitierte Mitarbeiter", "Unlimitierte Rapporte & Rechnungen", "QR-Rechnung", "Prioritäts-Support"] }
+          ].map(plan => (
+            <div key={plan.name} style={{ border: `1px solid ${plan.name === "Pro" ? COLORS.gold : COLORS.border}`, borderRadius: 12, padding: 20, background: plan.name === "Pro" ? "rgba(212,168,83,0.05)" : "#111" }}>
+              <div style={{ fontWeight: 700, fontSize: 18, color: plan.color, marginBottom: 4 }}>{plan.name}</div>
+              <div style={{ fontSize: 15, color: COLORS.text, marginBottom: 12 }}>{plan.price}</div>
+              {plan.features.map((f, i) => (
+                <div key={i} style={{ color: COLORS.muted, fontSize: 13, marginBottom: 4 }}>✓ {f}</div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
