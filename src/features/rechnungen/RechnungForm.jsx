@@ -3,8 +3,7 @@ import { GOLD, isMobile, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from ".
 const mobile = typeof window !== "undefined" && window.innerWidth < 600;
 import { formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
-
-export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
+export function RechnungForm({ invoice, catalog = { employees: [], materials: [] }, onSave, onCancel, onPreview }) {
   const rd = invoice?.reportData || {};
   const initRows = () => {
     if (invoice?.lineItems?.length) return invoice.lineItems;
@@ -68,7 +67,13 @@ export function RechnungForm({ invoice, onSave, onCancel, onPreview }) {
         </div>
         {rows.map((row, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "3fr 1fr 1fr 1fr auto", gap: 6 }}>
-            <input placeholder="Beschreibung" value={row.description} onChange={e => updateRow(i, "description", e.target.value)} style={iStyle} />
+            <div style={{ position: "relative" }}>
+  <input placeholder="Beschreibung" value={row.description} onChange={e => { updateRow(i, "description", e.target.value); }} list={`catalog-list-${i}`} style={{ ...iStyle, width: "100%" }} />
+  <datalist id={`catalog-list-${i}`}>
+    {(catalog.employees||[]).map((e,j) => <option key={j} value={e.name}>{e.name} - CHF {e.rate}/h</option>)}
+    {(catalog.materials||[]).map((m,j) => <option key={j} value={m.name}>{m.name} - CHF {m.price}</option>)}
+  </datalist>
+</div>
             <input placeholder="1" type="number" value={row.qty} onChange={e => updateRow(i, "qty", e.target.value)} style={iStyle} />
             <input placeholder="St" value={row.unit} onChange={e => updateRow(i, "unit", e.target.value)} style={iStyle} />
             <input placeholder="0.00" type="number" value={row.price} onChange={e => updateRow(i, "price", e.target.value)} style={iStyle} />
