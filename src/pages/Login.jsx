@@ -74,7 +74,13 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
     if (error) { setErrorMsg(mapError(error.message)); return; }
     onNavigate("/dashboard");
   };
-
+const handleForgotPassword = async () => {
+    if (!email.trim()) { setErrorMsg("Bitte E-Mail eingeben."); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: "https://www.bauabnahme.app" });
+    if (error) { setErrorMsg("Fehler: " + error.message); return; }
+    setErrorMsg("");
+    alert("Reset-Link wurde an " + email.trim() + " gesendet.");
+  };
   const handleStep1 = () => {
     clear();
     if (!email.trim()) { setErrorMsg("Bitte E-Mail eingeben."); return; }
@@ -217,6 +223,9 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
               <button onClick={handleLogin} disabled={loading} style={{ width: "100%", minHeight: 48, borderRadius: 10, border: "none", background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer", marginBottom: 10, opacity: loading ? 0.7 : 1 }}>
                 {loading ? "Bitte warten..." : "Einloggen"}
               </button>
+<button onClick={handleForgotPassword} style={{ width: "100%", minHeight: 36, borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, cursor: "pointer", fontSize: 13, marginBottom: 10 }}>
+  Passwort vergessen?
+</button>
 
 
 
