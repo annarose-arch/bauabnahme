@@ -68,7 +68,15 @@ export function RechnungForm({ invoice, catalog = { employees: [], materials: []
         {rows.map((row, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "3fr 1fr 1fr 1fr auto", gap: 6 }}>
             <div style={{ position: "relative" }}>
-  <input placeholder="Beschreibung" value={row.description} onChange={e => { updateRow(i, "description", e.target.value); }} list={`catalog-list-${i}`} style={{ ...iStyle, width: "100%" }} />
+  <input placeholder="Beschreibung" value={row.description} onChange={e => {
+  const val = e.target.value;
+  updateRow(i, "description", val);
+  const emp = (catalog.employees||[]).find(x => x.name === val);
+  const mat = (catalog.materials||[]).find(x => x.name === val);
+  if (emp) { updateRow(i, "price", emp.rate || ""); updateRow(i, "unit", "h"); }
+  if (mat) { updateRow(i, "price", mat.price || ""); updateRow(i, "unit", mat.unit || "St"); }
+}}
+ list={`catalog-list-${i}`} style={{ ...iStyle, width: "100%" }} />
   <datalist id={`catalog-list-${i}`}>
     {(catalog.employees||[]).map((e,j) => <option key={j} value={e.name}>{e.name} - CHF {e.rate}/h</option>)}
     {(catalog.materials||[]).map((m,j) => <option key={j} value={m.name}>{m.name} - CHF {m.price}</option>)}
