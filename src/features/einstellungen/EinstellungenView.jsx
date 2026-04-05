@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TeamManager } from "./TeamManager.jsx";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn } from "../../lib/constants.js";
 import { SectionCard } from "../../components/UI.jsx";
 import { supabase } from "../../supabase.js";
@@ -94,6 +95,10 @@ return (
         <button type="button" onClick={() => { localStorage.setItem("bauabnahme_plan", "pro"); showNotice("Pro Plan aktiviert!"); }} style={{ ...gBtn, fontSize: 12, color: GOLD, borderColor: GOLD, minHeight: 30 }}>Pro Plan aktivieren (nach Zahlung)</button>
       </div>
 
+      <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Team</div>
+        <TeamManager session={session} showNotice={showNotice} />
+      </div>
       <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Support</div>
         <a href="mailto:support@bauabnahme.app" style={{ ...pBtn, textDecoration: "none", display: "inline-flex" }}>support@bauabnahme.app</a>
