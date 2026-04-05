@@ -101,7 +101,7 @@ return (
    
       <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Support</div>
-        <a href="mailto:support@bauabnahme.app" style={{ ...pBtn, textDecoration: "none", display: "inline-flex" }}>support@bauabnahme.app</a>
+        <a href="mailto:support@bauabnahme.app" style={{ color: MUTED, fontSize: 13, textDecoration: "none" }}>support@bauabnahme.app</a>
       </div>
       <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 10 }}>Rechtliches</div>
@@ -113,7 +113,7 @@ return (
       </div>
   <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Support</div>
-        <a href="mailto:support@bauabnahme.app" style={{ ...pBtn, textDecoration: "none", display: "inline-flex" }}>support@bauabnahme.app</a>
+        <a href="mailto:support@bauabnahme.app" style={{ color: MUTED, fontSize: 13, textDecoration: "none" }}>support@bauabnahme.app</a>
       </div>
       <div style={{ border: "1px solid #7f1d1d", borderRadius: 10, padding: 14, marginBottom: 16, background: "rgba(127,29,29,0.05)" }}>
         <div style={{ color: "#e05c5c", fontWeight: 700, marginBottom: 8 }}>Konto-Verwaltung</div>
