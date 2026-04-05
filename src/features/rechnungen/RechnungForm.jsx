@@ -43,8 +43,15 @@ export function RechnungForm({ invoice, catalog = { employees: [], materials: []
   const total = afterDiscount + vat;
   const skontoAmt = total * (Number(form.skontoPct) / 100);
 
-  const buildInvoice = () => ({ ...invoice, ...form, lineItems: rows, subtotal, vat, total, totalAmount: total, discountAmt, skontoAmt });
-
+ const buildInvoice = () => {
+  const workRows = rows.filter(r => (catalog.employees||[]).find(e => e.name === r.description) || (!( catalog.materials||[]).find(m => m.name === r.description) && r.unit === "h"));
+  const materialRows = rows.filter(r => (catalog.materials||[]).find(m => m.name === r.description));
+  const workRowsMapped = workRows.map(r => { const emp = (catalog.employees||[]).find(e => e.name === r.description); return { employee: r.description, from: "", to: "", hours: Number(r.qty), rate: Number(r.price), total: Number(r.qty)*Number(r.price) }; });
+  const matRowsMapped = materialRows.map(r => ({ name: r.description, qty: Number(r.qty), unit: r.unit||"St", price: Number(r.price), total: Number(r.qty)*Number(r.price) }));
+  const otherRows = rows.filter(r => !workRows.includes(r) && !materialRows.includes(r)).map(r => ({ employee: r.description, from: "", to: "", hours: Number(r.qty), rate: Number(r.price), total: Number(r.qty)*Number(r.price) }));
+  const reportData = { ...(invoice?.reportData||{}), workRows: [...workRowsMapped, ...otherRows], materialRows: matRowsMapped };
+  return { ...invoice, ...form, lineItems: rows, reportData, subtotal, vat, total, totalAmount: total, discountAmt, skontoAmt };
+};
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0, color: GOLD }}>Rechnung bearbeiten</h2>
