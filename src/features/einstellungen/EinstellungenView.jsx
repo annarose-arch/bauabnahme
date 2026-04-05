@@ -88,10 +88,10 @@ return (
    <div style={{ marginBottom: 16, border: "1px solid " + BORDER, borderRadius: 10, padding: 14 }}>
         <div style={{ color: MUTED, fontSize: 13, marginBottom: 10 }}>Aktueller Plan</div>
         <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
-          {[{ n: "Starter", p: "CHF 0", link: null }, { n: "Pro", p: "CHF 29/Mt", link: "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06" }, { n: "Team", p: "CHF 79/Mt", link: "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07" }].map(pl => (
+          {[{ n: "Starter", p: "CHF 0", link: null, features: ["1 Benutzer", "15 Rapporte/Monat", "15 Rechnungen/Monat"] }, { n: "Pro", p: "CHF 29/Mt", link: "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06", features: ["1 Admin + 5 Mitarbeiter", "Unlimitierte Rapporte", "Unlimitierte Rechnungen"] }, { n: "Team", p: "CHF 79/Mt", link: "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07", features: ["Unlimitierte Mitarbeiter", "Unlimitierte Rapporte & Rechnungen", "Prioritaets-Support"] }].map(pl => (
             <div key={pl.n} style={{ border: "2px solid " + (pl.n.toLowerCase() === currentPlan ? GOLD : BORDER), borderRadius: 8, padding: 10, background: pl.n.toLowerCase() === currentPlan ? "rgba(212,168,83,0.1)" : "transparent" }}>
               <div style={{ fontWeight: 700, color: pl.n.toLowerCase() === currentPlan ? GOLD : TEXT }}>{pl.n}</div>
-              <div style={{ color: MUTED, fontSize: 13 }}>{pl.p}</div>
+              <div style={{ color: MUTED, fontSize: 13 }}>{pl.features && pl.features.map((f, i) => <div key={i} style={{ color: MUTED, fontSize: 11, marginTop: 2 }}>• {f}</div>)}
               {pl.link && <a href={pl.link} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginTop: 6, color: GOLD, fontSize: 12, textDecoration: "none" }}>Abonnieren</a>}
             </div>
           ))}
