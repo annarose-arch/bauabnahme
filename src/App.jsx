@@ -25,5 +25,5 @@ if(s?.user?.user_metadata?.account_status==="deactivated")return(
     <button onClick={async()=>{await supabase.auth.signOut();go("/");}} style={{background:"transparent",color:"#888",border:"1px solid #333",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontSize:13}}>Logout</button>
   </div>
 );
-return<Dashboard onNavigate={go} onLogout={async()=>{ try { await supabase.auth.signOut(); } catch(e) {} localStorage.clear(); sessionStorage.clear(); window.location.href="/"; }} session={s}/>;
+return<Dashboard onNavigate={go} onLogout={()=>{ localStorage.clear(); sessionStorage.clear(); window.location.href="/"; }} session={s}/>;
 }
