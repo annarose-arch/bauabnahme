@@ -101,7 +101,7 @@ return (
       </div>
       <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Support</div>
-        <a href="mailto:support@bauabnahme.app" style={{ ...pBtn, textDecoration: "none", display: "inline-flex" }}>support@bauabnahme.app</a>
+        <a href="mailto:support@bauabnahme.app" grep -n "pBtn.*support\|support.*pBtn" src/features/einstellungen/EinstellungenView.jsx
       </div>
       <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
         <div style={{ color: GOLD, fontWeight: 700, marginBottom: 10 }}>Rechtliches</div>
