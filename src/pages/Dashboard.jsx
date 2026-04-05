@@ -217,7 +217,7 @@ if (!isDemo && userId) {
     setArchivedReports(active.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap: fetch* recreated each render
-  useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); fetchInvoices(); fetchCatalog(); }, [userId,isDemo]);
+  useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId){ const t=setTimeout(()=>{ if(userId){ fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); fetchInvoices(); fetchCatalog(); } },2000); return ()=>clearTimeout(t); } fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); fetchInvoices(); fetchCatalog(); }, [userId,isDemo]);
   const fetchInvoices = async () => { 
     if(!userId) return;
     const {data} = await supabase.from("invoices").select("*").eq("user_id",userId).order("id",{ascending:false});
