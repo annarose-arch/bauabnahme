@@ -268,6 +268,7 @@ if (!isDemo && userId) {
   };
 const ok = await checkLimit("report");
 if (!ok) return;
+await bumpUsage("report");
 
   const handleSave = async () => {
     setShowCustomerSuggestions(false);
