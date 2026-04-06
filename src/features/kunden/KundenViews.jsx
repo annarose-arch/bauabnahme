@@ -1,3 +1,4 @@
+import { useTranslation } from "../../lib/translations.js";
 import { useState, useMemo } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
 import { parseReport, parseCustomerMeta, toNum, formatDateCH, formatReportCardSummary } from "../../lib/utils.js";
@@ -31,7 +32,7 @@ function formatCHF(amount) {
   return parts.join(".");
 }
 
-export function KundenView({
+export function KundenView({ language = "DE",
   customerForm,
   setCustomerForm,
   customers,
@@ -39,6 +40,7 @@ export function KundenView({
   onSelect,
   onDelete,
 }) {
+  const tr = useTranslation(language);
   const [search, setSearch] = useState("");
   const filteredCustomers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -64,10 +66,10 @@ export function KundenView({
         )}
       </div>
       <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-        <input placeholder="Firmenname *" value={customerForm.company} onChange={(e) => setCustomerForm((p) => ({ ...p, company: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.customer.company + " *"} value={customerForm.company} onChange={(e) => setCustomerForm((p) => ({ ...p, company: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <input placeholder="Vorname" value={customerForm.firstName} onChange={(e) => setCustomerForm((p) => ({ ...p, firstName: e.target.value }))} style={iStyle} />
-          <input placeholder="Nachname" value={customerForm.lastName} onChange={(e) => setCustomerForm((p) => ({ ...p, lastName: e.target.value }))} style={iStyle} />
+          <input placeholder={tr.customer.firstName} value={customerForm.firstName} onChange={(e) => setCustomerForm((p) => ({ ...p, firstName: e.target.value }))} style={iStyle} />
+          <input placeholder={tr.customer.lastName} value={customerForm.lastName} onChange={(e) => setCustomerForm((p) => ({ ...p, lastName: e.target.value }))} style={iStyle} />
         </div>
         <input placeholder="Adresse" value={customerForm.address} onChange={(e) => setCustomerForm((p) => ({ ...p, address: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
