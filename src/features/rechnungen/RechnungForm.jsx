@@ -1,9 +1,11 @@
+import { useTranslation } from "../../lib/translations.js";
 import { useState } from "react";
 import { GOLD, isMobile, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
 const mobile = typeof window !== "undefined" && window.innerWidth < 600;
 import { formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
-export function RechnungForm({ invoice, catalog = { employees: [], materials: [] }, onSave, onCancel, onPreview }) {
+export function RechnungForm({ language = "DE", invoice, catalog = { employees: [], materials: [] }, onSave, onCancel, onPreview }) {
+  const tr = useTranslation(language);
   const rd = invoice?.reportData || {};
   const initRows = () => {
     if (invoice?.lineItems?.length) return invoice.lineItems;
@@ -63,7 +65,7 @@ export function RechnungForm({ invoice, catalog = { employees: [], materials: []
         <input placeholder="Bezug Rapport Nr." value={form.rapportRef} onChange={e => set("rapportRef", e.target.value)} style={iStyle} />
       </div>
 
-      <h3 style={{ color: GOLD, marginBottom: 8 }}>Positionen</h3>
+      <h3 style={{ color: GOLD, marginBottom: 8 }}>{tr.invoice.positions}</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
         <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "3fr 1fr 1fr 1fr auto", gap: 6 }}>
           <div style={{ color: MUTED, fontSize: 12, textAlign: "center" }}>Beschreibung</div>
@@ -75,7 +77,7 @@ export function RechnungForm({ invoice, catalog = { employees: [], materials: []
         {rows.map((row, i) => (
           <div key={i} style={{ display: "grid", gridTemplateColumns: window.innerWidth < 600 ? "1fr" : "3fr 1fr 1fr 1fr auto", gap: 6 }}>
             <div style={{ position: "relative" }}>
-  <input placeholder="Beschreibung" value={row.description} onChange={e => {
+  <input placeholder={tr.invoice.description} value={row.description} onChange={e => {
   const val = e.target.value;
   updateRow(i, "description", val);
   const emp = (catalog.employees||[]).find(x => x.name === val);
@@ -116,8 +118,8 @@ export function RechnungForm({ invoice, catalog = { employees: [], materials: []
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={() => onSave(buildInvoice())} style={pBtn}>Speichern</button>
-        <button type="button" onClick={() => onPreview && onPreview(buildInvoice())} style={{ ...gBtn, color: GOLD, borderColor: GOLD }}>PDF Vorschau</button>
+        <button type="button" onClick={() => onSave(buildInvoice())} style={pBtn}>{tr.common.save}</button>
+        <button type="button" onClick={() => onPreview && onPreview(buildInvoice())} style={{ ...gBtn, color: GOLD, borderColor: GOLD }}>{tr.invoice.pdf} Vorschau</button>
         <button type="button" onClick={onCancel} style={gBtn}>Abbrechen</button>
       </div>
     </SectionCard>
