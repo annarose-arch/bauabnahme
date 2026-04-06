@@ -66,7 +66,7 @@ export function RapportForm({ language = "DE",
         {/* Arbeitsstunden */}
         <h3 style={{ marginBottom: 4 }}>{tr.report.workHours}</h3>
         <button type="button" onClick={() => setWorkRows(p => [...p, { employee: "", from: "", to: "", rate: "" }])} style={{ ...pBtn, width: 180 }}>
-          + Zeile hinzufügen
+          + {tr.report.addRow}
         </button>
         {workRows.map((row, i) => {
           const h = calcHours(row.from, row.to), t = h * toNum(row.rate);
@@ -80,7 +80,7 @@ export function RapportForm({ language = "DE",
                     const emp = catalog.employees.find(x => x.name === e.target.value);
                     setWorkRows(p => p.map((r, j) => j === i ? { ...r, employee: e.target.value, rate: emp?.rate || r.rate, _customEmployee: false } : r));
                   }} style={{ ...iStyle, width: "100%" }}>
-                    <option value="">Mitarbeiter wählen...</option>
+                    <option value="">{tr.report.employee}... </option>
                     {catalog.employees.map(emp => <option key={emp.id} value={emp.name}>{emp.name}{emp.rate ? ` — CHF ${emp.rate}/h` : ""}</option>)}
                     <option value="__custom__">✏️ Manuell eingeben</option>
                   </select>
@@ -107,7 +107,7 @@ export function RapportForm({ language = "DE",
         {/* Material */}
         <h3 style={{ marginBottom: 4 }}>{tr.report.material}</h3>
         <button type="button" onClick={() => setMaterialRows(p => [...p, { name: "", qty: "", unit: "", price: "" }])} style={{ ...pBtn, width: 180 }}>
-          + Zeile hinzufügen
+          + {tr.report.addRow}
         </button>
         {materialRows.map((row, i) => {
           const t = toNum(row.qty) * toNum(row.price);
@@ -121,7 +121,7 @@ export function RapportForm({ language = "DE",
                     const mat = catalog.materials.find(x => x.name === e.target.value);
                     setMaterialRows(p => p.map((r, j) => j === i ? { ...r, name: e.target.value, unit: mat?.unit || r.unit, price: mat?.price || r.price, _customMaterial: false } : r));
                   }} style={{ ...iStyle, width: "100%" }}>
-                    <option value="">Material wählen...</option>
+                    <option value="">{tr.report.material}... </option>
                     {catalog.materials.map(mat => <option key={mat.id} value={mat.name}>{mat.name}{mat.unit ? ` (${mat.unit})` : ""}{mat.price ? ` — CHF ${mat.price}` : ""}</option>)}
                     <option value="__custom__">✏️ Manuell eingeben</option>
                   </select>
