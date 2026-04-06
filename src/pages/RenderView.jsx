@@ -159,7 +159,7 @@ export function RenderView({
   // ── Papierkorb ──────────────────────────────────────────────────────────
   if (view === "trash") return (
     <Papierkorb
-      trashReports={trashReports}
+      language={language}      trashReports={trashReports}
       trashInvoices={trashInvoices}
       trashCustomers={trashCustomers} onRestoreCustomer={restoreCustomer} onHardDeleteCustomer={hardDeleteCustomer}
       onRestore={restore}
