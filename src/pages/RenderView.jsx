@@ -88,7 +88,7 @@ export function RenderView({
 
   // ── Neuer Rapport ───────────────────────────────────────────────────────
   if (view === "new-report") return (
-    <RapportForm
+    <RapportForm language={language}
       editingReport={editingReport}
       reportForm={reportForm}
       setReportForm={setReportForm}
