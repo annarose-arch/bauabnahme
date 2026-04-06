@@ -77,7 +77,7 @@ export function RenderView({
   // ── Kunden Liste ────────────────────────────────────────────────────────
   if (view === "customers") return (
     <KundenView
-      customerForm={customerForm}
+      language={language}      customerForm={customerForm}
       setCustomerForm={setCustomerForm}
       customers={customers}
       onSave={saveCustomer}
