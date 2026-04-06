@@ -37,6 +37,9 @@ export const t = {
   }
 };
 
+import { useState, useEffect } from "react";
 export function useTranslation(lang = "DE") {
-  return t[lang] || t.DE;
+  const [current, setCurrent] = useState(t[lang] || t.DE);
+  useEffect(() => { setCurrent(t[lang] || t.DE); }, [lang]);
+  return current;
 }
