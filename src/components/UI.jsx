@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { GOLD, BORDER, PANEL, TEXT, MUTED, gBtn } from "../lib/constants.js";
 
 // ─── SignaturePad ──────────────────────────────────────────────────────────
-export function SignaturePad({ value, onChange }) {
+export function SignaturePad({ value, onChange, clearLabel }) {
   const ref = useRef(null);
   const drawing = useRef(false);
   const last = useRef(null);
@@ -38,14 +38,14 @@ export function SignaturePad({ value, onChange }) {
         onTouchStart={start} onTouchMove={draw} onTouchEnd={end}
       />
       <button type="button" onClick={clear} style={{ ...gBtn, marginTop: 6, fontSize: 13, minHeight: 32 }}>
-        Unterschrift löschen
+        {clearLabel || "Unterschrift löschen"}
       </button>
     </div>
   );
 }
 
 // ─── PhotoUpload ───────────────────────────────────────────────────────────
-export function PhotoUpload({ label, value, onChange }) {
+export function PhotoUpload({ label, value, onChange, addPhotoLabel }) {
   const ref = useRef(null);
   const onFile = (e) => {
     const f = e.target.files?.[0];
@@ -65,7 +65,7 @@ export function PhotoUpload({ label, value, onChange }) {
       ) : (
         <button type="button" onClick={() => ref.current?.click()}
           style={{ ...gBtn, minHeight: 80, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 4, fontSize: 13, color: MUTED }}>
-          <span style={{ fontSize: 24 }}>📷</span><span>Foto hinzufügen</span>
+          <span style={{ fontSize: 24 }}>📷</span><span>{addPhotoLabel || "Foto hinzufügen"}</span>
         </button>
       )}
       <input ref={ref} type="file" accept="image/*" style={{ display: "none" }} onChange={onFile} />
