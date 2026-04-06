@@ -48,11 +48,11 @@ export function RapportForm({ language = "DE",
         </div>
         <input placeholder={tr.customer.email} value={reportForm.customerEmail} onChange={e => setReportForm(p => ({ ...p, customerEmail: e.target.value }))} style={iStyle} />
         <input placeholder={tr.report.orderNo} value={reportForm.orderNo} onChange={e => setReportForm(p => ({ ...p, orderNo: e.target.value }))} style={iStyle} />
-        <input placeholder="Projektname" value={reportForm.projectSearch || ""} onChange={e => setReportForm(p => ({ ...p, projectSearch: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.report.orderNo} value={reportForm.projectSearch || ""} onChange={e => setReportForm(p => ({ ...p, projectSearch: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <input type="date" value={reportForm.date} onChange={e => setReportForm(p => ({ ...p, date: e.target.value }))} style={iStyle} />
           <select value={reportForm.status} onChange={e => setReportForm(p => ({ ...p, status: e.target.value }))} style={iStyle}>
-            {["offen", "gesendet", "archiviert"].map(s => <option key={s}>{s}</option>)}
+            {[tr.report.status, "gesendet", "archiviert"].map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
 
@@ -149,7 +149,7 @@ export function RapportForm({ language = "DE",
 
         {/* Unterschrift */}
         <h3 style={{ marginBottom: 4 }}>✍️ Unterschrift</h3>
-        <input placeholder="Name des Unterzeichners" value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.report.employee} value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={iStyle} />
         <SignaturePad value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
 
         <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
