@@ -44,7 +44,7 @@ export function RapportForm({ language = "DE",
         <input placeholder={tr.report.address} value={reportForm.address} onChange={e => setReportForm(p => ({ ...p, address: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
           <input placeholder={tr.report.zip} value={reportForm.zip || ""} onChange={e => setReportForm(p => ({ ...p, zip: e.target.value }))} style={iStyle} />
-          <input placeholder="Ort" value={reportForm.city || ""} onChange={e => setReportForm(p => ({ ...p, city: e.target.value }))} style={iStyle} />
+          <input placeholder={tr.report.city} value={reportForm.city || ""} onChange={e => setReportForm(p => ({ ...p, city: e.target.value }))} style={iStyle} />
         </div>
         <input placeholder={tr.customer.email} value={reportForm.customerEmail} onChange={e => setReportForm(p => ({ ...p, customerEmail: e.target.value }))} style={iStyle} />
         <input placeholder={tr.report.orderNo} value={reportForm.orderNo} onChange={e => setReportForm(p => ({ ...p, orderNo: e.target.value }))} style={iStyle} />
@@ -52,7 +52,7 @@ export function RapportForm({ language = "DE",
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <input type="date" value={reportForm.date} onChange={e => setReportForm(p => ({ ...p, date: e.target.value }))} style={iStyle} />
           <select value={reportForm.status} onChange={e => setReportForm(p => ({ ...p, status: e.target.value }))} style={iStyle}>
-            {[tr.report.status, "gesendet", "archiviert"].map(s => <option key={s}>{s}</option>)}
+            {[tr.report.status, tr.common.save === "Speichern" ? "gesendet" : "sent", tr.common.save === "Speichern" ? "archiviert" : "archived"].map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
 
@@ -95,7 +95,7 @@ export function RapportForm({ language = "DE",
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8 }}>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>von (HH:MM)</div><input placeholder="07:00" value={row.from} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} style={iStyle} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>bis (HH:MM)</div><input placeholder="17:00" value={row.to} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} style={iStyle} /></div>
-                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Stunden</div><input readOnly value={h.toFixed(2)} style={{ ...iStyle, color: GOLD }} /></div>
+                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Std</div><input readOnly value={h.toFixed(2)} style={{ ...iStyle, color: GOLD }} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>CHF/h</div><input placeholder="110" value={row.rate} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, rate: e.target.value } : r))} style={iStyle} /></div>
               </div>
               <div style={{ textAlign: "right", color: GOLD, fontWeight: 700, fontSize: 14, marginTop: 6 }}>Total: CHF {t.toFixed(2)}</div>
