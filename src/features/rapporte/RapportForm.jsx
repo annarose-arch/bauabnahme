@@ -52,7 +52,7 @@ export function RapportForm({ language = "DE",
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <input type="date" value={reportForm.date} onChange={e => setReportForm(p => ({ ...p, date: e.target.value }))} style={iStyle} />
           <select value={reportForm.status} onChange={e => setReportForm(p => ({ ...p, status: e.target.value }))} style={iStyle}>
-            {[tr.report.status, tr.common.save === "Speichern" ? "gesendet" : "sent", tr.common.save === "Speichern" ? "archiviert" : "archived"].map(s => <option key={s}>{s}</option>)}
+           {[tr.report.statusOpen, tr.report.statusSent, tr.report.statusArchived].map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
 
