@@ -1,0 +1,42 @@
+export const t = {
+  DE: {
+    nav: { home: "Start", customers: "Kunden", catalog: "Katalog", newReport: "Neuer Rapport", reports: "Offene Rapporte", invoices: "Rechnungen", trash: "Papierkorb", settings: "Einstellungen" },
+    report: { title: "Neuer Rapport", save: "Rapport speichern", customer: "Kunde", address: "Adresse", zip: "PLZ", city: "Ort", orderNo: "Auftrag-Nr", date: "Datum", status: "Status", workHours: "Arbeitsstunden", material: "Material", expenses: "Spesen CHF", notes: "Notizen", addRow: "Zeile hinzufuegen", employee: "Mitarbeiter", from: "Von", to: "Bis", rate: "Ansatz CHF", name: "Bezeichnung", qty: "Menge", unit: "Einheit", price: "Preis CHF", total: "Total", vat: "MwSt 8.1%", saved: "Rapport gespeichert." },
+    customer: { title: "Kunden", new: "Neuer Kunde", save: "Speichern", company: "Firmenname", firstName: "Vorname", lastName: "Nachname", phone: "Telefon", email: "E-Mail", search: "Suchen..." },
+    invoice: { title: "Rechnungen", new: "Neue Rechnung", save: "Speichern", generate: "Rechnung generieren", open: "Rechnung oeffnen", edit: "Bearbeiten", pdf: "PDF", sent: "Als versendet markieren", paid: "Bezahlt", discount: "Rabatt %", skonto: "Skonto %", payDays: "Zahlungsziel (Tage)", skontoDays: "Skonto-Frist (Tage)", positions: "Positionen", description: "Beschreibung", qty: "Menge", unit: "Einheit", price: "Preis CHF" },
+    settings: { title: "Einstellungen", profile: "Firmenprofil", plan: "Aktueller Plan", team: "Team", legal: "Rechtliches", support: "Support", account: "Konto-Verwaltung", logout: "Logout", deactivate: "Konto deaktivieren", delete: "Konto loeschen", iban: "IBAN", logo: "Logo hochladen", nextRapportNr: "Naechste Rapport-Nr", nextInvoiceNr: "Naechste Rechnungs-Nr", nextCustomerNr: "Naechste Kunden-Nr" },
+    common: { save: "Speichern", cancel: "Abbrechen", delete: "Loeschen", restore: "Wiederherstellen", edit: "Bearbeiten", search: "Suchen", loading: "Lade...", ok: "OK", back: "Zurueck", yes: "Ja", no: "Nein" },
+    trash: { title: "Papierkorb", reports: "Rapporte", invoices: "Rechnungen", customers: "Kunden", empty: "Papierkorb ist leer" }
+  },
+  FR: {
+    nav: { home: "Accueil", customers: "Clients", catalog: "Catalogue", newReport: "Nouveau rapport", reports: "Rapports ouverts", invoices: "Factures", trash: "Corbeille", settings: "Parametres" },
+    report: { title: "Nouveau rapport", save: "Enregistrer", customer: "Client", address: "Adresse", zip: "NPA", city: "Lieu", orderNo: "N de commande", date: "Date", status: "Statut", workHours: "Heures de travail", material: "Materiel", expenses: "Frais CHF", notes: "Remarques", addRow: "Ajouter une ligne", employee: "Employe", from: "De", to: "A", rate: "Taux CHF", name: "Designation", qty: "Quantite", unit: "Unite", price: "Prix CHF", total: "Total", vat: "TVA 8.1%", saved: "Rapport enregistre." },
+    customer: { title: "Clients", new: "Nouveau client", save: "Enregistrer", company: "Nom de la societe", firstName: "Prenom", lastName: "Nom", phone: "Telephone", email: "E-mail", search: "Rechercher..." },
+    invoice: { title: "Factures", new: "Nouvelle facture", save: "Enregistrer", generate: "Generer la facture", open: "Ouvrir la facture", edit: "Modifier", pdf: "PDF", sent: "Marquer comme envoyee", paid: "Payee", discount: "Rabais %", skonto: "Escompte %", payDays: "Delai de paiement (jours)", skontoDays: "Delai escompte (jours)", positions: "Positions", description: "Description", qty: "Quantite", unit: "Unite", price: "Prix CHF" },
+    settings: { title: "Parametres", profile: "Profil de lentreprise", plan: "Plan actuel", team: "Equipe", legal: "Mentions legales", support: "Support", account: "Gestion du compte", logout: "Deconnexion", deactivate: "Desactiver le compte", delete: "Supprimer le compte", iban: "IBAN", logo: "Telecharger le logo", nextRapportNr: "Prochain rapport nr", nextInvoiceNr: "Prochain facture nr", nextCustomerNr: "Prochain client nr" },
+    common: { save: "Enregistrer", cancel: "Annuler", delete: "Supprimer", restore: "Restaurer", edit: "Modifier", search: "Rechercher", loading: "Chargement...", ok: "OK", back: "Retour", yes: "Oui", no: "Non" },
+    trash: { title: "Corbeille", reports: "Rapports", invoices: "Factures", customers: "Clients", empty: "La corbeille est vide" }
+  },
+  IT: {
+    nav: { home: "Inizio", customers: "Clienti", catalog: "Catalogo", newReport: "Nuovo rapporto", reports: "Rapporti aperti", invoices: "Fatture", trash: "Cestino", settings: "Impostazioni" },
+    report: { title: "Nuovo rapporto", save: "Salva rapporto", customer: "Cliente", address: "Indirizzo", zip: "CAP", city: "Citta", orderNo: "N ordine", date: "Data", status: "Stato", workHours: "Ore di lavoro", material: "Materiale", expenses: "Spese CHF", notes: "Note", addRow: "Aggiungi riga", employee: "Dipendente", from: "Da", to: "A", rate: "Tariffa CHF", name: "Descrizione", qty: "Quantita", unit: "Unita", price: "Prezzo CHF", total: "Totale", vat: "IVA 8.1%", saved: "Rapporto salvato." },
+    customer: { title: "Clienti", new: "Nuovo cliente", save: "Salva", company: "Nome azienda", firstName: "Nome", lastName: "Cognome", phone: "Telefono", email: "E-mail", search: "Cerca..." },
+    invoice: { title: "Fatture", new: "Nuova fattura", save: "Salva", generate: "Genera fattura", open: "Apri fattura", edit: "Modifica", pdf: "PDF", sent: "Segna come inviata", paid: "Pagata", discount: "Sconto %", skonto: "Sconto cassa %", payDays: "Termine pagamento (giorni)", skontoDays: "Termine sconto (giorni)", positions: "Posizioni", description: "Descrizione", qty: "Quantita", unit: "Unita", price: "Prezzo CHF" },
+    settings: { title: "Impostazioni", profile: "Profilo aziendale", plan: "Piano attuale", team: "Team", legal: "Note legali", support: "Supporto", account: "Gestione account", logout: "Disconnetti", deactivate: "Disattiva account", delete: "Elimina account", iban: "IBAN", logo: "Carica logo", nextRapportNr: "Prossimo rapporto nr", nextInvoiceNr: "Prossimo fattura nr", nextCustomerNr: "Prossimo cliente nr" },
+    common: { save: "Salva", cancel: "Annulla", delete: "Elimina", restore: "Ripristina", edit: "Modifica", search: "Cerca", loading: "Caricamento...", ok: "OK", back: "Indietro", yes: "Si", no: "No" },
+    trash: { title: "Cestino", reports: "Rapporti", invoices: "Fatture", customers: "Clienti", empty: "Il cestino e vuoto" }
+  },
+  EN: {
+    nav: { home: "Home", customers: "Customers", catalog: "Catalog", newReport: "New Report", reports: "Open Reports", invoices: "Invoices", trash: "Trash", settings: "Settings" },
+    report: { title: "New Report", save: "Save Report", customer: "Customer", address: "Address", zip: "ZIP", city: "City", orderNo: "Order No.", date: "Date", status: "Status", workHours: "Work Hours", material: "Material", expenses: "Expenses CHF", notes: "Notes", addRow: "Add Row", employee: "Employee", from: "From", to: "To", rate: "Rate CHF", name: "Description", qty: "Quantity", unit: "Unit", price: "Price CHF", total: "Total", vat: "VAT 8.1%", saved: "Report saved." },
+    customer: { title: "Customers", new: "New Customer", save: "Save", company: "Company Name", firstName: "First Name", lastName: "Last Name", phone: "Phone", email: "E-Mail", search: "Search..." },
+    invoice: { title: "Invoices", new: "New Invoice", save: "Save", generate: "Generate Invoice", open: "Open Invoice", edit: "Edit", pdf: "PDF", sent: "Mark as Sent", paid: "Paid", discount: "Discount %", skonto: "Cash Discount %", payDays: "Payment Terms (days)", skontoDays: "Discount Period (days)", positions: "Positions", description: "Description", qty: "Quantity", unit: "Unit", price: "Price CHF" },
+    settings: { title: "Settings", profile: "Company Profile", plan: "Current Plan", team: "Team", legal: "Legal", support: "Support", account: "Account Management", logout: "Logout", deactivate: "Deactivate Account", delete: "Delete Account", iban: "IBAN", logo: "Upload Logo", nextRapportNr: "Next Report No.", nextInvoiceNr: "Next Invoice No.", nextCustomerNr: "Next Customer No." },
+    common: { save: "Save", cancel: "Cancel", delete: "Delete", restore: "Restore", edit: "Edit", search: "Search", loading: "Loading...", ok: "OK", back: "Back", yes: "Yes", no: "No" },
+    trash: { title: "Trash", reports: "Reports", invoices: "Invoices", customers: "Customers", empty: "Trash is empty" }
+  }
+};
+
+export function useTranslation(lang = "DE") {
+  return t[lang] || t.DE;
+}
