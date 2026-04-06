@@ -147,15 +147,19 @@ export function RapportForm({ language = "DE",
         <input placeholder={tr.report.expenses} value={reportForm.expenses} onChange={e => setReportForm(p => ({ ...p, expenses: e.target.value }))} style={iStyle} />
         <textarea placeholder={tr.report.notes} value={reportForm.notes} onChange={e => setReportForm(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ ...iStyle, minHeight: 80, padding: 10 }} />
 
-        {/* Unterschrift */}
-        <h3 style={{ marginBottom: 4 }}>✍️ Unterschrift</h3>
-        <input placeholder={tr.report.employee} value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={iStyle} />
-        <SignaturePad value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
-        {/* Kunden Unterschrift */}
-        <h3 style={{ marginBottom: 4 }}>✍️ Kunden Unterschrift</h3>
-        <input placeholder="Name des Kunden" value={reportForm.customerSignerName || ""} onChange={e => setReportForm(p => ({ ...p, customerSignerName: e.target.value }))} style={iStyle} />
-        <SignaturePad value={reportForm.customerSignatureImage || ""} onChange={v => setReportForm(p => ({ ...p, customerSignatureImage: v }))} />
-
+                {/* Unterschriften nebeneinander */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div>
+            <h3 style={{ marginBottom: 4 }}>✍️ Mitarbeiter</h3>
+            <input placeholder={tr.report.employee} value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
+            <SignaturePad value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
+          </div>
+          <div>
+            <h3 style={{ marginBottom: 4 }}>✍️ Kunde</h3>
+            <input placeholder="Name des Kunden" value={reportForm.customerSignerName || ""} onChange={e => setReportForm(p => ({ ...p, customerSignerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
+            <SignaturePad value={reportForm.customerSignatureImage || ""} onChange={v => setReportForm(p => ({ ...p, customerSignatureImage: v }))} />
+          </div>
+        </div>
         <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
         <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {formatCHF(total)}</div>
         <div style={{ display: "flex", gap: 8 }}>
