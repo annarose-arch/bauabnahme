@@ -26,7 +26,7 @@ export function buildRapportHtml(
   firmPhone, firmEmail, isPro, isDemoMode, mailto, customers, parseCustomerMeta
 ) {
   const work = p.workRows || [], mat = p.materialRows || [], tot = p.totals || {};
-  const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {};
+  const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {};, custSig = p.customerSignature || {}
   const name = report.customer || "-";
   const custRecord = customers.find(
     (c) => String(c.id) === String(p.customerId) || c.name === report.customer
@@ -108,7 +108,8 @@ ${photos.before || photos.after ? `<div class="card"><h3>Fotos</h3><div style="d
   <div><b>MwSt 8.1%:</b> CHF ${Number(tot.vat || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
   <div class="total">TOTAL CHF ${Number(tot.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
 </div>
-${sig.image ? `<div class="card"><h3>Unterschrift</h3><div style="margin-bottom:4px"><b>${sig.name || "-"}</b></div><img src="${sig.image}" style="width:280px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/></div>` : ""}
+${sig.image || custSig.image ? `<div class="card" style="display:flex;gap:32px"><div>${sig.image ? `<h3>Mitarbeiter</h3><div style="margin-bottom:4px"><b>${sig.name || "-"}</b></div><img src="${sig.image}" style="width:220px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/>` : ""}</div><div>${custSig.image ? `<h3>Kunde</h3><div style="margin-bottom:4px"><b>${custSig.name || "-"}</b></div><img src="${custSig.image}" style="width:220px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/>` : ""}</div></div>` : ""}
+
 </body></html>`;
 }
 
