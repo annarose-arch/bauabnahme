@@ -26,7 +26,7 @@ export function buildRapportHtml(
   firmPhone, firmEmail, isPro, isDemoMode, mailto, customers, parseCustomerMeta
 ) {
   const work = p.workRows || [], mat = p.materialRows || [], tot = p.totals || {};
-  const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {};, custSig = p.customerSignature || {}
+  const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {}, custSig = p.customerSignature || {}
   const name = report.customer || "-";
   const custRecord = customers.find(
     (c) => String(c.id) === String(p.customerId) || c.name === report.customer
