@@ -7,7 +7,7 @@ export function RapportForm({ language = "DE",
   editingReport, reportForm, setReportForm,
   workRows, setWorkRows, materialRows, setMaterialRows,
   customers, catalog,
-{tr.report.workHours} Total, {tr.report.material} Total, vat, total,
+  workSubtotal, materialSubtotal, vat, total,
   showCustomerSuggestions, setShowCustomerSuggestions,
   onCustomerSelect, onSave, onCancel,
 }) {
@@ -20,8 +20,7 @@ export function RapportForm({ language = "DE",
         {/* Kunde Autocomplete */}
         <div style={{ position: "relative" }}>
           <input
-        <div style={{ position: "relative" }}>
-            placeholder={tr.customer.company}
+            placeholder="Firmenname eingeben..."
             value={reportForm.customer}
             onChange={e => { setReportForm(p => ({ ...p, customer: e.target.value, selectedCustomerId: "" })); setShowCustomerSuggestions(true); }}
             onFocus={() => setShowCustomerSuggestions(true)}
@@ -67,7 +66,7 @@ export function RapportForm({ language = "DE",
         {/* Arbeitsstunden */}
         <h3 style={{ marginBottom: 4 }}>{tr.report.workHours}</h3>
         <button type="button" onClick={() => setWorkRows(p => [...p, { employee: "", from: "", to: "", rate: "" }])} style={{ ...pBtn, width: 180 }}>
-          >{tr.report.addRow}<
+          + Zeile hinzufügen
         </button>
         {workRows.map((row, i) => {
           const h = calcHours(row.from, row.to), t = h * toNum(row.rate);
@@ -94,8 +93,8 @@ export function RapportForm({ language = "DE",
                 <button type="button" onClick={() => setWorkRows(p => p.filter((_, j) => j !== i))} style={{ ...dBtn, minWidth: 34 }} disabled={workRows.length === 1}>✕</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8 }}>
-                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>{tr.report.from}(HH:MM)< </div><input placeholder="07:00" value={row.from} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} style={iStyle} /></div>
-                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>{tr.report.to}(HH:MM)</div><input placeholder="17:00" value={row.to} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} style={iStyle} /></div>
+                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Von (HH:MM)</div><input placeholder="07:00" value={row.from} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} style={iStyle} /></div>
+                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Bis (HH:MM)</div><input placeholder="17:00" value={row.to} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} style={iStyle} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Stunden</div><input readOnly value={h.toFixed(2)} style={{ ...iStyle, color: GOLD }} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>CHF/h</div><input placeholder="110" value={row.rate} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, rate: e.target.value } : r))} style={iStyle} /></div>
               </div>
@@ -103,12 +102,12 @@ export function RapportForm({ language = "DE",
             </div>
           );
         })}
-        <div style={{ color: MUTED, fontSize: 13 }}>{tr.report.workHours}: CHF {workSubtotal.toFixed(2)}</div>
+        <div style={{ color: MUTED, fontSize: 13 }}>Subtotal Arbeit: CHF {workSubtotal.toFixed(2)}</div>
 
         {/* Material */}
         <h3 style={{ marginBottom: 4 }}>{tr.report.material}</h3>
         <button type="button" onClick={() => setMaterialRows(p => [...p, { name: "", qty: "", unit: "", price: "" }])} style={{ ...pBtn, width: 180 }}>
-           >{tr.report.addRow}<
+          + Zeile hinzufügen
         </button>
         {materialRows.map((row, i) => {
           const t = toNum(row.qty) * toNum(row.price);
@@ -143,7 +142,7 @@ export function RapportForm({ language = "DE",
             </div>
           );
         })}
-        <div style={{ color: MUTED, fontSize: 13 }}>{tr.report.material}: CHF {materialSubtotal.toFixed(2)}</div>
+        <div style={{ color: MUTED, fontSize: 13 }}>Subtotal Material: CHF {materialSubtotal.toFixed(2)}</div>
 
         <input placeholder={tr.report.expenses} value={reportForm.expenses} onChange={e => setReportForm(p => ({ ...p, expenses: e.target.value }))} style={iStyle} />
         <textarea placeholder={tr.report.notes} value={reportForm.notes} onChange={e => setReportForm(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ ...iStyle, minHeight: 80, padding: 10 }} />
