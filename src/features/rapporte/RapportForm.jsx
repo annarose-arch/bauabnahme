@@ -151,6 +151,10 @@ export function RapportForm({ language = "DE",
         <h3 style={{ marginBottom: 4 }}>✍️ Unterschrift</h3>
         <input placeholder={tr.report.employee} value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={iStyle} />
         <SignaturePad value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
+        {/* Kunden Unterschrift */}
+        <h3 style={{ marginBottom: 4 }}>✍️ Kunden Unterschrift</h3>
+        <input placeholder="Name des Kunden" value={reportForm.customerSignerName || ""} onChange={e => setReportForm(p => ({ ...p, customerSignerName: e.target.value }))} style={iStyle} />
+        <SignaturePad value={reportForm.customerSignatureImage || ""} onChange={v => setReportForm(p => ({ ...p, customerSignatureImage: v }))} />
 
         <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
         <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {formatCHF(total)}</div>
