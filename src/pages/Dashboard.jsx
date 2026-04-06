@@ -120,11 +120,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
     localStorage.setItem("bauabnahme_language_pref", next);
     window.dispatchEvent(new CustomEvent("bauabnahme-language-change", { detail: next }));
   }, []);
-  useEffect(() => {
-    if (view !== "settings") return;
-    const stored = normalizeUiLanguage(localStorage.getItem("bauabnahme_language_pref"));
-    setUiLanguage((prev) => (prev === stored ? prev : stored));
-  }, [view]);
+
   const [invoices, setInvoices] = useState([]);
    const saveInvoiceToStorage = useCallback(async (inv) => {
 if (!isDemo && userId) {
