@@ -59,7 +59,7 @@ export function RapportForm({ language = "DE",
         {/* Fotos */}
         <h3 style={{ marginBottom: 4 }}>📷 Fotos</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <PhotoUpload label={tr.report.from} value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
+          <PhotoUpload label="Vorher" addPhotoLabel={tr.report.addRow} value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
           <PhotoUpload label={tr.report.to} value={reportForm.afterPhoto} onChange={v => setReportForm(p => ({ ...p, afterPhoto: v }))} />
         </div>
 
@@ -152,12 +152,12 @@ export function RapportForm({ language = "DE",
           <div>
             <h3 style={{ marginBottom: 4 }}>✍️ Mitarbeiter</h3>
             <input placeholder={tr.report.employee} value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
-            <SignaturePad value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
+            <SignaturePad clearLabel={tr.common.delete} value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
           </div>
           <div>
             <h3 style={{ marginBottom: 4 }}>✍️ Kunde</h3>
             <input placeholder="Name des Kunden" value={reportForm.customerSignerName || ""} onChange={e => setReportForm(p => ({ ...p, customerSignerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
-            <SignaturePad value={reportForm.customerSignatureImage || ""} onChange={v => setReportForm(p => ({ ...p, customerSignatureImage: v }))} />
+            <SignaturePad clearLabel={tr.common.delete} value={reportForm.customerSignatureImage || ""} onChange={v => setReportForm(p => ({ ...p, customerSignatureImage: v }))} />
           </div>
         </div>
         <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
