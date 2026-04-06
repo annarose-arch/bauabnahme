@@ -1,8 +1,9 @@
+import { useTranslation } from "../../lib/translations.js";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
 import { calcHours, toNum, formatCHF } from "../../lib/utils.js";
 import { SignaturePad, PhotoUpload, SectionCard } from "../../components/UI.jsx";
 
-export function RapportForm({
+export function RapportForm({ language = "DE",
   editingReport, reportForm, setReportForm,
   workRows, setWorkRows, materialRows, setMaterialRows,
   customers, catalog,
@@ -10,6 +11,7 @@ export function RapportForm({
   showCustomerSuggestions, setShowCustomerSuggestions,
   onCustomerSelect, onSave, onCancel,
 }) {
+  const tr = useTranslation(language);
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>{editingReport ? "Rapport bearbeiten" : "Neuer Rapport"}</h2>
@@ -45,7 +47,7 @@ export function RapportForm({
           <input placeholder="Ort" value={reportForm.city || ""} onChange={e => setReportForm(p => ({ ...p, city: e.target.value }))} style={iStyle} />
         </div>
         <input placeholder="Kunde E-Mail" value={reportForm.customerEmail} onChange={e => setReportForm(p => ({ ...p, customerEmail: e.target.value }))} style={iStyle} />
-        <input placeholder="Auftrag-Nr / Projekt-Nr" value={reportForm.orderNo} onChange={e => setReportForm(p => ({ ...p, orderNo: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.report.orderNo} value={reportForm.orderNo} onChange={e => setReportForm(p => ({ ...p, orderNo: e.target.value }))} style={iStyle} />
         <input placeholder="Projektname" value={reportForm.projectSearch || ""} onChange={e => setReportForm(p => ({ ...p, projectSearch: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <input type="date" value={reportForm.date} onChange={e => setReportForm(p => ({ ...p, date: e.target.value }))} style={iStyle} />
@@ -62,7 +64,7 @@ export function RapportForm({
         </div>
 
         {/* Arbeitsstunden */}
-        <h3 style={{ marginBottom: 4 }}>⏱ Arbeitsstunden</h3>
+        <h3 style={{ marginBottom: 4 }}>{tr.report.workHours}</h3>
         <button type="button" onClick={() => setWorkRows(p => [...p, { employee: "", from: "", to: "", rate: "" }])} style={{ ...pBtn, width: 180 }}>
           + Zeile hinzufügen
         </button>
@@ -103,7 +105,7 @@ export function RapportForm({
         <div style={{ color: MUTED, fontSize: 13 }}>Subtotal Arbeit: CHF {workSubtotal.toFixed(2)}</div>
 
         {/* Material */}
-        <h3 style={{ marginBottom: 4 }}>🔧 Material / Kranrapport</h3>
+        <h3 style={{ marginBottom: 4 }}>{tr.report.material}</h3>
         <button type="button" onClick={() => setMaterialRows(p => [...p, { name: "", qty: "", unit: "", price: "" }])} style={{ ...pBtn, width: 180 }}>
           + Zeile hinzufügen
         </button>
