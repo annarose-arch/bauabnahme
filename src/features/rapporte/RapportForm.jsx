@@ -20,7 +20,7 @@ export function RapportForm({ language = "DE",
         {/* Kunde Autocomplete */}
         <div style={{ position: "relative" }}>
           <input
-            placeholder="Firmenname eingeben..."
+            placeholder={tr.customer.company}
             value={reportForm.customer}
             onChange={e => { setReportForm(p => ({ ...p, customer: e.target.value, selectedCustomerId: "" })); setShowCustomerSuggestions(true); }}
             onFocus={() => setShowCustomerSuggestions(true)}
@@ -59,8 +59,8 @@ export function RapportForm({ language = "DE",
         {/* Fotos */}
         <h3 style={{ marginBottom: 4 }}>📷 Fotos</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <PhotoUpload label="Vorher" value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
-          <PhotoUpload label="Nachher" value={reportForm.afterPhoto} onChange={v => setReportForm(p => ({ ...p, afterPhoto: v }))} />
+          <PhotoUpload label={tr.report.from} value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
+          <PhotoUpload label={tr.report.to} value={reportForm.afterPhoto} onChange={v => setReportForm(p => ({ ...p, afterPhoto: v }))} />
         </div>
 
         {/* Arbeitsstunden */}
