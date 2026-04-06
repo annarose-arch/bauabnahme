@@ -84,7 +84,7 @@ function buildReportDescriptionPayload({
       vat: Number.isFinite(vat) ? vat : 0,
       total: Number.isFinite(total) ? total : 0
     },
-    signature: {
+    customerSignature: { name: reportForm.customerSignerName || "", image: reportForm.customerSignatureImage || "" }, signature: {
       name: reportForm.signerName || "",
       image: reportForm.signatureImage || ""
     }
