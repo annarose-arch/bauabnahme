@@ -41,12 +41,12 @@ export function RapportForm({ language = "DE",
             )}
         </div>
 
-        <input placeholder="Adresse (Strasse)" value={reportForm.address} onChange={e => setReportForm(p => ({ ...p, address: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.report.address} value={reportForm.address} onChange={e => setReportForm(p => ({ ...p, address: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
-          <input placeholder="PLZ" value={reportForm.zip || ""} onChange={e => setReportForm(p => ({ ...p, zip: e.target.value }))} style={iStyle} />
+          <input placeholder={tr.report.zip} value={reportForm.zip || ""} onChange={e => setReportForm(p => ({ ...p, zip: e.target.value }))} style={iStyle} />
           <input placeholder="Ort" value={reportForm.city || ""} onChange={e => setReportForm(p => ({ ...p, city: e.target.value }))} style={iStyle} />
         </div>
-        <input placeholder="Kunde E-Mail" value={reportForm.customerEmail} onChange={e => setReportForm(p => ({ ...p, customerEmail: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.customer.email} value={reportForm.customerEmail} onChange={e => setReportForm(p => ({ ...p, customerEmail: e.target.value }))} style={iStyle} />
         <input placeholder={tr.report.orderNo} value={reportForm.orderNo} onChange={e => setReportForm(p => ({ ...p, orderNo: e.target.value }))} style={iStyle} />
         <input placeholder="Projektname" value={reportForm.projectSearch || ""} onChange={e => setReportForm(p => ({ ...p, projectSearch: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -86,7 +86,7 @@ export function RapportForm({ language = "DE",
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: 6 }}>
-                    <input placeholder="Mitarbeiter" value={row.employee} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, employee: e.target.value } : r))} style={{ ...iStyle, flex: 1 }} />
+                    <input placeholder={tr.report.employee} value={row.employee} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, employee: e.target.value } : r))} style={{ ...iStyle, flex: 1 }} />
                     {catalog.employees.length > 0 && <button type="button" onClick={() => setWorkRows(p => p.map((r, j) => j === i ? { ...r, _customEmployee: false, employee: "" } : r))} style={{ ...gBtn, fontSize: 11, minHeight: 34, padding: "0 8px" }}>↩ Dropdown</button>}
                   </div>
                 )}
@@ -127,16 +127,16 @@ export function RapportForm({ language = "DE",
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: 6 }}>
-                    <input placeholder="Bezeichnung" value={row.name} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, name: e.target.value } : r))} style={{ ...iStyle, flex: 1 }} />
+                    <input placeholder={tr.report.name} value={row.name} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, name: e.target.value } : r))} style={{ ...iStyle, flex: 1 }} />
                     {catalog.materials.length > 0 && <button type="button" onClick={() => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, _customMaterial: false, name: "" } : r))} style={{ ...gBtn, fontSize: 11, minHeight: 34, padding: "0 8px" }}>↩ Dropdown</button>}
                   </div>
                 )}
                 <button type="button" onClick={() => setMaterialRows(p => p.filter((_, j) => j !== i))} style={{ ...dBtn, minWidth: 34 }} disabled={materialRows.length === 1}>✕</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8 }}>
-                <input placeholder="Menge" value={row.qty} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, qty: e.target.value } : r))} style={iStyle} />
-                <input placeholder="Einheit" value={row.unit} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} style={iStyle} />
-                <input placeholder="CHF Preis" value={row.price} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, price: e.target.value } : r))} style={iStyle} />
+                <input placeholder={tr.report.qty} value={row.qty} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, qty: e.target.value } : r))} style={iStyle} />
+                <input placeholder={tr.report.unit} value={row.unit} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} style={iStyle} />
+                <input placeholder={tr.report.price} value={row.price} onChange={e => setMaterialRows(p => p.map((r, j) => j === i ? { ...r, price: e.target.value } : r))} style={iStyle} />
               </div>
               <div style={{ textAlign: "right", color: GOLD, fontWeight: 700, fontSize: 14, marginTop: 6 }}>Total: CHF {t.toFixed(2)}</div>
             </div>
