@@ -144,8 +144,8 @@ export function RapportForm({ language = "DE",
         })}
         <div style={{ color: MUTED, fontSize: 13 }}>Subtotal Material: CHF {materialSubtotal.toFixed(2)}</div>
 
-        <input placeholder="Spesen CHF" value={reportForm.expenses} onChange={e => setReportForm(p => ({ ...p, expenses: e.target.value }))} style={iStyle} />
-        <textarea placeholder="Notizen" value={reportForm.notes} onChange={e => setReportForm(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ ...iStyle, minHeight: 80, padding: 10 }} />
+        <input placeholder={tr.report.expenses} value={reportForm.expenses} onChange={e => setReportForm(p => ({ ...p, expenses: e.target.value }))} style={iStyle} />
+        <textarea placeholder={tr.report.notes} value={reportForm.notes} onChange={e => setReportForm(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ ...iStyle, minHeight: 80, padding: 10 }} />
 
         {/* Unterschrift */}
         <h3 style={{ marginBottom: 4 }}>✍️ Unterschrift</h3>
@@ -155,7 +155,7 @@ export function RapportForm({ language = "DE",
         <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
         <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {formatCHF(total)}</div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={onSave} style={pBtn}>{editingReport ? "Änderungen speichern" : "Rapport speichern"}</button>
+          <button type="button" onClick={onSave} style={pBtn}>{editingReport ? tr.common.save : tr.report.save}</button>
           {editingReport && <button type="button" onClick={onCancel} style={gBtn}>Abbrechen</button>}
         </div>
       </div>
