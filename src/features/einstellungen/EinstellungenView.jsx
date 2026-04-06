@@ -3,7 +3,7 @@ import { TeamManager } from "./TeamManager.jsx";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn } from "../../lib/constants.js";
 import { SectionCard } from "../../components/UI.jsx";
 import { supabase } from "../../supabase.js";
-export function EinstellungenView({ session, userEmail, showNotice, onLogout, nextRapportNr, setNextRapportNrState, nextInvoiceNr, setNextInvoiceNrState }) {
+export function EinstellungenView({ session, userEmail, showNotice, onLogout, nextRapportNr, setNextRapportNrState, nextInvoiceNr, setNextInvoiceNrState, onPickLanguage }) {
   const meta = session?.user?.user_metadata || {};
   const currentPlan = localStorage.getItem("bauabnahme_plan") || "starter";
   const [showLegal, setShowLegal] = useState(null);
@@ -121,7 +121,7 @@ return (
           <button type="button" onClick={() => setShowDeleteModal(true)} style={{ ...gBtn, fontSize: 12, minHeight: 32, color: "#e05c5c", borderColor: "#e05c5c" }}>Konto loeschen</button>
         </div>
       </div>
-<LanguageSwitcher />
+<LanguageSwitcher onPickLanguage={onPickLanguage} />
 
       {showDeleteModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -156,13 +156,13 @@ return (
     </SectionCard>
   );
 }
-function LanguageSwitcher() {
+function LanguageSwitcher({ onPickLanguage }) {
   const [lang, setLang] = useState(() => localStorage.getItem("bauabnahme_language_pref") || "DE");
   return (
     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
       <span style={{ color: MUTED, fontSize: 11 }}>Sprache:</span>
       {["DE", "FR", "IT", "EN"].map(code => (
-        <button key={code} type="button" onClick={() => { setLang(code); localStorage.setItem("bauabnahme_language_pref", code); }}
+        <button key={code} type="button" onClick={() => { setLang(code); localStorage.setItem("bauabnahme_language_pref", code); if(onPickLanguage) onPickLanguage(code); }}
           style={{ padding: "3px 9px", borderRadius: 6, cursor: "pointer", border: "1px solid " + (lang === code ? GOLD : BORDER), background: lang === code ? "rgba(212,168,83,0.15)" : "transparent", color: lang === code ? GOLD : MUTED, fontSize: 12, fontWeight: lang === code ? 700 : 400 }}>
           {code}
         </button>
