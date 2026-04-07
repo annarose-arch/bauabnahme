@@ -369,7 +369,7 @@ const c=customers.find(x=>String(x.id)===String(inv.customerId)); if(c){ setSele
         <button type="button" onClick={()=>setMobileSidebarOpen(p=>!p)} style={{...gBtn,minHeight:34,padding:"0 10px"}}>{mobileSidebarOpen?"✕":"☰"}</button>
       </div>
       {mobileSidebarOpen&&<div onClick={()=>setMobileSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:199}}/>}
-      <div className="dash-grid" style={{display:"grid",gridTemplateColumns:"240px 1fr",minHeight:"100vh"}}>
+      <div className="dash-grid" style={{display:"grid",gridTemplateColumns:"240px 1fr",minHeight:"100vh",overflowX:"hidden"}}>
         <aside className={`dash-sidebar${mobileSidebarOpen?" open":""}`} style={{borderRight:`1px solid ${BORDER}`,background:PANEL,padding:16}}>
           <div style={{fontWeight:700,fontSize:20,marginBottom:16}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
           <nav style={{display:"grid",gap:6}}>
