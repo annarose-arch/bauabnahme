@@ -43,6 +43,7 @@ return (
             {meta.address && <div style={{ color: MUTED, fontSize: 13 }}>{meta.address}, {meta.zip} {meta.city}</div>}
             {meta.phone && <div style={{ color: MUTED, fontSize: 13 }}>Tel: {meta.phone}</div>}
             <div style={{ color: MUTED, fontSize: 13 }}>{userEmail}</div>
+            <div style={{ color: MUTED, fontSize: 11 }}>ID: {session?.user?.id?.slice(0,8)}</div>
           </div>
         </div>
         <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", border: "1px solid " + BORDER, borderRadius: 8, cursor: "pointer", color: MUTED, fontSize: 13 }}>
