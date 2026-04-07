@@ -380,7 +380,7 @@ const c=customers.find(x=>String(x.id)===String(inv.customerId)); if(c){ setSele
             ))}
           </nav>
         </aside>
-        <main style={{padding:20,minWidth:0}}>
+        <main style={{padding: window.innerWidth < 600 ? "12px 10px" : 20, minWidth:0, maxWidth:"100%", overflowX:"hidden"}}>
           {isDemo&&<DemoBanner onNavigate={onNavigate} pBtn={pBtn} gBtn={gBtn}/>}
           <NoticeBanner message={notice}/>
           <RenderView view={view} openedReport={openedReport} selectedCustomer={selectedCustomer} editingReport={editingReport} isDemo={isDemo} reports={reports} archivedReports={archivedReports} trashReports={trashReports} trashCustomers={trashCustomers} onRestoreCustomer={restoreCustomer} onHardDeleteCustomer={hardDeleteCustomer}
