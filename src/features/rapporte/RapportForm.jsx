@@ -57,7 +57,7 @@ export function RapportForm({ language = "DE",
         </div>
 
         {/* Fotos */}
-        <h3 style={{ marginBottom: 4 }}>📷 Fotos</h3>
+        <h3 style={{ marginBottom: 4 }}>📷 {tr.report.notes}</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <PhotoUpload label="Vorher" addPhotoLabel={tr.report.addRow} value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
           <PhotoUpload label="Nachher" addPhotoLabel={tr.report.addRow} value={reportForm.afterPhoto} onChange={v => setReportForm(p => ({ ...p, afterPhoto: v }))} />
@@ -82,7 +82,7 @@ export function RapportForm({ language = "DE",
                   }} style={{ ...iStyle, width: "100%" }}>
                     <option value="">{tr.report.employee}... </option>
                     {catalog.employees.map(emp => <option key={emp.id} value={emp.name}>{emp.name}{emp.rate ? ` — CHF ${emp.rate}/h` : ""}</option>)}
-                    <option value="__custom__">✏️ Manuell eingeben</option>
+                    <option value="__custom__">✏️ {tr.common.edit}</option>
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: 6 }}>
@@ -93,8 +93,8 @@ export function RapportForm({ language = "DE",
                 <button type="button" onClick={() => setWorkRows(p => p.filter((_, j) => j !== i))} style={{ ...dBtn, minWidth: 34 }} disabled={workRows.length === 1}>✕</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8 }}>
-                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>von (HH:MM)</div><input placeholder="07:00" value={row.from} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} style={iStyle} /></div>
-                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>bis (HH:MM)</div><input placeholder="17:00" value={row.to} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} style={iStyle} /></div>
+                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>{tr.report.from} (HH:MM)</div><input placeholder="07:00" value={row.from} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, from: e.target.value } : r))} style={iStyle} /></div>
+                <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>{tr.report.to} (HH:MM)</div><input placeholder="17:00" value={row.to} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, to: e.target.value } : r))} style={iStyle} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Std</div><input readOnly value={h.toFixed(2)} style={{ ...iStyle, color: GOLD }} /></div>
                 <div><div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>CHF/h</div><input placeholder="110" value={row.rate} onChange={e => setWorkRows(p => p.map((r, j) => j === i ? { ...r, rate: e.target.value } : r))} style={iStyle} /></div>
               </div>
@@ -123,7 +123,7 @@ export function RapportForm({ language = "DE",
                   }} style={{ ...iStyle, width: "100%" }}>
                     <option value="">{tr.report.material}... </option>
                     {catalog.materials.map(mat => <option key={mat.id} value={mat.name}>{mat.name}{mat.unit ? ` (${mat.unit})` : ""}{mat.price ? ` — CHF ${mat.price}` : ""}</option>)}
-                    <option value="__custom__">✏️ Manuell eingeben</option>
+                    <option value="__custom__">✏️ {tr.common.edit}</option>
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: 6 }}>
@@ -150,21 +150,21 @@ export function RapportForm({ language = "DE",
                 {/* Unterschriften nebeneinander */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
-            <h3 style={{ marginBottom: 4 }}>✍️ Mitarbeiter</h3>
+            <h3 style={{ marginBottom: 4 }}>✍️ {tr.report.employee}</h3>
             <input placeholder={tr.report.employee} value={reportForm.signerName} onChange={e => setReportForm(p => ({ ...p, signerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
             <SignaturePad clearLabel={tr.common.delete} value={reportForm.signatureImage} onChange={v => setReportForm(p => ({ ...p, signatureImage: v }))} />
           </div>
           <div>
-            <h3 style={{ marginBottom: 4 }}>✍️ Kunde</h3>
-            <input placeholder="Name des Kunden" value={reportForm.customerSignerName || ""} onChange={e => setReportForm(p => ({ ...p, customerSignerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
+            <h3 style={{ marginBottom: 4 }}>✍️ {tr.customer.title}</h3>
+            <input placeholder={tr.customer.company} value={reportForm.customerSignerName || ""} onChange={e => setReportForm(p => ({ ...p, customerSignerName: e.target.value }))} style={{ ...iStyle, marginBottom: 6 }} />
             <SignaturePad clearLabel={tr.common.delete} value={reportForm.customerSignatureImage || ""} onChange={v => setReportForm(p => ({ ...p, customerSignatureImage: v }))} />
           </div>
         </div>
-        <div style={{ color: MUTED }}>MwSt 8.1%: CHF {formatCHF(vat)}</div>
+        <div style={{ color: MUTED }}>{tr.report.vat}: CHF {formatCHF(vat)}</div>
         <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {formatCHF(total)}</div>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={onSave} style={pBtn}>{editingReport ? tr.common.save : tr.report.save}</button>
-          {editingReport && <button type="button" onClick={onCancel} style={gBtn}>Abbrechen</button>}
+          {editingReport && <button type="button" onClick={onCancel} style={gBtn}>{tr.common.cancel}</button>}
         </div>
       </div>
     </SectionCard>
