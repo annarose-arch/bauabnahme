@@ -48,7 +48,7 @@ export function RapportForm({ language = "DE",
         </div>
         <input placeholder={tr.customer.email} value={reportForm.customerEmail} onChange={e => setReportForm(p => ({ ...p, customerEmail: e.target.value }))} style={iStyle} />
         <input placeholder={tr.report.orderNo} value={reportForm.orderNo} onChange={e => setReportForm(p => ({ ...p, orderNo: e.target.value }))} style={iStyle} />
-        <input placeholder={tr.report.orderNo} value={reportForm.projectSearch || ""} onChange={e => setReportForm(p => ({ ...p, projectSearch: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.report.projectName} value={reportForm.projectSearch || ""} onChange={e => setReportForm(p => ({ ...p, projectSearch: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <input type="date" value={reportForm.date} onChange={e => setReportForm(p => ({ ...p, date: e.target.value }))} style={iStyle} />
           <select value={reportForm.status} onChange={e => setReportForm(p => ({ ...p, status: e.target.value }))} style={iStyle}>
