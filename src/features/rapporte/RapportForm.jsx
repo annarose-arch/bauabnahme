@@ -59,8 +59,8 @@ export function RapportForm({ language = "DE",
         {/* Fotos */}
         <h3 style={{ marginBottom: 4 }}>📷 {tr.report.notes}</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <PhotoUpload label="Vorher" addPhotoLabel={tr.report.addRow} value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
-          <PhotoUpload label="Nachher" addPhotoLabel={tr.report.addRow} value={reportForm.afterPhoto} onChange={v => setReportForm(p => ({ ...p, afterPhoto: v }))} />
+          <PhotoUpload label="Vorher" addPhotoLabel={tr.report.addPhoto} value={reportForm.beforePhoto} onChange={v => setReportForm(p => ({ ...p, beforePhoto: v }))} />
+          <PhotoUpload label="Nachher" addPhotoLabel={tr.report.addPhoto} value={reportForm.afterPhoto} onChange={v => setReportForm(p => ({ ...p, afterPhoto: v }))} />
         </div>
 
         {/* Arbeitsstunden */}
