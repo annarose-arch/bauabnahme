@@ -92,7 +92,7 @@ function buildReportDescriptionPayload({
 }
 
 export default function Dashboard({ session, onLogout, onNavigate, isDemo = false }) {
-  const userId    = session?.user?.id;
+  const userId    = session?.user?.id; console.log("SESSION USER ID:", session?.user?.id, "EMAIL:", session?.user?.email);
   const [userRole, setUserRole] = useState("admin");
   const isAdmin = userRole === "admin";
   useEffect(() => { if(!userId||isDemo) return; supabase.from("user_roles").select("role").eq("user_id",userId).single().then(({data})=>{ if(data) setUserRole(data.role); }); }, [userId, isDemo]);
