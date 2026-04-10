@@ -1,10 +1,30 @@
+import { useState } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
 import { formatDateCH, formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Rechnungsliste ────────────────────────────────────────────────────────
-export function RechnungenView({ invoices, onReopen, onEdit, onMarkSent, onDelete }) {
+const PAGE_SIZE = 20;
+function Pagination({ total, page, setPage }) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return null;
   return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 16 }}>
+      <button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0} style={{ ...gBtn, minWidth: 80 }}>← Zurück</button>
+      <span style={{ color: MUTED, fontSize: 13 }}>Seite {page+1} von {pages}</span>
+      <button onClick={() => setPage(p => Math.min(pages-1, p+1))} disabled={page >= pages-1} style={{ ...gBtn, minWidth: 80 }}>Weiter →</button>
+    </div>
+  );
+}
+export function RechnungenView({ invoices, onReopen, onEdit, onMarkSent, onDelete }) {
+  const [pageEntwurf, setPageEntwurf] = useState(0);
+  const [pageSent, setPageSent] = useState(0);
+  const [pageArchived, setPageArchived] = useState(0);
+  const entwurf = invoices.filter(i => i.status === "entwurf");
+  const sent = invoices.filter(i => i.status === "versendet");
+  const archived = invoices.filter(i => i.status === "archiviert" || i.status === "bezahlt");
+  return (
+
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>🧾 Rechnungen</h2>
       {invoices.length === 0 && <p style={{ color: MUTED }}>Noch keine Rechnungen erstellt.</p>}
