@@ -1,10 +1,19 @@
+import { useState } from "react";
 import { useTranslation } from "../../lib/translations.js";
 import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants.js";
 import { parseReport, formatCHF, formatReportCardSummary, formatDateCH, toNum } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
 // ─── Offene Rapporte Liste ─────────────────────────────────────────────────
+const PAGE_SIZE = 20;
+function Pagination({ total, page, setPage }) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return null;
+  return (<div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16 }}><button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0} style={{ ...gBtn, minWidth: 80 }}>← Zurück</button><span style={{ color: MUTED, fontSize: 13 }}>Seite {page+1} von {pages}</span><button onClick={() => setPage(p => Math.min(pages-1, p+1))} disabled={page >= pages-1} style={{ ...gBtn, minWidth: 80 }}>Weiter →</button></div>);
+}
 export function RapporteListe({ reports, archivedReports, invoices = [], onOpen, onEdit, onPDF, onDelete }) {
+  const [page, setPage] = useState(0);
+  const pagedts = reports.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>Offene Rapporte</h2>
@@ -15,7 +24,7 @@ export function RapporteListe({ reports, archivedReports, invoices = [], onOpen,
       )}
       {reports.length === 0 && <p style={{ color: MUTED }}>Noch keine Rapporte.</p>}
       <div style={{ display: "grid", gap: 8 }}>
-        {reports.map((r) => {
+        {pagedReports.map((r) => {
           const pr = parseReport(r);
           const hasInvoice = invoices.some((inv) => inv.reportData?.rapportNr === pr.rapportNr);
           const nr = pr.rapportNr != null && String(pr.rapportNr).trim() !== "" ? String(pr.rapportNr).trim() : "—";
