@@ -40,8 +40,7 @@ pdf: { rapport: "Rapporto", invoice: "Fattura", date: "Data", customer: "Cliente
     settings: { title: "Settings", profile: "Company Profile", plan: "Current Plan", team: "Team", legal: "Legal", support: "Support", account: "Account Management", logout: "Logout", deactivate: "Deactivate Account", delete: "Delete Account", iban: "IBAN", logo: "Upload Logo", nextRapportNr: "Next Report No.", nextInvoiceNr: "Next Invoice No.", nextCustomerNr: "Next Customer No." },
     common: { save: "Save", cancel: "Cancel", delete: "Delete", restore: "Restore", edit: "Edit", search: "Search", loading: "Loading...", ok: "OK", back: "Back", yes: "Yes", no: "No" },
     trash: { title: "Trash", reports: "Reports", invoices: "Invoices", customers: "Customers", empty: "Trash is empty" }
-  }
-};
+  },
 pdf: { rapport: "Report", invoice: "Invoice", date: "Date", customer: "Customer", orderNo: "Order No.", address: "Address", project: "Project", photos: "Photos", before: "Before", after: "After", workHours: "Work Hours", employee: "Employee", time: "Time", hours: "Hours", total: "Total", material: "Material", description: "Description", qty: "Quantity", expenses: "Expenses", notes: "Notes", subtotal: "Subtotal", vat: "VAT 8.1%", draft: "DRAFT", issuer: "Issuer", recipient: "Recipient", ref: "Reference", discount: "Discount", payment: "Payment", dueDate: "Due date", reference: "Reference", noIban: "No IBAN stored", price: "Price", skonto: "Cash discount" },
 
 export function useTranslation(lang = "DE") {
