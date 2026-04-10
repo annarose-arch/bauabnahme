@@ -138,10 +138,6 @@ if (!isDemo && userId) {
     if(!isDemo && userId) await supabase.from("invoices").update({status:"geloescht"}).eq("id",String(id));
     setInvoices((prev) => prev.map((i) => invoiceIdEq(i.id, id) ? { ...i, status: "geloescht", _preTrashStatus: i.status === "versendet" ? "versendet" : "entwurf" } : i));
   }, [userId, isDemo]);
-      
-      return u;
-    });
-  }, []);
   const restoreInvoice = useCallback(async (inv) => {
     const back = (inv._preTrashStatus === "versendet") ? "versendet" : "entwurf";
     if (!isDemo && userId) {
@@ -157,10 +153,6 @@ if (!isDemo && userId) {
     if(!isDemo && userId) await supabase.from("invoices").delete().eq("id",String(id));
     setInvoices((prev) => prev.filter((i) => !invoiceIdEq(i.id, id)));
   }, [userId, isDemo]);
-      
-      return u;
-    });
-  }, []);
   const visibleInvoices = useMemo(
     () => invoices.filter((i) => String(i.status || "").trim().toLowerCase() !== "geloescht"),
     [invoices]
