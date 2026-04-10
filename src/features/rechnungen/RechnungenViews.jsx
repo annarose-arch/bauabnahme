@@ -17,54 +17,59 @@ function Pagination({ total, page, setPage }) {
   );
 }
 export function RechnungenView({ invoices, onReopen, onEdit, onMarkSent, onDelete }) {
-  const [pageEntwurf, setPageEntwurf] = useState(0);
-  const [pageSent, setPageSent] = useState(0);
-  const [pageArchived, setPageArchived] = useState(0);
-  const entwurf = invoices.filter(i => i.status === "entwurf");
-  const sent = invoices.filter(i => i.status === "versendet");
-  const archived = invoices.filter(i => i.status === "archiviert" || i.status === "bezahlt");
-  return (
+  const [pageEntwurf, setPageEntwurf] = useState(0);
+  const [pageSent, setPageSent] = useState(0);
+  const [pageArchived, setPageArchived] = useState(0);
+  const entwurf = invoices.filter(i => i.status === "entwurf");
+  const sent = invoices.filter(i => i.status === "versendet");
+  const archived = invoices.filter(i => i.status === "archiviert" || i.status === "bezahlt");
 
-    <SectionCard>
-      <h2 style={{ marginTop: 0 }}>🧾 Rechnungen</h2>
-      {invoices.length === 0 && <p style={{ color: MUTED }}>Noch keine Rechnungen erstellt.</p>}
-      <div style={{ display: "grid", gap: 10 }}>
-        {entwurf.slice(pageEntwurf * PAGE_SIZE, (pageEntwurf + 1) * PAGE_SIZE).map(inv => {
-          const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
-          const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
-          return (
-          <div key={inv.id} style={{ border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`, borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-              <div style={{ minWidth: 0, flex: "1 1 200px" }}>
-                <div style={{ fontWeight: 700, color: GOLD, fontSize: 14, lineHeight: 1.45, wordBreak: "break-word" }}>{summaryLine}</div>
-              </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <span style={{
-                  fontSize: 11, padding: "2px 8px", borderRadius: 4, fontWeight: 700,
-                  background: inv.status === "versendet" ? "rgba(212,168,83,0.15)" : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${inv.status === "versendet" ? GOLD : BORDER}`,
-                  color: inv.status === "versendet" ? GOLD : MUTED,
-                }}>
-                  {inv.status === "versendet" ? "✅ Versendet" : "📝 Entwurf"}
-                </span>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
-              <button type="button" onClick={() => onEdit && onEdit(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>✏️ Bearbeiten </button>
-              <button type="button" onClick={() => onReopen(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>🖨 PDF</button>
-              {inv.status === "entwurf" && (
-                <button type="button" onClick={() => onMarkSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>
-                  ✅ Als versendet markieren
-                </button>
-              )}
-              <button type="button" onClick={() => { if (window.confirm("Rechnung in den Papierkorb verschieben?")) onDelete(inv.id); }} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>🗑 Löschen</button>
-            </div>
-          </div>
-          );
-        })}
-      </div>
-    </SectionCard>
-  );
+  const InvCard = ({inv}) => {
+    const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
+    const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
+    return (
+      <div key={inv.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", background: "rgba(255,255,255,0.02)" }}>
+        <div style={{ fontWeight: 700, color: GOLD, fontSize: 14, marginBottom: 8 }}>{summaryLine}</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+          <button type="button" onClick={() => onEdit && onEdit(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>✏️ Bearbeiten</button>
+          <button type="button" onClick={() => onReopen(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>🖨 PDF</button>
+          {inv.status === "entwurf" && <button type="button" onClick={() => onMarkSent(inv)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: GOLD, borderColor: GOLD }}>✅ Als versendet markieren</button>}
+          <button type="button" onClick={() => { if (window.confirm("Rechnung löschen?")) onDelete(inv.id); }} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>🗑</button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <SectionCard>
+      <h2 style={{ marginTop: 0 }}>🧾 Rechnungen</h2>
+      {invoices.length === 0 && <p style={{ color: MUTED }}>Noch keine Rechnungen erstellt.</p>}
+
+      {entwurf.length > 0 && <>
+        <h3 style={{ color: MUTED, fontSize: 13, marginBottom: 8 }}>📝 Entwurf ({entwurf.length})</h3>
+        <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
+          {entwurf.slice(pageEntwurf * PAGE_SIZE, (pageEntwurf+1) * PAGE_SIZE).map(inv => <InvCard key={inv.id} inv={inv}/>)}
+        </div>
+        <Pagination total={entwurf.length} page={pageEntwurf} setPage={setPageEntwurf}/>
+      </>}
+
+      {sent.length > 0 && <>
+        <h3 style={{ color: GOLD, fontSize: 13, marginBottom: 8, marginTop: 16 }}>✅ Versendet ({sent.length})</h3>
+        <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
+          {sent.slice(pageSent * PAGE_SIZE, (pageSent+1) * PAGE_SIZE).map(inv => <InvCard key={inv.id} inv={inv}/>)}
+        </div>
+        <Pagination total={sent.length} page={pageSent} setPage={setPageSent}/>
+      </>}
+
+      {archived.length > 0 && <>
+        <h3 style={{ color: MUTED, fontSize: 13, marginBottom: 8, marginTop: 16 }}>📁 Archiviert ({archived.length})</h3>
+        <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
+          {archived.slice(pageArchived * PAGE_SIZE, (pageArchived+1) * PAGE_SIZE).map(inv => <InvCard key={inv.id} inv={inv}/>)}
+        </div>
+        <Pagination total={archived.length} page={pageArchived} setPage={setPageArchived}/>
+      </>}
+    </SectionCard>
+  );
 }
 
 // ─── Rechnung Modal (Rabatt / Skonto) ──────────────────────────────────────
