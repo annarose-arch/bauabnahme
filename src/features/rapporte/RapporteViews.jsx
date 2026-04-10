@@ -13,7 +13,7 @@ function Pagination({ total, page, setPage }) {
 }
 export function RapporteListe({ reports, archivedReports, invoices = [], onOpen, onEdit, onPDF, onDelete }) {
   const [page, setPage] = useState(0);
-  const pagedts = reports.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const pagedReports = reports.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   return (
     <SectionCard>
       <h2 style={{ marginTop: 0 }}>Offene Rapporte</h2>
