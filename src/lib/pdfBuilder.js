@@ -70,7 +70,7 @@ th{background:#f9f4ec}
 ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:14px">
 ${!isPro ? '<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#d4a853;color:#111;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
-<button class="btn noprint" onclick="window.print()">${tr.pdf} / ${tr.print}</button>
+<button class="btn noprint" onclick="window.print()">${tr.print}</button>
 <a class="btn noprint" href="${mailto}">📧 ${tr.email}</a>
 </div>
 <div class="letterhead">
