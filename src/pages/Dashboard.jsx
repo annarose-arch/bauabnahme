@@ -207,6 +207,7 @@ if (!isDemo && userId) {
       showNotice("Ladefehler: " + error.message);
       return;
     }
+    showNotice("Rapporte geladen: " + (data||[]).length);
     const all = data || [];
     setTrashReports(all.filter((r) => r.status === "geloescht"));
     const active = all.filter((r) => r.status !== "geloescht");
