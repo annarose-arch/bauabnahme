@@ -225,14 +225,14 @@ ${mHtml ? `<div class="section-title"${tr.material}</div><table><thead><tr><th>$
   ${costs.expenses ? `<div class="totals-row"><span>${tr.expenses}</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
   <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
 </div></div>
-${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payent} bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
+${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payment} bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
 <div class="qr-section">
   <div class="qr-left">
-    <div class="qr-title">${tr.payent}</div>
+    <div class="qr-title">${tr.payment}</div>
     <div class="qr-fields">
-      ${qrUrl ? `<div><div class="qr-label">IBAN</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">${tr.noIban} — bitte in Einstellungen ergänzen</div>'}
+      ${qrUrl ? `<div><div class="qr-label">${tr.reference}</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">${tr.noIban} — bitte in Einstellungen ergänzen</div>'}
       <div><div class="qr-label">${tr.dueDate}</div><div>${dueDate}</div></div>
-      <div><div class="qr-label">Referenz</div><div>${invoiceNr}</div></div>
+      <div><div class="qr-label">${tr.reference}</div><div>${invoiceNr}</div></div>
     </div>
   </div>
   ${qrUrl ? `<img src="${qrUrl}" width="160" height="160" class="qr-img" alt="QR Code"/>` : ""}
