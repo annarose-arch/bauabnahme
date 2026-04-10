@@ -42,7 +42,7 @@ pdf: { rapport: "Rapporto", invoice: "Fattura", date: "Data", customer: "Cliente
     trash: { title: "Trash", reports: "Reports", invoices: "Invoices", customers: "Customers", empty: "Trash is empty" }
   },
 pdf: { rapport: "Report", invoice: "Invoice", date: "Date", customer: "Customer", orderNo: "Order No.", address: "Address", project: "Project", photos: "Photos", before: "Before", after: "After", workHours: "Work Hours", employee: "Employee", time: "Time", hours: "Hours", total: "Total", material: "Material", description: "Description", qty: "Quantity", expenses: "Expenses", notes: "Notes", subtotal: "Subtotal", vat: "VAT 8.1%", draft: "DRAFT", issuer: "Issuer", recipient: "Recipient", ref: "Reference", discount: "Discount", payment: "Payment", dueDate: "Due date", reference: "Reference", noIban: "No IBAN stored", price: "Price", skonto: "Cash discount" }
-}
+
 };
 export function useTranslation(lang = "DE") {
   return t[lang] || t.DE;
