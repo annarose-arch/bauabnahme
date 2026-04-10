@@ -219,11 +219,14 @@ ${projectName ? `<div class="project-line">${tr.project}: ${projectName}</div>` 
 ${wHtml ? `<div class="section-title"${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
 ${mHtml ? `<div class="section-title"${tr.material}</div><table><thead><tr><th>${tr.description}</th><th style="text-align:center">${tr.qty}</th><th style="text-align:center">${tr.price}</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
 <div class="totals-box"><div class="totals-inner">
-  <div class="totals-row"><span>${tr.subtotal}</span><span>CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
-  ${discountPct > 0 ? `<div class="totals-discount"><span>${tr.discount} ${discountPct}%</span><span>− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
-  <div class="totals-row"><span>${tr.vat}</span><span>CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
-  ${costs.expenses ? `<div class="totals-row"><span>${tr.expenses}</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
-  <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+   <table style="width:100%;border-collapse:collapse;margin-left:auto;max-width:380px">
+    <tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.subtotal}</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;font-family:monospace">CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
+    ${discountPct > 0 ? `<tr><td style="padding:4px 0;font-weight:700;font-size:13px">${tr.discount} ${discountPct}%</td><td style="padding:4px 0;text-align:right;font-weight:700;font-size:13px;font-family:monospace">− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>` : ""}
+    <tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.vat}</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;font-family:monospace">CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
+    ${costs.expenses ? `<tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.expenses}</td><td style="padding:4px 0;text-align:right;font-size:13px;font-family:monospace">CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>` : ""}
+    <tr style="border-top:2px solid #111"><td style="padding:8px 0 4px;font-size:18px;font-weight:900">TOTAL CHF</td><td style="padding:8px 0 4px;text-align:right;font-size:18px;font-weight:900;font-family:monospace">${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
+  </table>
+ctionDigits:2})}</span></div>
 </div></div>
 ${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payment} bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
 <div class="qr-section">
