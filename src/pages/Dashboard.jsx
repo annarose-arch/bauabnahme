@@ -202,7 +202,7 @@ if (!isDemo && userId) {
   const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
   const fetchReports = async () => {
     if (!userId) return;
-    const { data, error } = await supabase.from("reports").select("*").eq("user_id", userId).order("id", { ascending: false });
+    const { data, error } = await supabase.from("reports").select("id,user_id,customer,status,date,description").eq("user_id", userId).order("id", { ascending: false });
     if (error) {
       showNotice("Ladefehler: " + error.message);
       return;
