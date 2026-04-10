@@ -355,6 +355,7 @@ export function KundenDetail({
             />
           ))}
         </div>
+              <CustPagination total={reportListForTab ? reportListForTab.length : 0} page={pageReport} setPage={setPageReport}/>
       )}
       {invoiceListForTab && invoiceListForTab.length > 0 && (
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
@@ -372,6 +373,7 @@ export function KundenDetail({
             />
           ))}
         </div>
+              <CustPagination total={invoiceListForTab ? invoiceListForTab.length : 0} page={pageInvoice} setPage={setPageInvoice}/>
       )}
 
       <div style={{ marginTop: 8, marginBottom: 14, display: "grid", gap: 4 }}>
