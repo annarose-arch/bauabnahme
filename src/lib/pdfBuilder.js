@@ -164,7 +164,7 @@ td{padding:7px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}
 tr:nth-child(even) td{background:#f8f8f8}
 .section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#111;margin:20px 0 6px;border-bottom:2px solid #111;padding-bottom:4px}
 .totals-box{display:flex;justify-content:flex-end;margin-bottom:20px}
-.totals-inner{width:320px}
+.totals-inner{width:380px}
 .totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
 .totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;font-weight:700;border-bottom:1px solid #eee}
 .totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#111;border-top:2px solid #111;margin-top:4px}
@@ -215,12 +215,12 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
   </div>
 </div>
 ${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">${tr.ref}: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
-${projectName ? `<div class="project-line">Projekt: ${projectName}</div>` : ""}
+${projectName ? `<div class="project-line">${tr.project}: ${projectName}</div>` : ""}
 ${wHtml ? `<div class="section-title"${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
 ${mHtml ? `<div class="section-title"${tr.material}</div><table><thead><tr><th>${tr.description}</th><th style="text-align:center">${tr.qty}</th><th style="text-align:center">${tr.price}</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
 <div class="totals-box"><div class="totals-inner">
   <div class="totals-row"><span>${tr.subtotal}</span><span>CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
-  ${discountPct > 0 ? `<div class="totals-discount"><span>Rabatt ${discountPct}%</span><span>− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
+  ${discountPct > 0 ? `<div class="totals-discount"><span>${tr.discount} ${discountPct}%</span><span>− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
   <div class="totals-row"><span>${tr.vat}</span><span>CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
   ${costs.expenses ? `<div class="totals-row"><span>${tr.expenses}</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
   <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
