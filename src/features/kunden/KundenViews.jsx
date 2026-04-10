@@ -373,9 +373,8 @@ export function KundenDetail({
             />
           ))}
         </div>
-              <CustPagination total={invoiceListForTab ? invoiceListForTab.length : 0} page={pageInvoice} setPage={setPageInvoice}/>
-      )}
-
+              )}
+<CustPagination total={invoiceListForTab ? invoiceListForTab.length : 0} page={pageInvoice} setPage={setPageInvoice}/>
       <div style={{ marginTop: 8, marginBottom: 14, display: "grid", gap: 4 }}>
         <div style={{ color: MUTED, fontSize: 13 }}>Umsatz aus Rapporten: <strong style={{ color: TEXT }}>CHF {formatCHF(revenue)}</strong></div>
         <div style={{ color: MUTED, fontSize: 13 }}>Gesamt fakturiert: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
