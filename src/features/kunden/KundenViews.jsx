@@ -339,7 +339,7 @@ export function KundenDetail({
       )}
       {reportListForTab && reportListForTab.length > 0 && (
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-         {reportListForTab.slice(pageReport * CUST_PAGE_SIZE, (pageReport+1) * CUST_PAGE_SIZE).map
+         {reportListForTab.slice(pageReport * CUST_PAGE_SIZE, (pageReport+1) * CUST_PAGE_SIZE).map((r) => (
 
             <ReportRowCard
               key={r.id}
@@ -358,7 +358,7 @@ export function KundenDetail({
       )}
       {invoiceListForTab && invoiceListForTab.length > 0 && (
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-          {invoiceListForTab.slice(pageInvoice * CUST_PAGE_SIZE, (pageInvoice+1) * CUST_PAGE_SIZE).map
+          {invoiceListForTab.slice(pageInvoice * CUST_PAGE_SIZE, (pageInvoice+1) * CUST_PAGE_SIZE).map((inv) => (
 
             <InvoiceRowCard
               key={inv.id}
