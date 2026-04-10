@@ -227,6 +227,12 @@ function InvoiceRowCard({ inv, onReopenInvoice, onPreviewInvoice, onMarkInvoiceS
     </div>
   );
 }
+const CUST_PAGE_SIZE = 20;
+function CustPagination({ total, page, setPage }) {
+  const pages = Math.ceil(total / CUST_PAGE_SIZE);
+  if (pages <= 1) return null;
+  return (<div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 12 }}><button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0} style={{ ...gBtn, minWidth: 80 }}>← Zurück</button><span style={{ color: MUTED, fontSize: 13 }}>Seite {page+1} von {pages}</span><button onClick={() => setPage(p => Math.min(pages-1, p+1))} disabled={page >= pages-1} style={{ ...gBtn, minWidth: 80 }}>Weiter →</button></div>);
+}
 
 // ─── Kunden Detail ─────────────────────────────────────────────────────────
 export function KundenDetail({
@@ -245,7 +251,8 @@ export function KundenDetail({
   onDeleteInvoice,
 }) {
   const [detailTab, setDetailTab] = useState("rapporte-aktiv");
-  const m = parseCustomerMeta(customer);
+  const m = parseCustomerMeta(customer); const [pageReport, setPageReport] = useState(0);
+  const [pageInvoice, setPageInvoice] = useState(0);
   const linkedMap = new Map();
   for (const r of [...reports, ...archivedReports]) {
     if (!isLinkedReport(r, customer)) continue;
@@ -332,7 +339,8 @@ export function KundenDetail({
       )}
       {reportListForTab && reportListForTab.length > 0 && (
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-          {reportListForTab.map((r) => (
+         {reportListForTab.slice(pageReport * CUST_PAGE_SIZE, (pageReport+1) * CUST_PAGE_SIZE).map
+
             <ReportRowCard
               key={r.id}
               r={r}
@@ -350,7 +358,8 @@ export function KundenDetail({
       )}
       {invoiceListForTab && invoiceListForTab.length > 0 && (
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-          {invoiceListForTab.map((inv) => (
+          {invoiceListForTab.slice(pageInvoice * CUST_PAGE_SIZE, (pageInvoice+1) * CUST_PAGE_SIZE).map
+
             <InvoiceRowCard
               key={inv.id}
               inv={inv}
