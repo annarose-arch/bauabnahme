@@ -219,7 +219,7 @@ if (!isDemo && userId) {
     if(!userId){ showNotice("fetchInvoices: kein userId"); return; }
     showNotice("Lade Rechnungen...");
     const {data} = await supabase.from("invoices").select("*").eq("user_id",userId).order("id",{ascending:false});
-    showNotice("Rechnungen geladen: "+(data||[]).length); if(data) setInvoices(data.map(r=>({id:r.id,invoiceNr:r.invoice_nr,customer:r.customer,customerId:r.customer_id,date:r.date,totalAmount:Number(r.total_amount),status:r.status,reportData:r.report_data,lineItems:r.line_items,subtotal:Number(r.subtotal),vat:Number(r.vat),total:Number(r.total),discount:Number(r.discount),discountAmt:Number(r.discount_amt),skontoPct:Number(r.skonto_pct),skontoAmt:Number(r.skonto_amt),paymentDays:Number(r.payment_days),skontoDays:Number(r.skonto_days),iban:r.iban,notes:r.notes,projektbezeichnung:r.projektbezeichnung,rapportRef:r.rapport_ref}))); };  const handleCustomerSelect = (id) => {
+    if(data) setInvoices(data.map(r=>({id:r.id,invoiceNr:r.invoice_nr,customer:r.customer,customerId:r.customer_id,date:r.date,totalAmount:Number(r.total_amount),status:r.status,reportData:r.report_data,lineItems:r.line_items,subtotal:Number(r.subtotal),vat:Number(r.vat),total:Number(r.total),discount:Number(r.discount),discountAmt:Number(r.discount_amt),skontoPct:Number(r.skonto_pct),skontoAmt:Number(r.skonto_amt),paymentDays:Number(r.payment_days),skontoDays:Number(r.skonto_days),iban:r.iban,notes:r.notes,projektbezeichnung:r.projektbezeichnung,rapportRef:r.rapport_ref}))); };  const handleCustomerSelect = (id) => {
     const c = customers.find((x) => String(x.id) === String(id));
     if (!c) return;
     const m = parseCustomerMeta(c);
