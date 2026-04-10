@@ -134,13 +134,10 @@ if (!isDemo && userId) {
     });
    }, [userId, isDemo]);
   /** Soft-delete: status `geloescht`, keep in localStorage (Papierkorb). */
-  const moveInvoiceToTrash = useCallback((id) => {
-    setInvoices((prev) => {
-      const u = prev.map((i) =>
-        invoiceIdEq(i.id, id)
-          ? { ...i, status: "geloescht", _preTrashStatus: i.status === "versendet" ? "versendet" : "entwurf" }
-          : i
-      );
+  const moveInvoiceToTrash = useCallback(async (id) => {
+    if(!isDemo && userId) await supabase.from("invoices").update({status:"geloescht"}).eq("id",String(id));
+    setInvoices((prev) => prev.map((i) => invoiceIdEq(i.id, id) ? { ...i, status: "geloescht", _preTrashStatus: i.status === "versendet" ? "versendet" : "entwurf" } : i));
+  }, [userId, isDemo]);
       
       return u;
     });
@@ -156,9 +153,10 @@ if (!isDemo && userId) {
       return { ...rest, status: back };
     }));
     }, [userId, isDemo]);
-  const hardDeleteInvoice = useCallback((id) => {
-    setInvoices((prev) => {
-      const u = prev.filter((i) => !invoiceIdEq(i.id, id));
+  const hardDeleteInvoice = useCallback(async (id) => {
+    if(!isDemo && userId) await supabase.from("invoices").delete().eq("id",String(id));
+    setInvoices((prev) => prev.filter((i) => !invoiceIdEq(i.id, id)));
+  }, [userId, isDemo]);
       
       return u;
     });
