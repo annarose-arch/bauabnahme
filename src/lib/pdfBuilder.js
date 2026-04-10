@@ -67,7 +67,7 @@ th{background:#f9f4ec}
 .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(212,168,83,0.12);white-space:nowrap;pointer-events:none;z-index:1000}
 @media print{.noprint{display:none}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
-${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
+${isDemoMode ? '<div class="watermark">${tr.draft}</div>' : ""}
 <div class="noprint" style="margin-bottom:14px">
 ${!isPro ? '<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#d4a853;color:#111;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
 <button class="btn noprint" onclick="window.print()">${tr.print}</button>
@@ -179,12 +179,12 @@ tr:nth-child(even) td{background:#f8f8f8}
 .btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
 @media print{.noprint{display:none}.qr-section{page-break-inside:avoid}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
-${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
+${isDemoMode ? '<div class="watermark">${tr.draft}</div>' : ""}
 <div class="noprint" style="margin-bottom:20px">
 ${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-<button type="button" class="btn" onclick="window.print()">Drucken / PDF</button>
-${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 E-Mail</a>` : `<span class="btn btn-muted" title="Keine Kunden-E-Mail hinterlegt">📧 E-Mail</span>`}
+<button type="button" class="btn" onclick="window.print()">${tr.print}</button>
+${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a>` : `<span class="btn btn-muted" title="Keine Kunden-E-Mail hinterlegt">📧 ${tr.email}</span>`}
 </div>
 </div>
 <div class="header">
@@ -194,7 +194,7 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 E-Mail</a>` : 
     <div class="firm-details">${firmDetails}</div>
   </div>
   <div>
-    <div class="invoice-label">Rechnung</div>
+    <div class="invoice-label">${tr.invoice}</div>
     <div class="invoice-meta">
       <div><strong>${invoiceNr}</strong></div>
       <div>${formatDateCH(reportDate)}</div>
@@ -204,34 +204,34 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 E-Mail</a>` : 
 </div>
 <div class="address-block">
   <div class="address-box">
-    <div class="address-label">Rechnungssteller</div>
+    <div class="address-label">${tr.issuer}</div>
     <strong>${firmName || firmContact}</strong><br/>${firmDetails}
   </div>
   <div class="address-box">
-    <div class="address-label">Rechnungsempfänger</div>
+    <div class="address-label">${tr.recipient}</div>
     <strong>${name}</strong><br/>
     ${custStreet}<br/>
     ${[custZip, custCity].filter(Boolean).join(" ")}
   </div>
 </div>
-${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">Bezug: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
+${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">${tr.ref}: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
 ${projectName ? `<div class="project-line">Projekt: ${projectName}</div>` : ""}
-${wHtml ? `<div class="section-title">Arbeitsstunden</div><table><thead><tr><th>Mitarbeiter</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
-${mHtml ? `<div class="section-title">Material</div><table><thead><tr><th>Bezeichnung</th><th style="text-align:center">Menge</th><th style="text-align:center">Preis</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
+${wHtml ? `<div class="section-title"${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
+${mHtml ? `<div class="section-title"${tr.material}</div><table><thead><tr><th>${tr.description}</th><th style="text-align:center">Menge</th><th style="text-align:center">Preis</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
 <div class="totals-box"><div class="totals-inner">
-  <div class="totals-row"><span>Subtotal</span><span>CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+  <div class="totals-row"><span>${tr.subtotal}</span><span>CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
   ${discountPct > 0 ? `<div class="totals-discount"><span>Rabatt ${discountPct}%</span><span>− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
-  <div class="totals-row"><span>MwSt 8.1%</span><span>CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
-  ${costs.expenses ? `<div class="totals-row"><span>Spesen</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
+  <div class="totals-row"><span>${tr.vat}</span><span>CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+  ${costs.expenses ? `<div class="totals-row"><span>${tr.expenses}</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
   <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
 </div></div>
-${skontoPct > 0 ? `<div class="skonto-box">Bei Zahlung bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
+${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payent} bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
 <div class="qr-section">
   <div class="qr-left">
-    <div class="qr-title">Zahlung</div>
+    <div class="qr-title">${tr.payent}</div>
     <div class="qr-fields">
-      ${qrUrl ? `<div><div class="qr-label">IBAN</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">Keine IBAN hinterlegt — bitte in Einstellungen ergänzen</div>'}
-      <div><div class="qr-label">Zahlbar bis</div><div>${dueDate}</div></div>
+      ${qrUrl ? `<div><div class="qr-label">IBAN</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">${tr.noIban} — bitte in Einstellungen ergänzen</div>'}
+      <div><div class="qr-label">${tr.dueDate}</div><div>${dueDate}</div></div>
       <div><div class="qr-label">Referenz</div><div>${invoiceNr}</div></div>
     </div>
   </div>
