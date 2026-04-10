@@ -116,7 +116,7 @@ ${sig.image || custSig.image ? `<div class="card" style="display:flex;gap:32px">
 }
 
 // ─── Rechnung HTML ──────────────────────────────────────────────────────────
-export function buildRechnungHtml({
+export function buildRechnungHtml({ language = "DE",
   invoiceNr, firmName, firmLogo, firmContact, firmDetails,
   name, custAddr, custStreet, custZip, custCity,
   validWork, validMat, costs, subtotal, discountPct, discountAmt,
@@ -126,6 +126,7 @@ export function buildRechnungHtml({
   custEmail,
   rapportNr,
 }) {
+  const tr = (t[language] || t.DE).pdf;
   const escText = (s) => String(s ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
