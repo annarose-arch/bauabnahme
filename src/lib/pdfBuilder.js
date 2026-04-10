@@ -1,3 +1,4 @@
+import { t } from "./translations.js";
 import { formatDateCH } from "./utils.js";
 
 // ─── Swiss QR-Bill ─────────────────────────────────────────────────────────
@@ -23,8 +24,9 @@ export function buildSwissQR(
 // ─── Rapport PDF HTML ──────────────────────────────────────────────────────
 export function buildRapportHtml(
   report, p, firmName, firmLogo, firmAddress, firmContact,
-  firmPhone, firmEmail, isPro, isDemoMode, mailto, customers, parseCustomerMeta
+  firmPhone, firmEmail, isPro, isDemoMode, mailto, customers, parseCustomerMeta, language = "DE"
 ) {
+  const tr = (t[language] || t.DE).pdf;
   const work = p.workRows || [], mat = p.materialRows || [], tot = p.totals || {};
   const costs = p.costs || {}, photos = p.photos || {}, sig = p.signature || {}, custSig = p.customerSignature || {}
   const name = report.customer || "-";
@@ -85,30 +87,30 @@ ${!isPro ? '<div style="background:#fff8e6;border:2px solid #d4a853;border-radiu
     </div>
   </div>
   <div class="report-header">
-    <div class="report-title">Rapport</div>
+    <div class="report-title">${tr.rapport}</div>
     <div style="font-size:13px;color:#555">Nr. ${p.rapportNr || report.id}</div>
     <div style="font-size:13px;color:#555">${formatDateCH(report.date)}</div>
   </div>
 </div>
 <div class="card">
   <table><tbody>
-    <tr><td><b>Rapport-Nr:</b></td><td>${p.rapportNr || "-"}</td><td><b>Datum:</b></td><td>${formatDateCH(report.date)}</td></tr>
-    <tr><td><b>Kunde:</b></td><td>${name}</td><td><b>Auftrag-Nr:</b></td><td>${p.orderNo || "-"}</td></tr>
-    <tr><td><b>Adresse:</b></td><td colspan="3">${custFullAddr}</td></tr>
-    ${p.projectName ? `<tr><td><b>Projekt:</b></td><td colspan="3">${p.projectName}</td></tr>` : ""}
+    <tr><td><b>Rapport-Nr:</b></td><td>${p.rapportNr || "-"}</td><td><b>${tr.date}:</b></td><td>${formatDateCH(report.date)}</td></tr>
+    <tr><td><b>${tr.customer}:</b></td><td>${name}</td><td><b>${tr.orderNo}:</b></td><td>${p.orderNo || "-"}</td></tr>
+    <tr><td><b>${tr.address}:</b></td><td colspan="3">${custFullAddr}</td></tr>
+    ${p.projectName ? `<tr><td><b>${tr.project}:</b></td><td colspan="3">${p.projectName}</td></tr>` : ""}
   </tbody></table>
 </div>
-${photos.before || photos.after ? `<div class="card"><h3>Fotos</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${photos.before ? `<div><p><b>Vorher</b></p><img src="${photos.before}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"/></div>` : ""}${photos.after ? `<div><p><b>Nachher</b></p><img src="${photos.after}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"/></div>` : ""}</div></div>` : ""}
-<div class="card"><h3>Arbeitsstunden</h3><table><thead><tr><th>#</th><th>Mitarbeiter</th><th>Zeit</th><th>Stunden</th><th>Total</th></tr></thead><tbody>${wHtml || "<tr><td colspan='5'>Keine Daten</td></tr>"}</tbody></table></div>
-<div class="card"><h3>Material / Kranrapport</h3><table><thead><tr><th>#</th><th>Bezeichnung</th><th>Menge</th><th>Total</th></tr></thead><tbody>${mHtml || "<tr><td colspan='4'>Keine Daten</td></tr>"}</tbody></table></div>
+${photos.before || photos.after ? `<div class="card"><h3>${tr.photos}</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${photos.before ? `<div><p><b>${tr.before}</b></p><img src="${photos.before}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"/></div>` : ""}${photos.after ? `<div><p><b>${tr.after}</b></p><img src="${photos.after}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px"/></div>` : ""}</div></div>` : ""}
+<div class="card"><h3>${tr.workHours}</h3><table><thead><tr><th>#</th><th>${tr.employee}</th><th>${tr.time}</th><th>${tr.hours}</th><th>${tr.total}</th></tr></thead><tbody>${wHtml || "<tr><td colspan='5'>Keine Daten</td></tr>"}</tbody></table></div>
+<div class="card"><h3>${tr.material}</h3><table><thead><tr><th>#</th><th>${tr.description}</th><th>${tr.qty}</th><th>${tr.total}</th></tr></thead><tbody>${mHtml || "<tr><td colspan='4'>Keine Daten</td></tr>"}</tbody></table></div>
 <div class="card">
-  <div><b>Spesen:</b> CHF ${Number(costs.expenses || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-  ${costs.notes ? `<div><b>Notizen:</b> ${costs.notes}</div>` : ""}
-  <div><b>Subtotal:</b> CHF ${Number(tot.subtotal || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-  <div><b>MwSt 8.1%:</b> CHF ${Number(tot.vat || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+  <div><b>${tr.expenses}:</b> CHF ${Number(costs.expenses || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+  ${costs.notes ? `<div><b>${tr.notes}:</b> ${costs.notes}</div>` : ""}
+  <div><b>${tr.subtotal}:</b> CHF ${Number(tot.subtotal || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+  <div><b>${tr.vat}:</b> CHF ${Number(tot.vat || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
   <div class="total">TOTAL CHF ${Number(tot.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
 </div>
-${sig.image || custSig.image ? `<div class="card" style="display:flex;gap:32px"><div>${sig.image ? `<h3>Mitarbeiter</h3><div style="margin-bottom:4px"><b>${sig.name || "-"}</b></div><img src="${sig.image}" style="width:220px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/>` : ""}</div><div>${custSig.image ? `<h3>Kunde</h3><div style="margin-bottom:4px"><b>${custSig.name || "-"}</b></div><img src="${custSig.image}" style="width:220px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/>` : ""}</div></div>` : ""}
+${sig.image || custSig.image ? `<div class="card" style="display:flex;gap:32px"><div>${sig.image ? `<h3>${tr.employee}</h3><div style="margin-bottom:4px"><b>${sig.name || "-"}</b></div><img src="${sig.image}" style="width:220px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/>` : ""}</div><div>${custSig.image ? `<h3>${tr.customer}</h3><div style="margin-bottom:4px"><b>${custSig.name || "-"}</b></div><img src="${custSig.image}" style="width:220px;border:1px solid rgba(212,168,83,0.4);border-radius:8px"/>` : ""}</div></div>` : ""}
 
 </body></html>`;
 }
