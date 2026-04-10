@@ -355,8 +355,8 @@ export function KundenDetail({
             />
           ))}
         </div>
-              <CustPagination total={reportListForTab ? reportListForTab.length : 0} page={pageReport} setPage={setPageReport}/>
-      )}
+        )}
+       <CustPagination total={reportListForTab ? reportListForTab.length : 0} page={pageReport} setPage={setPageReport}/>
       {invoiceListForTab && invoiceListForTab.length > 0 && (
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
           {invoiceListForTab.slice(pageInvoice * CUST_PAGE_SIZE, (pageInvoice+1) * CUST_PAGE_SIZE).map((inv) => (
