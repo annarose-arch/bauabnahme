@@ -150,7 +150,7 @@ export function buildRechnungHtml({ language = "DE",
 @page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #111}
-.firm-name{font-size:22px;font-weight:900;color:#111}
+.firm-name{font-size:14px;font-weight:700;color:#111}
 .firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}
 .invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
 .invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
@@ -205,9 +205,10 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
 </div>
 <div class="address-block">
   <div class="address-box">
-    <div class="address-label">${tr.issuer}</div>
-    <strong>${firmName || firmContact}</strong><br/>${firmDetails}
+    <div class="address-label">${tr.recipient}</div>
+    <strong>${name}</strong><br/>${custStreet}<br/>${[custZip,custCity].filter(Boolean).join(" ")}
   </div>
+</div>
   <div class="address-box">
     <div class="address-label">${tr.recipient}</div>
     <strong>${name}</strong><br/>
