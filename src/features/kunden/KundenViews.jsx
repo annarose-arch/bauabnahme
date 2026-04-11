@@ -244,7 +244,7 @@ function CustPagination({ total, page, setPage }) {
 }
 
 // ─── Kunden Detail ─────────────────────────────────────────────────────────
-export function KundenDetail({
+export function KundenDetail({ language = "DE",
   customer,
   reports,
   archivedReports,
@@ -260,6 +260,7 @@ export function KundenDetail({
   onDeleteInvoice,
 }) {
   const [detailTab, setDetailTab] = useState("rapporte-aktiv");
+  const tr = useTranslation(language);
   const m = parseCustomerMeta(customer); const [pageReport, setPageReport] = useState(0);
   const [pageInvoice, setPageInvoice] = useState(0);
   const linkedMap = new Map();
