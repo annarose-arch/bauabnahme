@@ -84,6 +84,7 @@ export function RenderView({
       onSave={saveCustomer}
       onSelect={setSelectedCustomer}
       onDelete={isAdmin ? deleteCustomer : null}
+      onEdit={isAdmin ? editCustomer : null}
     />
   );
 
