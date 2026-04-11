@@ -168,7 +168,7 @@ if (!isDemo && userId) {
   const bumpInvoiceNr = () => { const n = nextInvoiceNr; setNextInvoiceNrState(n+1); localStorage.setItem("bauabnahme_next_invoice_nr", String(n+1)); return n; };
   const [catalog, setCatalog] = useState({employees:[],materials:[]});
   const emptyForm = { selectedCustomerId:"", selectedProjectId:"", customer:"", address:"", zip:"", city:"", orderNo:"", customerEmail:"", date: new Date().toISOString().slice(0,10), status:"offen", expenses:"", notes:"", beforePhoto:"", afterPhoto:"", signerName:"", signatureImage:"", customerSignerName:"", customerSignatureImage:""};
-  const [customerForm, setCustomerForm] = useState({ company:"", firstName:"", lastName:"", address:"", zip:"", city:"", phone:"", email:"" });
+  const [customerForm, setCustomerForm] = useState({ company:"", firstName:"", lastName:"", address:"", zip:"", city:"", phone:"", email:"", mwst:"" });
   const [reportForm, setReportForm]     = useState(emptyForm);
   const [workRows, setWorkRows]         = useState([{ employee:"", from:"", to:"", rate:"" }]);
   const [materialRows, setMaterialRows] = useState([{ name:"", qty:"", unit:"", price:"" }]);
