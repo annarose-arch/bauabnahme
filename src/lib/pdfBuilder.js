@@ -158,12 +158,12 @@ body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14p
 .address-box{border-left:3px solid #111;padding:10px 14px}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
 .project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}
-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
 th{background:#111;color:#fff;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
-td{padding:7px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}
+td{padding:9px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}td.num{text-align:right;font-family:monospace;white-space:nowrap}
 tr:nth-child(even) td{background:#f8f8f8}
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#111;margin:20px 0 6px;border-bottom:2px solid #111;padding-bottom:4px}
-.totals-box{display:flex;justify-content:flex-end;margin-bottom:20px}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#111;margin:24px 0 8px;border-bottom:2px solid #111;padding-bottom:4px}
+.totals-box{display:flex;justify-content:flex-end;margin-top:24px;margin-bottom:20px;border-top:2px solid #111;padding-top:16px}
 .totals-inner{width:380px}
 .totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
 .totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;font-weight:700;border-bottom:1px solid #eee}
