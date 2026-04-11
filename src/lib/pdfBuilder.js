@@ -117,128 +117,132 @@ ${sig.image || custSig.image ? `<div class="card" style="display:flex;gap:32px">
 
 // ─── Rechnung HTML ──────────────────────────────────────────────────────────
 export function buildRechnungHtml({ language = "DE",
-  invoiceNr, firmName, firmLogo, firmContact, firmDetails,
-  name, custAddr, custStreet, custZip, custCity,
-  validWork, validMat, costs, subtotal, discountPct, discountAmt,
-  vat, totalAmount, skontoPct, skontoAmt,
-  dueDate, skontoDueDate, qrUrl,
-  isPro, isDemoMode, reportDate, projectName,
-  custEmail,
-  rapportNr,
+  invoiceNr, firmName, firmLogo, firmContact, firmDetails,
+  name, custAddr, custStreet, custZip, custCity,
+  validWork, validMat, costs, subtotal, discountPct, discountAmt,
+  vat, totalAmount, skontoPct, skontoAmt,
+  dueDate, skontoDueDate, qrUrl,
+  isPro, isDemoMode, reportDate, projectName,
+  custEmail, rapportNr,
 }) {
-  const tr = (t[language] || t.DE).pdf;
-  const escText = (s) => String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
- const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:right;font-family:monospace">${Number(r.hours || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})} h</td><td style="text-align:right;color:#333;width:35px">CHF</td><td style="text-align:right;font-family:monospace;width:90px">${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
-const mHtml = validMat.map(r => `<tr><td style="padding:9px 12px">${r.name || "-"}</td><td style="text-align:right;padding:9px 12px;white-space:nowrap;font-family:monospace">${r.qty || 0} ${r.unit || ""}</td><td style="text-align:right;padding:9px 12px;white-space:nowrap;font-family:monospace">CHF ${Number(r.price || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td style="text-align:right;padding:9px 12px;white-space:nowrap;font-family:monospace">CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
-  const mailSubject = `Rechnung ${invoiceNr}`;
-  const mailBody = `Rechnungsnummer: ${invoiceNr}\nBetrag: CHF ${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}\nFälligkeitsdatum: ${dueDate}`;
-  const emailTrim = custEmail != null ? String(custEmail).trim() : "";
-  const mailtoHref =
-    emailTrim.length > 0
-      ? `mailto:${emailTrim}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`
-      : "";
-  const escHref = (u) => String(u).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  const tr = (t[language] || t.DE).pdf;
+  const escText = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const fCHF = (n) => Number(n||0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const emailTrim = custEmail != null ? String(custEmail).trim() : "";
+  const mailSubject = `Rechnung ${invoiceNr}`;
+  const mailBody = `Rechnungsnummer: ${invoiceNr}\nBetrag: CHF ${fCHF(totalAmount)}\nFälligkeitsdatum: ${dueDate}`;
+  const mailtoHref = emailTrim ? `mailto:${emailTrim}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}` : "";
+  const escHref = (u) => String(u).replace(/&/g,"&amp;").replace(/"/g,"&quot;");
 
-  return `<!doctype html><html><head><meta charset="utf-8"/>
+  const wHtml = validWork.map(r => `
+    <tr>
+      <td>${r.employee || "-"}</td>
+      <td class="num">${r.from || "-"}–${r.to || "-"}</td>
+      <td class="num">${fCHF(r.hours)} h</td>
+      <td class="num">CHF ${fCHF(r.total)}</td>
+    </tr>`).join("");
+
+  const mHtml = validMat.map(r => `
+    <tr>
+      <td>${r.name || "-"}</td>
+      <td class="num">${r.qty || 0} ${r.unit || ""}</td>
+      <td class="num">CHF ${fCHF(r.price)}</td>
+      <td class="num">CHF ${fCHF(r.total)}</td>
+    </tr>`).join("");
+
+  return `<!doctype html><html><head><meta charset="utf-8"/>
 <title>Rechnung ${invoiceNr}</title>
 <style>
 *{box-sizing:border-box}
 @page{margin:16mm;size:A4}
-body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #111}
-.firm-name{font-size:22px;font-weight:900;color:#111}
-.firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}
-.invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
-.invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
-.address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:8px}
-.address-box{border-left:3px solid #111;padding:10px 14px}
-.address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
-.project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}
-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-th{background:#111;color:#fff;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
-td{padding:9px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}td.num{text-align:right;font-family:monospace;white-space:nowrap}
-tr:nth-child(even) td{background:#f8f8f8}
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#111;margin:24px 0 8px;border-bottom:2px solid #111;padding-bottom:4px}
-.totals-box{display:flex;justify-content:flex-end;margin-top:24px;margin-bottom:20px;border-top:2px solid #111;padding-top:16px}
-.totals-inner{width:380px}
-.totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
-.totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;font-weight:700;border-bottom:1px solid #eee}
-.totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#111;border-top:2px solid #111;margin-top:4px}
-.skonto-box{background:#f5f5f5;border-left:3px solid #555;padding:10px 14px;font-size:12px;color:#333;margin-bottom:20px}
-.qr-section{border-top:2px solid #111;margin-top:28px;padding-top:18px;display:flex;gap:24px;align-items:flex-start}
-.qr-title{font-size:15px;font-weight:800;color:#111;margin-bottom:12px}
-.qr-fields{display:grid;gap:6px;font-size:12px;color:#333;line-height:1.6}
-.qr-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;letter-spacing:1px}
-.qr-img{border:1px solid #ccc;padding:6px;background:#fff}
-.no-iban{background:#f5f5f5;border:2px dashed #999;border-radius:6px;padding:14px;font-size:13px;color:#555;text-align:center}
+body{font-family:Arial,sans-serif;color:#111;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
+.noprint{margin-bottom:20px}
+.btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px;text-decoration:none;display:inline-block}
 .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(0,0,0,0.06);white-space:nowrap;pointer-events:none;z-index:1000}
-.btn{background:#111;border:none;color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;margin-right:8px}
-@media print{.noprint{display:none}.qr-section{page-break-inside:avoid}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid #111}
+.firm-name{font-size:20px;font-weight:900}
+.firm-details{font-size:12px;color:#555;line-height:1.7;margin-top:4px}
+.invoice-label{font-size:28px;font-weight:900;text-align:right}
+.invoice-meta{font-size:13px;color:#444;text-align:right;line-height:2}
+.address-block{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}
+.address-box{border-left:3px solid #111;padding:10px 16px}
+.address-label{font-size:10px;text-transform:uppercase;color:#888;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.ref-line{margin:8px 0 4px;font-size:13px;color:#555}
+.project-line{margin:4px 0 20px;font-size:13px;font-style:italic;color:#555;padding-bottom:12px;border-bottom:1px solid #eee}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;margin:24px 0 0;border-bottom:2px solid #111;padding-bottom:4px}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{background:#111;color:#fff;padding:10px 12px;font-size:12px;font-weight:700;text-align:left}
+th.num{text-align:right}
+td{padding:9px 12px;font-size:13px;border-bottom:1px solid #eee}
+td.num{text-align:right;font-family:monospace;white-space:nowrap}
+tr:nth-child(even) td{background:#f9f9f9}
+.totals{display:flex;justify-content:flex-end;margin:24px 0}
+.totals table{width:360px;border-collapse:collapse}
+.totals td{padding:6px 10px;font-size:13px;border:none}
+.totals td.num{text-align:right;font-family:monospace;white-space:nowrap;width:120px}
+.totals tr.total-row td{border-top:2px solid #111;font-size:18px;font-weight:900;padding-top:10px}
+.skonto-box{background:#f5f5f5;border-left:3px solid #555;padding:10px 16px;font-size:12px;color:#444;margin:8px 0 20px}
+.qr-section{border-top:2px solid #111;margin-top:32px;padding-top:20px;display:flex;gap:28px;align-items:flex-start}
+.qr-title{font-size:15px;font-weight:800;margin-bottom:12px}
+.qr-fields{display:grid;gap:8px;font-size:12px;color:#444}
+.qr-label{font-size:10px;text-transform:uppercase;color:#888;font-weight:700;letter-spacing:1px;margin-bottom:2px}
+.qr-img{border:1px solid #ccc;padding:6px;background:#fff}
+.no-iban{background:#f5f5f5;border:2px dashed #bbb;border-radius:6px;padding:14px;font-size:13px;color:#666;text-align:center}
+@media print{.noprint{display:none}a[href]:after{content:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.qr-section{page-break-inside:avoid}}
 </style></head><body>
-${isDemoMode ? '<div class="watermark">${tr.draft}</div>' : ""}
-<div class="noprint" style="margin-bottom:20px">
-${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
-<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-<button type="button" class="btn" onclick="window.print()">${tr.print}</button>
-${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a>` : `<span class="btn btn-muted" title="Keine Kunden-E-Mail hinterlegt">📧 ${tr.email}</span>`}
-</div>
+${isDemoMode ? `<div class="watermark">${tr.draft}</div>` : ""}
+<div class="noprint">
+  ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>` : ""}
+  <button type="button" class="btn" onclick="window.print()">${tr.print}</button>
+  ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a>` : `<span class="btn" style="opacity:0.5">📧 ${tr.email}</span>`}
 </div>
 <div class="header">
-  <div>
-    ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>` : ""}
-    <div class="firm-name">${firmName || firmContact || ""}</div>
-    <div class="firm-details">${firmDetails}</div>
-  </div>
-  <div>
-    <div class="invoice-label">${tr.invoice}</div>
-    <div class="invoice-meta">
-      <div><strong>${invoiceNr}</strong></div>
-      <div>${formatDateCH(reportDate)}</div>
-      <div>${tr.dueDate}: ${dueDate}</div>
-    </div>
-  </div>
+  <div>
+    ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>` : ""}
+    <div class="firm-name">${firmName || firmContact || ""}</div>
+    <div class="firm-details">${firmDetails}</div>
+  </div>
+  <div>
+    <div class="invoice-label">${tr.invoice}</div>
+    <div class="invoice-meta">
+      <div><strong>${invoiceNr}</strong></div>
+      <div>${formatDateCH(reportDate)}</div>
+      <div>${tr.dueDate}: <strong>${dueDate}</strong></div>
+    </div>
+  </div>
 </div>
 <div class="address-block">
-  <div class="address-box">
-    <div class="address-label">${tr.issuer}</div>
-    <strong>${firmName || firmContact}</strong><br/>${firmDetails}
-  </div>
-  <div class="address-box">
-    <div class="address-label">${tr.recipient}</div>
-    <strong>${name}</strong><br/>
-    ${custStreet}<br/>
-    ${[custZip, custCity].filter(Boolean).join(" ")}
-  </div>
+  <div class="address-box">
+    <div class="address-label">${tr.issuer}</div>
+    <strong>${firmName || firmContact}</strong><br/>${firmDetails}
+  </div>
+  <div class="address-box">
+    <div class="address-label">${tr.recipient}</div>
+    <strong>${name}</strong><br/>${custStreet}<br/>${[custZip,custCity].filter(Boolean).join(" ")}
+  </div>
 </div>
 ${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">${tr.ref}: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
 ${projectName ? `<div class="project-line">${tr.project}: ${projectName}</div>` : ""}
-${wHtml ? `<div class="section-title">${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th class="num">Zeit</th><th class="num">Stunden</th><th class="num">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
-${mHtml ? `<div class="section-title">${tr.material}</div><table><thead><tr><th style="padding:9px 12px">${tr.description}</th><th style="text-align:right;padding:9px 12px;width:120px">${tr.qty}</th><th style="text-align:right;padding:9px 12px;width:120px">${tr.price}</th><th style="text-align:right;padding:9px 12px;width:120px">Total</th></tr></thead><tbody>${mHtml}</tbody></table>`: ""}
-<div class="totals-box"><div class="totals-inner">
-     <table style="width:100%;border-collapse:collapse;margin-left:auto;max-width:380px">
-    <tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.subtotal}</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;width:40px">CHF</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;font-family:monospace;width:100px">${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
-    ${discountPct > 0 ? `<tr><td style="padding:4px 0;font-size:13px">${tr.discount}${discountPct}%</td><td style="padding:4px 0;text-align:right;width:40px;">CHF</td><td style="padding:4px 0;text-align:right;font-size:13px;font-family:monospace;width:100px">−${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>` : ""}
-    <tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.vat}</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;width:40px">CHF</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;font-family:monospace;width:100px">${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
-    ${costs.expenses ? `<tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.expenses}</td><td style="padding:4px 0;text-align:right;font-size:13px;width:40px">CHF</td><td style="padding:4px 0;text-align:right;font-size:13px;font-family:monospace;width:100px">${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>` : ""}
-    <tr style="border-top:2px solid #111"><td style="padding:8px 0 4px;font-size:18px;font-weight:900">TOTAL</td><td style="padding:8px 0 4px;text-align:right;font-size:18px;font-weight:900;width:40px">CHF</td><td style="padding:8px 0 4px;text-align:right;font-size:18px;font-weight:900;font-family:monospace;width:100px">${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
-  </table>
-</div></div>
-${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payment} bis ${skontoDueDate}: ${skontoPct}% Skonto → CHF ${(totalAmount - skontoAmt).toFixed(2)}</div>` : ""}
+${wHtml ? `<div class="section-title">${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th class="num">${tr.time}</th><th class="num">${tr.hours}</th><th class="num">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
+${mHtml ? `<div class="section-title">${tr.material}</div><table><thead><tr><th>${tr.description}</th><th class="num">${tr.qty}</th><th class="num">${tr.price}</th><th class="num">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
+<div class="totals"><table>
+  <tr><td>${tr.subtotal}</td><td class="num">CHF ${fCHF(subtotal)}</td></tr>
+  ${discountPct > 0 ? `<tr><td>${tr.discount} ${discountPct}%</td><td class="num">− CHF ${fCHF(discountAmt)}</td></tr>` : ""}
+  <tr><td>${tr.vat}</td><td class="num">CHF ${fCHF(vat)}</td></tr>
+  ${costs.expenses ? `<tr><td>${tr.expenses}</td><td class="num">CHF ${fCHF(costs.expenses)}</td></tr>` : ""}
+  <tr class="total-row"><td>TOTAL</td><td class="num">CHF ${fCHF(totalAmount)}</td></tr>
+</table></div>
+${skontoPct > 0 ? `<div class="skonto-box">${tr.skonto} ${skontoPct}% ${tr.dueDate} ${skontoDueDate}: CHF ${fCHF(totalAmount - skontoAmt)}</div>` : ""}
 <div class="qr-section">
-  <div class="qr-left">
-    <div class="qr-title">${tr.payment}</div>
-
-      ${qrUrl ? `<div><div class="qr-label">${tr.reference}</div><div style="font-family:monospace">${custAddr}</div></div>` : `<div class="no-iban">${tr.noIban}</div>`}
-      <div><div class="qr-label">${tr.dueDate}</div><div>${dueDate}</div></div>
-      <div><div class="qr-label">${tr.reference}</div><div>${invoiceNr}</div></div>
-    </div>
-  </div>
-  ${qrUrl ? `<img src="${qrUrl}" width="160" height="160" class="qr-img" alt="QR Code"/>` : ""}
+  <div>
+    <div class="qr-title">${tr.payment}</div>
+    <div class="qr-fields">
+      ${qrUrl ? `<div><div class="qr-label">IBAN</div><div style="font-family:monospace">${custAddr}</div></div>` : `<div class="no-iban">${tr.noIban}</div>`}
+      <div><div class="qr-label">${tr.dueDate}</div><div>${dueDate}</div></div>
+      <div><div class="qr-label">${tr.reference}</div><div>${invoiceNr}</div></div>
+    </div>
+  </div>
+  ${qrUrl ? `<img src="${qrUrl}" width="160" height="160" class="qr-img" alt="QR"/>` : ""}
 </div>
 </body></html>`;
-
 }
