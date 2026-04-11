@@ -49,7 +49,7 @@ export function RenderView({
       archivedReports={archivedReports}
       invoices={invoices}
       onBack={() => setSelectedCustomer(null)}
-      onOpenReport={r => { setSelectedCustomer(null); setOpenedReport(r); }}
+      onOpenReport={r => { setOpenedReport(r); }}
       onEditReport={r => { setSelectedCustomer(null); startEdit(r); }}
       onPDF={openPDF}
       onInvoice={openInvoice}
