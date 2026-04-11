@@ -39,6 +39,7 @@ export function KundenView({ language = "DE",
   onSave,
   onSelect,
   onDelete,
+  onEdit,                          
 }) {
   const tr = useTranslation(language);
   const [search, setSearch] = useState("");
@@ -106,6 +107,14 @@ export function KundenView({ language = "DE",
                 <span style={{ color: MUTED }}>{tr.customer.title} Nr. </span>
                 <span style={{ color: GOLD, fontWeight: 600 }}>{m.kundennummer || "—"}</span>
               </div>
+             <button
+  type="button"
+  onClick={(e) => { e.stopPropagation(); onEdit(c); }}
+  style={{ ...gBtn, minHeight: 32, fontSize: 12, justifySelf: "start" }}
+>
+  {tr.common.edit}
+</button>
+
               <button
                 type="button"
                 onClick={(e) => {
