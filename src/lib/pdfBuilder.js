@@ -209,13 +209,6 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
     <strong>${name}</strong><br/>${custStreet}<br/>${[custZip,custCity].filter(Boolean).join(" ")}
   </div>
 </div>
-  <div class="address-box">
-    <div class="address-label">${tr.recipient}</div>
-    <strong>${name}</strong><br/>
-    ${custStreet}<br/>
-    ${[custZip, custCity].filter(Boolean).join(" ")}
-  </div>
-</div>
 ${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">${tr.ref}: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
 ${projectName ? `<div class="project-line">${tr.project}: ${projectName}</div>` : ""}
 ${wHtml ? `<div class="section-title"${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
