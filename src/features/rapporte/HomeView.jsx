@@ -51,7 +51,7 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
         <SectionCard>
           <div style={{ color: MUTED, fontSize: 12 }}>{tr.nav.invoices}</div>
           <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, margin: "4px 0" }}>CHF {formatCHF(total)}</div>
-          <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>{pending.length} Rechnungen</div>
+          <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>{pending.length} {tr.nav.invoices}</div>
           <button type="button" onClick={() => goTo("invoices")} style={gBtn}>{tr.common.show}</button>
         </SectionCard>
       </div>
