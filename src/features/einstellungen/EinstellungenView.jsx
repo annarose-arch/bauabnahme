@@ -83,6 +83,15 @@ return (
             <button type="button" style={pBtn} onClick={async () => { const v = document.getElementById("iban-input").value.trim(); await saveMeta({ iban: v }); showNotice("IBAN gespeichert!"); }}>Speichern</button>
           </div>
           {meta.iban && <div style={{ color: GOLD, fontSize: 12, marginTop: 4 }}>{meta.iban}</div>}
+          <div style={{ marginTop: 12 }}>
+  <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>MWST-Nr:</div>
+  <div style={{ display: "flex", gap: 8 }}>
+    <input placeholder="CHE-123.456.789 MWST" defaultValue={meta.mwst_nr || ""} id="mwst-input" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
+    <button type="button" style={pBtn} onClick={async () => { const v = document.getElementById("mwst-input").value.trim(); await saveMeta({ mwst_nr: v }); showNotice("MWST-Nr gespeichert!"); }}>Speichern</button>
+  </div>
+  {meta.mwst_nr && <div style={{ color: GOLD, fontSize: 12, marginTop: 4 }}>{meta.mwst_nr}</div>}
+</div>
+
         </div>
               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
