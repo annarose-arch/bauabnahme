@@ -56,8 +56,8 @@ return (
     <input placeholder="Ort" defaultValue={meta.city || ""} id="company-city" style={{ ...iStyle, flex: 1 }} />
   </div>
   <div style={{ display: "flex", gap: 8 }}>
-    <input placeholder="Telefon" defaultValue={meta.phone || ""} id="company-phone" style={{ ...iStyle, flex: 1 }} />
     <input placeholder="E-Mail" defaultValue={meta.email || userEmail || ""} id="company-email" style={{ ...iStyle, flex: 1 }} />
+<input placeholder="Telefon" defaultValue={meta.phone || ""} id="company-phone" style={{ ...iStyle, flex: 1 }} />
   </div>
   <button type="button" style={pBtn} onClick={async () => {
     await saveMeta({
