@@ -231,9 +231,9 @@ ${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payment} bis ${skontoDueDate
 <div class="qr-section">
   <div class="qr-left">
     <div class="qr-title">${tr.payment}</div>
-    `${tr.noIban} — bitte in Einstellungen ergänzen`
-<div class="qr-fields">
-      ${qrUrl ? `<div><div class="qr-label">${tr.reference}</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">${tr.noIban} — bitte in Einstellungen ergänzen</div>'}
+
+    <div class="qr-fields">
+      ${qrUrl ? `<div><div class="qr-label">${tr.reference}</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">`${tr.noIban} — bitte in Einstellungen ergänzen`
       <div><div class="qr-label">${tr.dueDate}</div><div>${dueDate}</div></div>
       <div><div class="qr-label">${tr.reference}</div><div>${invoiceNr}</div></div>
     </div>
