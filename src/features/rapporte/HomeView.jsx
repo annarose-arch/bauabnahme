@@ -1,10 +1,11 @@
-import { useState } from "react";
 import { useTranslation } from "../../lib/translations.js";
+import { useState } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, gBtn } from "../../lib/constants.js";
 import { SectionCard } from "../../components/UI.jsx";
 import { parseReport, formatCHF, parseCustomerMeta, toNum } from "../../lib/utils.js";
 
-export function HomeView({ customers = [], reports = [], archivedReports = [], invoices = [], onSelectCustomer, goTo }) {
+export function HomeView({ customers = [], reports = [], archivedReports = [], invoices = [], onSelectCustomer, goTo, language = "DE" }) {
+  const tr = useTranslation(language);
   const [search, setSearch] = useState("");
   const open = reports.filter(r => r.status === "offen" || r.status === "bearbeitet");
   const pending = invoices.filter(i => i.status === "entwurf" || i.status === "versendet");
@@ -25,7 +26,7 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
     <div style={{ padding: "0 0 40px" }}>
       <h2 style={{ color: GOLD, marginTop: 0 }}>BauAbnahme</h2>
       <SectionCard>
-        <input placeholder="Suchen: Kunde, Adresse, Rapport-Nr, Projekt, Rechnung..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...iStyle, width: "100%" }} />
+        <input placeholder={tr.common.search} value={search} onChange={e => setSearch(e.target.value)} style={{ ...iStyle, width: "100%" }} />
         {results.length > 0 && (
           <div style={{ marginTop: 8 }}>
             {results.map((r, i) => (
@@ -43,15 +44,15 @@ export function HomeView({ customers = [], reports = [], archivedReports = [], i
       </SectionCard>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "12px 0" }}>
         <SectionCard>
-          <div style={{ color: MUTED, fontSize: 12 }}>Offene Rapporte</div>
+          <div style={{ color: MUTED, fontSize: 12 }}>{tr.nav.reports}</div>
           <div style={{ color: GOLD, fontWeight: 800, fontSize: 32, margin: "8px 0" }}>{open.length}</div>
-          <button type="button" onClick={() => goTo("reports")} style={gBtn}>Anzeigen</button>
+          <button type="button" onClick={() => goTo("reports")} style={gBtn}>{tr.common.show}</button>
         </SectionCard>
         <SectionCard>
-          <div style={{ color: MUTED, fontSize: 12 }}>Ausstehende Rechnungen</div>
+          <div style={{ color: MUTED, fontSize: 12 }}>{tr.nav.invoices}</div>
           <div style={{ color: GOLD, fontWeight: 800, fontSize: 20, margin: "4px 0" }}>CHF {formatCHF(total)}</div>
           <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>{pending.length} Rechnungen</div>
-          <button type="button" onClick={() => goTo("invoices")} style={gBtn}>Anzeigen</button>
+          <button type="button" onClick={() => goTo("invoices")} style={gBtn}>{tr.common.show}</button>
         </SectionCard>
       </div>
     </div>
