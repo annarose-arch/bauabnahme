@@ -71,7 +71,7 @@ export function KundenView({ language = "DE",
           <input placeholder={tr.customer.firstName} value={customerForm.firstName} onChange={(e) => setCustomerForm((p) => ({ ...p, firstName: e.target.value }))} style={iStyle} />
           <input placeholder={tr.customer.lastName} value={customerForm.lastName} onChange={(e) => setCustomerForm((p) => ({ ...p, lastName: e.target.value }))} style={iStyle} />
         </div>
-        <input placeholder={tr.customer.address} value={customerForm.address} onChange={(e) => setCustomerForm((p) => ({ ...p, address: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.report.address} value={customerForm.address} onChange={(e) => setCustomerForm((p) => ({ ...p, address: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
           <input placeholder={tr.report.zip} value={customerForm.zip} onChange={(e) => setCustomerForm((p) => ({ ...p, zip: e.target.value }))} style={iStyle} />
           <input placeholder={tr.report.city} value={customerForm.city} onChange={(e) => setCustomerForm((p) => ({ ...p, city: e.target.value }))} style={iStyle} />
@@ -103,7 +103,7 @@ export function KundenView({ language = "DE",
             >
               <div style={{ color: TEXT, fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>{c.name}</div>
               <div style={{ color: MUTED, fontSize: 12 }}>
-                <span style={{ color: MUTED }}>Kundennummer </span>
+                <span style={{ color: MUTED }}>{tr.customer.title} Nr. </span>
                 <span style={{ color: GOLD, fontWeight: 600 }}>{m.kundennummer || "—"}</span>
               </div>
               <button
@@ -309,7 +309,7 @@ export function KundenDetail({
       <h2 style={{ marginTop: 0 }}>{customer.name}</h2>
       <div style={{ display: "grid", gap: 4, marginBottom: 14 }}>
         <div>
-          <b>Kundennummer:</b> {m.kundennummer || "-"}
+          <b>{tr.customer.title} Nr.:</b> {m.kundennummer || "-"}
         </div>
         <div>
           <b>Ansprechperson:</b> {[m.firstName, m.lastName].filter(Boolean).join(" ") || "-"}
