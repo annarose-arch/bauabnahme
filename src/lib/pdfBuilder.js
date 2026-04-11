@@ -133,7 +133,7 @@ export function buildRechnungHtml({ language = "DE",
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
   const wHtml = validWork.map(r => `<tr><td>${r.employee || "-"}</td><td style="text-align:center">${r.from || "-"}–${r.to || "-"}</td><td style="text-align:center">${Number(r.hours || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})} h</td><td style="text-align:right">CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
-  const mHtml = validMat.map(r => `<tr><td>${r.name || "-"}</td><td style="text-align:center">${r.qty || 0} ${r.unit || ""}</td><td style="text-align:center">CHF ${Number(r.price || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td style="text-align:right">CHF ${Number(r.total || 0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
+ const mHtml = validMat.map(r => `<tr><td>${r.name||"-"}</td><td class="r">${r.qty||0} ${r.unit||""}</td><td class="r">CHF ${Number(r.price||0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td class="r">CHF ${Number(r.total||0).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join("");
   const mailSubject = `Rechnung ${invoiceNr}`;
   const mailBody = `Rechnungsnummer: ${invoiceNr}\nBetrag: CHF ${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}\nFälligkeitsdatum: ${dueDate}`;
   const emailTrim = custEmail != null ? String(custEmail).trim() : "";
@@ -159,11 +159,12 @@ body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14p
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
 .project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}
 table{width:100%;border-collapse:collapse;margin-bottom:16px}
-th{background:#111;color:#fff;padding:8px 10px;font-size:12px;text-align:left;font-weight:700}
-td{padding:7px 10px;font-size:13px;border-bottom:1px solid #eee;color:#111}
+th{background:#111;color:#fff;padding:10px 14px;font-size:12px;text-align:left;font-weight:700}
+th.r{text-align:right}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid #eee;color:#111}
+td.r{text-align:right;font-family:monospace;white-space:nowrap}
 tr:nth-child(even) td{background:#f8f8f8}
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;color:#111;margin:20px 0 6px;border-bottom:2px solid #111;padding-bottom:4px}
-.totals-box{display:flex;justify-content:flex-end;margin-bottom:20px}
+.totals-box{display:flex;justify-content:flex-end;margin-top:28px;padding-top:16px;border-top:1px solid #ddd;margin-bottom:20px}
 .totals-inner{width:380px}
 .totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
 .totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;font-weight:700;border-bottom:1px solid #eee}
@@ -217,10 +218,10 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
 ${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">${tr.ref}: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
 ${projectName ? `<div class="project-line">${tr.project}: ${projectName}</div>` : ""}
 ${wHtml ? `<div class="section-title"${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
-${mHtml ? `<div class="section-title"${tr.material}</div><table><thead><tr><th>${tr.description}</th><th style="text-align:center">${tr.qty}</th><th style="text-align:center">${tr.price}</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
+${mHtml ? `<div class="section-title">${tr.material}</div><table><thead><tr><th>${tr.description}</th><th class="r">${tr.qty}</th><th class="r">${tr.price}</th><th class="r">Total</th></tr></thead><tbody>${mHtml}</tbody></table>`: ""}
 <div class="totals-box"><div class="totals-inner">
   <div class="totals-row"><span>${tr.subtotal}</span><span>CHF ${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
-  ${discountPct > 0 ? `<div class="totals-discount"><span>${tr.discount} ${discountPct}%</span><span>− CHF ${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
+ ${discountPct > 0 ? `<div class="totals-discount"><span>${tr.discount} ${discountPct}%</span><span>CHF −${Number(discountAmt).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
   <div class="totals-row"><span>${tr.vat}</span><span>CHF ${Number(vat).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
   ${costs.expenses ? `<div class="totals-row"><span>${tr.expenses}</span><span>CHF ${Number(costs.expenses).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>` : ""}
   <div class="totals-total"><span>TOTAL CHF</span><span>${Number(totalAmount).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
