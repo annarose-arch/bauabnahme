@@ -79,6 +79,7 @@ export function KundenView({ language = "DE",
         </div>
         <input placeholder={tr.customer.phone} value={customerForm.phone} onChange={(e) => setCustomerForm((p) => ({ ...p, phone: e.target.value }))} style={iStyle} />
         <input placeholder={tr.customer.email} value={customerForm.email} onChange={(e) => setCustomerForm((p) => ({ ...p, email: e.target.value }))} style={iStyle} />
+       <input placeholder="MWST-Nr (optional)" value={customerForm.mwst || ""} onChange={(e) => setCustomerForm((p) => ({ ...p, mwst: e.target.value }))} style={iStyle} />
         <button type="button" onClick={onSave} style={pBtn}>
           {tr.customer.save}
         </button>
