@@ -167,7 +167,7 @@ tr:nth-child(even) td{background:#f8f8f8}
 .totals-box{display:flex;justify-content:flex-end;margin-top:28px;padding-top:16px;border-top:1px solid #ddd;margin-bottom:20px}
 .totals-inner{width:380px}
 .totals-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#333;border-bottom:1px solid #eee}
-.totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;font-weight:700;border-bottom:1px solid #eee}
+.totals-discount{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#111;border-bottom:1px solid #eee}
 .totals-total{display:flex;justify-content:space-between;padding:10px 0 6px;font-size:20px;font-weight:900;color:#111;border-top:2px solid #111;margin-top:4px}
 .skonto-box{background:#f5f5f5;border-left:3px solid #555;padding:10px 14px;font-size:12px;color:#333;margin-bottom:20px}
 .qr-section{border-top:2px solid #111;margin-top:28px;padding-top:18px;display:flex;gap:24px;align-items:flex-start}
@@ -231,7 +231,7 @@ ${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payment} bis ${skontoDueDate
   <div class="qr-left">
     <div class="qr-title">${tr.payment}</div>
     <div class="qr-fields">
-      ${qrUrl ? `<div><div class="qr-label">${tr.reference}</div><div style="font-family:monospace">${custAddr}</div></div>` : '<div class="no-iban">${tr.noIban} — bitte in Einstellungen ergänzen</div>'}
+      ${qrUrl ? `<div><div class="qr-label">${tr.reference}</div><div style="font-family:monospace">${custAddr}</div></div>` : `<div class="no-iban">${tr.noIban}</div>`}
       <div><div class="qr-label">${tr.dueDate}</div><div>${dueDate}</div></div>
       <div><div class="qr-label">${tr.reference}</div><div>${invoiceNr}</div></div>
     </div>
