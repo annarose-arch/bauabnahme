@@ -105,7 +105,7 @@ return (
       </div>   
   
  <div style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: 14, marginBottom: 16 }}>
-        <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Team</div>
+        <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>Mitarbeiter</div>
         <TeamManager session={session} showNotice={showNotice} />
    </div>
    <div style={{ marginBottom: 16, border: "1px solid " + BORDER, borderRadius: 10, padding: 14 }}>
