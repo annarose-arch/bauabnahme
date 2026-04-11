@@ -71,6 +71,7 @@ export function RenderView({
       invoices={invoices}
       onSelectCustomer={setSelectedCustomer}
       goTo={goTo}
+      language={language}
     />
   );
 
