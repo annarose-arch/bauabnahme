@@ -55,7 +55,7 @@ export function RapporteListe({ reports, archivedReports, invoices = [], onOpen,
                 )}
                 <span>{` · ${project} · ${customer} · ${date} · CHF ${total}`}</span>
               </div>
-              <span style={{ color: GOLD, fontWeight: 700, fontSize: 13 }}>{r.status}</span>
+              <button type="button" onClick={() => onOpen(r)} style={{ color: GOLD, fontWeight: 700, fontSize: 13, background: "transparent", border: `1px solid ${GOLD}`, borderRadius: 6, padding: "2px 10px", cursor: "pointer" }}>{r.status}</button>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" onClick={() => onEdit(r)} style={{ ...gBtn, minHeight: 34 }}>
