@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "../../lib/translations.js";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, gBtn } from "../../lib/constants.js";
 import { SectionCard } from "../../components/UI.jsx";
 import { parseReport, formatCHF, parseCustomerMeta, toNum } from "../../lib/utils.js";
