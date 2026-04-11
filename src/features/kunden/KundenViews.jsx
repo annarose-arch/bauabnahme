@@ -135,7 +135,8 @@ export function KundenView({ language = "DE",
   );
 }
 
-function ReportRowCard({ const tr = useTranslation(language);r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport, showInvoiceButton = true, invoices = [] }) {
+function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInvoice, onDeleteReport, showInvoiceButton = true, invoices = [], language = "DE" }) {
+  const tr = useTranslation(language);
   return (
     <div
       style={{
@@ -184,7 +185,8 @@ function ReportRowCard({ const tr = useTranslation(language);r, isArchived, onOp
 }
 
 /** Same invoice row layout as RechnungenViews.jsx (summary line + badge + actions). */
-function InvoiceRowCard({ const tr = useTranslation(language);inv, onReopenInvoice, onPreviewInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onDeleteInvoice, showEditButton = true }) {
+function InvoiceRowCard({ inv, onReopenInvoice, onPreviewInvoice, onMarkInvoiceSent, onMarkInvoicePaid, onDeleteInvoice, showEditButton = true, language = "DE" }) {
+  const tr = useTranslation(language);
   const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
   const summaryLine = `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
   return (
