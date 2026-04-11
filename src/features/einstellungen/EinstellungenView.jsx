@@ -46,6 +46,32 @@ return (
             <div style={{ color: MUTED, fontSize: 11 }}>ID: {session?.user?.id?.slice(0,8)}</div>
           </div>
         </div>
+<div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+  <div style={{ display: "flex", gap: 8 }}>
+    <input placeholder="Firmenname" defaultValue={meta.company_name || ""} id="company-name" style={{ ...iStyle, flex: 1 }} />
+  </div>
+  <div style={{ display: "flex", gap: 8 }}>
+    <input placeholder="Adresse" defaultValue={meta.address || ""} id="company-address" style={{ ...iStyle, flex: 1 }} />
+    <input placeholder="PLZ" defaultValue={meta.zip || ""} id="company-zip" style={{ ...iStyle, width: 80 }} />
+    <input placeholder="Ort" defaultValue={meta.city || ""} id="company-city" style={{ ...iStyle, flex: 1 }} />
+  </div>
+  <div style={{ display: "flex", gap: 8 }}>
+    <input placeholder="Telefon" defaultValue={meta.phone || ""} id="company-phone" style={{ ...iStyle, flex: 1 }} />
+    <input placeholder="E-Mail" defaultValue={meta.email || userEmail || ""} id="company-email" style={{ ...iStyle, flex: 1 }} />
+  </div>
+  <button type="button" style={pBtn} onClick={async () => {
+    await saveMeta({
+      company_name: document.getElementById("company-name").value.trim(),
+      address: document.getElementById("company-address").value.trim(),
+      zip: document.getElementById("company-zip").value.trim(),
+      city: document.getElementById("company-city").value.trim(),
+      phone: document.getElementById("company-phone").value.trim(),
+      email: document.getElementById("company-email").value.trim(),
+    });
+    showNotice("Firmenprofil gespeichert!");
+  }}>Speichern</button>
+</div>
+
         <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", border: "1px solid " + BORDER, borderRadius: 8, cursor: "pointer", color: MUTED, fontSize: 13 }}>
           Logo hochladen
           <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = async (ev) => { await saveMeta({ company_logo: ev.target.result }); showNotice("Logo gespeichert!"); }; r.readAsDataURL(f); }} />
