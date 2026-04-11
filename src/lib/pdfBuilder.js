@@ -117,7 +117,7 @@ ${sig.image || custSig.image ? `<div class="card" style="display:flex;gap:32px">
 
 // ─── Rechnung HTML ──────────────────────────────────────────────────────────
 export function buildRechnungHtml({ language = "DE",
-  invoiceNr, firmName, firmLogo, firmContact, firmDetails,
+  invoiceNr, firmName, firmLogo, firmContact, firmDetails, firmMwst = "",
   name, custAddr, custStreet, custZip, custCity,
   validWork, validMat, costs, subtotal, discountPct, discountAmt,
   vat, totalAmount, skontoPct, skontoAmt,
@@ -192,7 +192,7 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
   <div>
     ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>` : ""}
     <div class="firm-name">${firmName || firmContact || ""}</div>
-    <div class="firm-details">${firmDetails}</div>
+    <div class="firm-details">${firmDetails}${firmMwst ? `<br/>MWST-Nr: ${firmMwst}` : ""}</div>
   </div>
   <div>
     <div class="invoice-label">${tr.invoice}</div>
