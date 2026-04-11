@@ -79,7 +79,7 @@ export function KundenView({ language = "DE",
         <input placeholder={tr.customer.phone} value={customerForm.phone} onChange={(e) => setCustomerForm((p) => ({ ...p, phone: e.target.value }))} style={iStyle} />
         <input placeholder={tr.customer.email} value={customerForm.email} onChange={(e) => setCustomerForm((p) => ({ ...p, email: e.target.value }))} style={iStyle} />
         <button type="button" onClick={onSave} style={pBtn}>
-          Kunden speichern
+          {tr.customer.save}
         </button>
       </div>
 
@@ -114,7 +114,7 @@ export function KundenView({ language = "DE",
                 }}
                 style={{ ...dBtn, minHeight: 32, fontSize: 12, justifySelf: "start" }}
               >
-                Löschen
+{tr.common.delete}
               </button>
             </div>
           );
@@ -167,7 +167,7 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
         </button>
         {showInvoiceButton && <button type="button" onClick={() => onInvoice(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: "#7ddb9a", borderColor: "#2d7a45" }}>🧾 Rechnung</button>}
         <button type="button" onClick={() => onDeleteReport(r)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
-          🗑 Löschen
+          🗑 {tr.common.delete}
         </button>
       </div>
     </div>
@@ -221,7 +221,7 @@ function InvoiceRowCard({ inv, onReopenInvoice, onPreviewInvoice, onMarkInvoiceS
           </button>
         )}
         <button type="button" onClick={() => onDeleteInvoice(inv.id)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
-          🗑 Löschen
+          🗑 {tr.common.delete}
         </button>
       </div>
     </div>
