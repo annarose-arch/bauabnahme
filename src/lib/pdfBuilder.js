@@ -216,8 +216,8 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
 </div>
 ${rapportNr != null && String(rapportNr).trim() !== "" ? `<div class="ref-line">${tr.ref}: Rapport Nr. ${escText(String(rapportNr).trim())} vom ${formatDateCH(reportDate)}</div>` : ""}
 ${projectName ? `<div class="project-line">${tr.project}: ${projectName}</div>` : ""}
-${wHtml ? `<div class="section-title"${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th style="text-align:center">Zeit</th><th style="text-align:center">Stunden</th><th style="text-align:right">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
-${mHtml ? `<div class="section-title"${tr.material}</div><table><thead><tr><th>${tr.description}</th><th style="text-align:center">${tr.qty}</th><th style="text-align:center">${tr.price}</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
+${wHtml ? `<div class="section-title">${tr.workHours}</div><table><thead><tr><th>${tr.employee}</th><th class="num">Zeit</th><th class="num">Stunden</th><th class="num">Total</th></tr></thead><tbody>${wHtml}</tbody></table>` : ""}
+${mHtml ? `<div class="section-title">${tr.material}</div><table><thead><tr><th>${tr.description}</th><th style="text-align:center">${tr.qty}</th><th style="text-align:center">${tr.price}</th><th style="text-align:right">Total</th></tr></thead><tbody>${mHtml}</tbody></table>` : ""}
 <div class="totals-box"><div class="totals-inner">
      <table style="width:100%;border-collapse:collapse;margin-left:auto;max-width:380px">
     <tr><td style="padding:4px 0;color:#333;font-size:13px">${tr.subtotal}</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;width:40px">CHF</td><td style="padding:4px 0;text-align:right;font-size:13px;color:#333;font-family:monospace;width:100px">${Number(subtotal).toLocaleString('de-CH',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>
