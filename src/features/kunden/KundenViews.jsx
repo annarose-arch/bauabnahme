@@ -50,11 +50,11 @@ export function KundenView({ language = "DE",
 
   return (
     <SectionCard>
-      <h2 style={{ marginTop: 0 }}>Kunden</h2>
+      <h2 style={{ marginTop: 0 }}>{tr.customer.title}</h2>
       <div style={{ marginBottom: 14 }}>
         <input
           type="search"
-          placeholder="Kunden suchen (Name)…"
+          placeholder={tr.customer.search}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ ...iStyle, width: "100%", maxWidth: 420 }}
@@ -71,13 +71,13 @@ export function KundenView({ language = "DE",
           <input placeholder={tr.customer.firstName} value={customerForm.firstName} onChange={(e) => setCustomerForm((p) => ({ ...p, firstName: e.target.value }))} style={iStyle} />
           <input placeholder={tr.customer.lastName} value={customerForm.lastName} onChange={(e) => setCustomerForm((p) => ({ ...p, lastName: e.target.value }))} style={iStyle} />
         </div>
-        <input placeholder="Adresse" value={customerForm.address} onChange={(e) => setCustomerForm((p) => ({ ...p, address: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.customer.address} value={customerForm.address} onChange={(e) => setCustomerForm((p) => ({ ...p, address: e.target.value }))} style={iStyle} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
-          <input placeholder="PLZ" value={customerForm.zip} onChange={(e) => setCustomerForm((p) => ({ ...p, zip: e.target.value }))} style={iStyle} />
-          <input placeholder="Ort" value={customerForm.city} onChange={(e) => setCustomerForm((p) => ({ ...p, city: e.target.value }))} style={iStyle} />
+          <input placeholder={tr.report.zip} value={customerForm.zip} onChange={(e) => setCustomerForm((p) => ({ ...p, zip: e.target.value }))} style={iStyle} />
+          <input placeholder={tr.report.city} value={customerForm.city} onChange={(e) => setCustomerForm((p) => ({ ...p, city: e.target.value }))} style={iStyle} />
         </div>
-        <input placeholder="Telefon" value={customerForm.phone} onChange={(e) => setCustomerForm((p) => ({ ...p, phone: e.target.value }))} style={iStyle} />
-        <input placeholder="Email" value={customerForm.email} onChange={(e) => setCustomerForm((p) => ({ ...p, email: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.customer.phone} value={customerForm.phone} onChange={(e) => setCustomerForm((p) => ({ ...p, phone: e.target.value }))} style={iStyle} />
+        <input placeholder={tr.customer.email} value={customerForm.email} onChange={(e) => setCustomerForm((p) => ({ ...p, email: e.target.value }))} style={iStyle} />
         <button type="button" onClick={onSave} style={pBtn}>
           Kunden speichern
         </button>
