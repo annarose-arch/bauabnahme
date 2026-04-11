@@ -22,7 +22,7 @@ export function RenderView({
   // callbacks
   setOpenedReport, setSelectedCustomer, setEditingReport, startEdit, openPDF, moveToTrash,
   restore, hardDelete, updateStatus, handleCustomerSelect, handleSave,
-  saveCustomer, deleteCustomer, restoreCustomer, hardDeleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice,
+ saveCustomer, deleteCustomer, restoreCustomer, hardDeleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice, editCustomer,
   reopenInvoice, openInvoice, downloadAndEmail, showNotice, restoreInvoice,
   onLogout, onNavigate, goTo, setEditingInvoice, hardDeleteInvoice, isAdmin = true,
   emptyForm,
