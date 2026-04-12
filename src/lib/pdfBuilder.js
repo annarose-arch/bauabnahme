@@ -192,7 +192,6 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
   <div>
     ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:24px;display:block"/>` : ""}
     <div class="firm-name">${firmName || firmContact || ""}</div>
-    <div class="firm-details">${firmDetails}${firmMwst ? `<br/>MWST-Nr: ${firmMwst}` : ""}</div>
   </div>
   <div>
     <div class="invoice-label">${tr.invoice}</div>
