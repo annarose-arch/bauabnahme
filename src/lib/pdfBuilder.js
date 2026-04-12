@@ -203,7 +203,7 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
     </div>
   </div>
 </div>
-<div class="address-block" style="margin-top:-40px">
+<div class="address-block" style="margin-top:-80px">
   <div class="address-box">
     <div class="address-label">${tr.recipient}</div>
     <strong>${name}</strong><br/>${custStreet}<br/>${[custZip,custCity].filter(Boolean).join(" ")}
