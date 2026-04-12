@@ -365,11 +365,11 @@ export function KundenDetail({ language = "DE",
       <div style={{ marginBottom: 12 }}>
         <input placeholder={tr.common.search + "..."} value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, width: "100%", marginBottom: 8 }} />
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <select value={selectedYear} onChange={e => { setSelectedYear(e.target.value); setSelectedMonth("all"); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, minWidth: 80 }}>
+          <select value={selectedYear} onChange={e => { setSelectedYear(e.target.value); setSelectedMonth("all"); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, minWidth: 160 }}>
             <option value="all">Alle Jahre</option>
             {getYears([...linkedActive,...linkedArchive,...custInvoices]).map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          {selectedYear !== "all" && <select value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, minWidth: 80 }}>
+          {selectedYear !== "all" && <select value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, minWidth: 160 }}>
             <option value="all">Alle Monate</option>
             {getMonths([...linkedActive,...linkedArchive,...custInvoices]).map(m => <option key={m} value={m}>{mn[m] || m}</option>)}
           </select>}
