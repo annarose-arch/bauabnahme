@@ -149,12 +149,12 @@ export function buildRechnungHtml({ language = "DE",
 *{box-sizing:border-box}
 @page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #111}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;padding-bottom:16px;border-bottom:2px solid #111}
 .firm-name{font-size:14px;font-weight:700;color:#111}
 .firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}
 .invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
 .invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
-.address-block{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:8px}
+.address-block{display:flex;justify-content:flex-end;margin-bottom:8px}
 .address-box{border-left:3px solid #111;padding:10px 14px}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
 .project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}
