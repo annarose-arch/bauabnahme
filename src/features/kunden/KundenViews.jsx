@@ -308,7 +308,7 @@ export function KundenDetail({ language = "DE",
 
   const emptyTabHint =
     detailTab === "rapporte-aktiv"
-      ? "Keine Rapporte."
+      ? "Keine " + tr.nav.reports + "."
       : detailTab === "rapporte-archiv"
         ? "Keine archivierten Rapporte."
         : detailTab === "rechnungen-offen"
@@ -338,7 +338,7 @@ export function KundenDetail({ language = "DE",
         </div>
       </div>
 
-      <h3 style={{ marginBottom: 10 }}>Rapporte & Rechnungen</h3>
+      <h3 style={{ marginBottom: 10 }}>{tr.nav.reports} & {tr.nav.invoices}</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", linkedActive.length)}
         {tabBtn("rapporte-archiv", tr.nav.reports + " Archiv", linkedArchive.length)}
@@ -390,8 +390,8 @@ export function KundenDetail({ language = "DE",
 <CustPagination total={invoiceListForTab ? invoiceListForTab.length : 0} page={pageInvoice} setPage={setPageInvoice}/>
       <div style={{ marginTop: 8, marginBottom: 14, display: "grid", gap: 4 }}>
         <div style={{ color: MUTED, fontSize: 13 }}>{tr.nav.reports}: <strong style={{ color: TEXT }}>CHF {formatCHF(revenue)}</strong></div>
-        <div style={{ color: MUTED, fontSize: 13 }}>Gesamt fakturiert: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
-        <div style={{ color: MUTED, fontSize: 13 }}>Gesamt bezahlt: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.filter(i => i.status === "bezahlt").reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
+        <div style={{ color: MUTED, fontSize: 13 }}>{tr.invoice?.title || "Fakturiert"}: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
+        <div style={{ color: MUTED, fontSize: 13 }}>{tr.invoice?.paid || "Bezahlt"}: <strong style={{ color: TEXT }}>CHF {formatCHF(custInvoices.filter(i => i.status === "bezahlt").reduce((s, i) => s + toNum(i.totalAmount), 0))}</strong></div>
         <div style={{ color: GOLD, fontWeight: 800, fontSize: 18 }}>Total CHF {formatCHF(revenue)}</div>
       </div>
       <button type="button" onClick={onBack} style={gBtn}>
