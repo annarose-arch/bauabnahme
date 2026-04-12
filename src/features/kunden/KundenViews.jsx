@@ -340,11 +340,11 @@ export function KundenDetail({ language = "DE",
 
       <h3 style={{ marginBottom: 10 }}>Rapporte & Rechnungen</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-        {tabBtn("rapporte-aktiv", "Rapporte Aktiv", linkedActive.length)}
-        {tabBtn("rapporte-archiv", "Rapporte Archiv", linkedArchive.length)}
-        {tabBtn("rechnungen-offen", "Rechnungen Offen", invoicesActive.length)}
-        {tabBtn("rechnungen-gesendet", "Rechnungen Gesendet", invoicesGesendet.length)}
-        {tabBtn("rechnungen-archiv", "Rechnungen Archiv", invoicesArchive.length)}
+        {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", linkedActive.length)}
+        {tabBtn("rapporte-archiv", tr.nav.reports + " Archiv", linkedArchive.length)}
+        {tabBtn("rechnungen-offen", tr.nav.invoices + " " + tr.invoice?.open, invoicesActive.length)}
+        {tabBtn("rechnungen-gesendet", tr.nav.invoices + " " + tr.report?.statusSent, invoicesGesendet.length)}
+        {tabBtn("rechnungen-archiv", tr.nav.invoices + " Archiv", invoicesArchive.length)}
       </div>
 
       {currentTabItems.length === 0 && (
