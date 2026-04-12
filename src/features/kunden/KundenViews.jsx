@@ -308,7 +308,7 @@ export function KundenDetail({ language = "DE",
 
   const emptyTabHint =
     detailTab === "rapporte-aktiv"
-      ? "Keine " + tr.nav.reports + "."
+      ? tr.common.no + " " + tr.nav.reports + "."
       : detailTab === "rapporte-archiv"
         ? "Keine archivierten Rapporte."
         : detailTab === "rechnungen-offen"
@@ -341,7 +341,7 @@ export function KundenDetail({ language = "DE",
       <h3 style={{ marginBottom: 10 }}>{tr.nav.reports} & {tr.nav.invoices}</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", linkedActive.length)}
-        {tabBtn("rapporte-archiv", tr.nav.reports + " Archiv", linkedArchive.length)}
+        {tabBtn("rapporte-archiv", tr.pdf.rapport + " Archiv", linkedArchive.length)}
         {tabBtn("rechnungen-offen", tr.nav.invoices + " " + tr.invoice?.open, invoicesActive.length)}
         {tabBtn("rechnungen-gesendet", tr.nav.invoices + " " + tr.report?.statusSent, invoicesGesendet.length)}
         {tabBtn("rechnungen-archiv", tr.nav.invoices + " Archiv", invoicesArchive.length)}
