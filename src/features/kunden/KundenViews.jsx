@@ -377,11 +377,11 @@ export function KundenDetail({ language = "DE",
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-        {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", linkedActive.length)}
-        {tabBtn("rapporte-archiv", tr.pdf.rapport + " Archiv", linkedArchive.length)}
-        {tabBtn("rechnungen-offen", tr.nav.invoices + " " + tr.invoice?.open, invoicesActive.length)}
-        {tabBtn("rechnungen-gesendet", tr.nav.invoices + " " + tr.report?.statusSent, invoicesGesendet.length)}
-        {tabBtn("rechnungen-archiv", tr.nav.invoices + " Archiv", invoicesArchive.length)}
+        {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", filterItems(linkedActive).length)}
+{tabBtn("rapporte-archiv", tr.pdf.rapport + " Archiv", filterItems(linkedArchive).length)}
+{tabBtn("rechnungen-offen", tr.nav.invoices + " Entwurf", filterItems(invoicesActive).length)}
+{tabBtn("rechnungen-gesendet", tr.nav.invoices + " Versendet", filterItems(invoicesGesendet).length)}
+{tabBtn("rechnungen-archiv", tr.nav.invoices + " Archiv", filterItems(invoicesArchive).length)}
       </div>
 
       {currentTabItems.length === 0 && (
