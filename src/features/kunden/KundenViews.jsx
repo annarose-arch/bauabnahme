@@ -355,6 +355,7 @@ export function KundenDetail({ language = "DE",
          {reportListForTab.slice(pageReport * CUST_PAGE_SIZE, (pageReport+1) * CUST_PAGE_SIZE).map((r) => (
 
             <ReportRowCard
+              language={language}
               key={r.id}
               r={r}
               isArchived={ARCHIVE_TAB_STATUSES.has(normalizeReportStatus(r))}
@@ -375,6 +376,7 @@ export function KundenDetail({ language = "DE",
           {invoiceListForTab.slice(pageInvoice * CUST_PAGE_SIZE, (pageInvoice+1) * CUST_PAGE_SIZE).map((inv) => (
 
             <InvoiceRowCard
+              language={language}
               key={inv.id}
               inv={inv}
               onReopenInvoice={onReopenInvoice}
