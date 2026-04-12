@@ -235,3 +235,4 @@ ${skontoPct > 0 ? `<div class="skonto-box">Bei ${tr.payment} bis ${skontoDueDate
 </body></html>`;
 
 }
+/* cache bust Sun Apr 12 10:58:06 CEST 2026 */
