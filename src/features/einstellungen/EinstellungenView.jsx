@@ -13,6 +13,7 @@ export function EinstellungenView({ session, userEmail, showNotice, onLogout, ne
   const handleDeactivate = async () => {
     if (!window.confirm("Konto deaktivieren? Daten bleiben 30 Tage erhalten.")) return;
     await supabase.auth.updateUser({ data: { ...meta, account_status: "deactivated", deactivated_at: new Date().toISOString() } });
+    await fetch("https://tgtyuxtrrafxalajxenw.supabase.co/functions/v1/cancel-subscription", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndHl1eHRycmFmeGFsYWp4ZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjMzOTYsImV4cCI6MjA4OTIzOTM5Nn0.ePbGVxCbj_mr_RMLtf4uphnvxdx267QmTfTuMknPhK8" }, body: JSON.stringify({ user_id: session?.user?.id, action: "deactivate" }) });
     showNotice("Konto deaktiviert. Reaktivierung innerhalb 30 Tage moeglich.");
     setTimeout(() => { if (onLogout) onLogout(); }, 2000);
   };
@@ -24,6 +25,7 @@ export function EinstellungenView({ session, userEmail, showNotice, onLogout, ne
         await supabase.from("reports").delete().eq("user_id", uid);
         await supabase.from("customers").delete().eq("user_id", uid);
       }
+     await fetch("https://tgtyuxtrrafxalajxenw.supabase.co/functions/v1/cancel-subscription", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndHl1eHRycmFmeGFsYWp4ZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjMzOTYsImV4cCI6MjA4OTIzOTM5Nn0.ePbGVxCbj_mr_RMLtf4uphnvxdx267QmTfTuMknPhK8" }, body: JSON.stringify({ user_id: session?.user?.id, action: "delete" }) });
       showNotice("Konto geloescht.");
       setTimeout(() => { if (onLogout) onLogout(); }, 2000);
     } catch (e) { showNotice("Fehler. Kontakt: support@bauabnahme.app"); }
