@@ -171,12 +171,12 @@ function ReportRowCard({ r, isArchived, onOpenReport, onEditReport, onPDF, onInv
       </button>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
         <button type="button" onClick={() => onEditReport(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>
-          ✏️ Bearbeiten
+{tr.common.edit}
         </button>
         <button type="button" onClick={() => onPDF(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13 }}>
           🖨 PDF
         </button>
-        {showInvoiceButton && <button type="button" onClick={() => onInvoice(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: "#7ddb9a", borderColor: "#2d7a45" }}>🧾 Rechnung</button>}
+        {showInvoiceButton && <button type="button" onClick={() => onInvoice(r)} style={{ ...gBtn, minHeight: 32, fontSize: 13, color: "#7ddb9a", borderColor: "#2d7a45" }}>🧾 {tr.nav.invoices}</button>}
         <button type="button" onClick={() => onDeleteReport(r)} style={{ ...dBtn, minHeight: 32, fontSize: 13 }}>
           🗑 {tr.common.delete}
         </button>
