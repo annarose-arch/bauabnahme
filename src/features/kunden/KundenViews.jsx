@@ -379,8 +379,8 @@ export function KundenDetail({ language = "DE",
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", filterItems(linkedActive).length)}
 {tabBtn("rapporte-archiv", tr.pdf.rapport + " Archiv", filterItems(linkedArchive).length)}
-{tabBtn("rechnungen-offen", tr.nav.invoices + " " + tr.report.status, filterItems(invoicesActive).length)}
-{tabBtn("rechnungen-gesendet", tr.nav.invoices + " " + tr.report.statusSent, filterItems(invoicesGesendet).length)}
+{tabBtn("rechnungen-offen", tr.nav.invoices + " " + tr.invoice.draft, filterItems(invoicesActive).length)}
+{tabBtn("rechnungen-gesendet", tr.nav.invoices + " " + tr.invoice.draftSent, filterItems(invoicesGesendet).length)}
 {tabBtn("rechnungen-archiv", tr.nav.invoices + " Archiv", filterItems(invoicesArchive).length)}
       </div>
 
