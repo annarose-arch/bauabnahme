@@ -1,4 +1,4 @@
-const CACHE_NAME = "bauabnahme-v4";
+const CACHE_NAME = "bauabnahme-v5";
 const urlsToCache = ["/"];
 
 self.addEventListener("install", e => {
