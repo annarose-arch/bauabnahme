@@ -243,7 +243,7 @@ const CUST_PAGE_SIZE = 20;
 function CustPagination({ total, page, setPage }) {
   const pages = Math.ceil(total / CUST_PAGE_SIZE);
   if (pages <= 1) return null;
-  return (<div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 12 }}><button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0} style={{ ...gBtn, minWidth: 80 }}>← {tr.common.back}</button><span style={{ color: MUTED, fontSize: 13 }}>Seite {page+1} von {pages}</span><button onClick={() => setPage(p => Math.min(pages-1, p+1))} disabled={page >= pages-1} style={{ ...gBtn, minWidth: 80 }}>Weiter →</button></div>);
+  return (<div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 12 }}><button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0} style={{ ...gBtn, minWidth: 80 }}>← Zurück</button><span style={{ color: MUTED, fontSize: 13 }}>Seite {page+1} von {pages}</span><button onClick={() => setPage(p => Math.min(pages-1, p+1))} disabled={page >= pages-1} style={{ ...gBtn, minWidth: 80 }}>Weiter →</button></div>);
 }
 
 // ─── Kunden Detail ─────────────────────────────────────────────────────────
