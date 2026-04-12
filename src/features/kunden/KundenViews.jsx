@@ -308,11 +308,11 @@ export function KundenDetail({ language = "DE",
 
   const emptyTabHint =
     detailTab === "rapporte-aktiv"
-      ? "Keine Rapporte mit Status offen oder bearbeitet."
+      ? "Keine Rapporte."
       : detailTab === "rapporte-archiv"
-        ? "Keine Rapporte mit Status archiviert oder gesendet."
+        ? "Keine archivierten Rapporte."
         : detailTab === "rechnungen-offen"
-          ? "Keine offenen Rechnungen (Entwurf)."
+          ? "Keine offenen Rechnungen."
           : "Keine versendeten Rechnungen.";
 
   const currentTabItems = reportListForTab != null ? reportListForTab : invoiceListForTab;
@@ -325,16 +325,16 @@ export function KundenDetail({ language = "DE",
           <b>{tr.customer.title} Nr.:</b> {m.kundennummer || "-"}
         </div>
         <div>
-          <b>Ansprechperson:</b> {[m.firstName, m.lastName].filter(Boolean).join(" ") || "-"}
+          <b>{tr.customer.firstName} {tr.customer.lastName}:</b> {[m.firstName, m.lastName].filter(Boolean).join(" ") || "-"}
         </div>
         <div>
-          <b>Adresse:</b> {m.address || "-"}, {m.zip || "-"} {m.city || "-"}
+          <b>{tr.report.address}:</b> {m.address || "-"}, {m.zip || "-"} {m.city || "-"}
         </div>
         <div>
-          <b>Telefon:</b> {customer.phone || "-"}
+          <b>{tr.customer.phone}:</b> {customer.phone || "-"}
         </div>
         <div>
-          <b>E-Mail:</b> {customer.email || "-"}
+          <b>{tr.customer.email}:</b> {customer.email || "-"}
         </div>
       </div>
 
