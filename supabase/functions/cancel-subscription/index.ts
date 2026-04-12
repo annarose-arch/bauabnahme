@@ -21,7 +21,7 @@ serve(async (req) => {
     await Promise.all(subs.data.map((s) => stripe.subscriptions.cancel(s.id)));
   }
   await sb.from("usage_limits").update({ plan: "starter" }).eq("user_id", uid);
-  const em = { from: "noreply@bauabnahme.app", to: "buchhaltung@pactora-trading.com", subject: "BauAbnahme: " + act, html: "<p>User: " + u.email + "</p>" };
+  const em = { from: "noreply@bauabnahme.app", to: "support@bauabnahme.app", subject: "BauAbnahme: " + act, html: "<p>User: " + u.email + "</p>" };
   await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": "Bearer " + RK, "Content-Type": "application/json" }, body: JSON.stringify(em) });
   return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
 });
