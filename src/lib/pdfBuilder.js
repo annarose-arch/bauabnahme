@@ -154,7 +154,7 @@ body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14p
 .firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}
 .invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
 .invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
-.address-block{display:flex;justify-content:flex-end;margin:0 0 32px 0;padding-right:0}
+.address-block{display:flex;justify-content:flex-end;margin:-20px 0 32px 0}
 .address-box{width:240px;padding:10px 14px;border-left:3px solid #111}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
 .project-line{margin:16px 0 24px;padding:8px 0;border-bottom:1px solid #ddd;font-size:14px;font-style:italic;color:#333}
