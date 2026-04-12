@@ -190,7 +190,7 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
 </div>
 <div class="header">
   <div>
-    ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block"/>` : ""}
+    ${firmLogo ? `<img src="${firmLogo}" style="height:60px;max-width:160px;object-fit:contain;margin-bottom:24px;display:block"/>` : ""}
     <div class="firm-name">${firmName || firmContact || ""}</div>
     <div class="firm-details">${firmDetails}${firmMwst ? `<br/>MWST-Nr: ${firmMwst}` : ""}</div>
   </div>
