@@ -76,7 +76,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
   };
 const handleForgotPassword = async () => {
     if (!email.trim()) { setErrorMsg("Bitte E-Mail eingeben."); return; }
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: "https://www.bauabnahme.app" });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: "https://www.bauabnahme.app/#type=recovery" });
     if (error) { setErrorMsg("Fehler: " + error.message); return; }
     setErrorMsg("");
     alert("Reset-Link wurde an " + email.trim() + " gesendet.");
