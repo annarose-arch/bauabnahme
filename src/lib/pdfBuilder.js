@@ -149,7 +149,7 @@ export function buildRechnungHtml({ language = "DE",
 *{box-sizing:border-box}
 @page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0;padding:32px;font-size:14px;max-width:800px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:64px;padding-bottom:16px;border-bottom:2px solid #111}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:16px}
 .firm-name{font-size:14px;font-weight:700;color:#111}
 .firm-details{font-size:12px;color:#333;line-height:1.7;margin-top:4px}
 .invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
@@ -203,7 +203,12 @@ ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 ${tr.email}</a
     </div>
   </div>
 </div>
-<div class="address-block" style="margin-top:-80px">
+<div style="border-top:2px solid #111;padding-top:20px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
+  <div style="font-size:12px;color:#333;line-height:1.8">
+    <strong>${firmName || firmContact || ""}</strong><br/>
+    ${firmDetails.replace(/<br\/>/g,"<br/>")}
+    ${firmMwst ? `<br/>MWST-Nr: ${firmMwst}` : ""}
+  </div>
   <div class="address-box">
     <div class="address-label">${tr.recipient}</div>
     <strong>${name}</strong><br/>${custStreet}<br/>${[custZip,custCity].filter(Boolean).join(" ")}
