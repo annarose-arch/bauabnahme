@@ -301,10 +301,33 @@ export function KundenDetail({ language = "DE",
     </button>
   );
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
+
+  const mnDE = {"01":"Jan","02":"Feb","03":"Mar","04":"Apr","05":"Mai","06":"Jun","07":"Jul","08":"Aug","09":"Sep","10":"Okt","11":"Nov","12":"Dez"};
+  const mnFR = {"01":"Jan","02":"Fev","03":"Mar","04":"Avr","05":"Mai","06":"Juin","07":"Juil","08":"Aou","09":"Sep","10":"Oct","11":"Nov","12":"Dec"};
+  const mnIT = {"01":"Gen","02":"Feb","03":"Mar","04":"Apr","05":"Mag","06":"Giu","07":"Lug","08":"Ago","09":"Set","10":"Ott","11":"Nov","12":"Dic"};
+  const mnEN = {"01":"Jan","02":"Feb","03":"Mar","04":"Apr","05":"May","06":"Jun","07":"Jul","08":"Aug","09":"Sep","10":"Oct","11":"Nov","12":"Dec"};
+  const mn = language === "FR" ? mnFR : language === "IT" ? mnIT : language === "EN" ? mnEN : mnDE;
+
+  const filterItems = (items, dateKey = "date") => {
+    return items.filter(item => {
+      const d = item[dateKey] || "";
+      const q = searchQuery.trim().toLowerCase();
+      if (selectedYear !== "all" && !d.startsWith(selectedYear)) return false;
+      if (selectedMonth !== "all" && d.slice(5,7) !== selectedMonth) return false;
+      if (q) { const hay = JSON.stringify(item).toLowerCase(); if (!hay.includes(q)) return false; }
+      return true;
+    });
+  };
+  const getYears = (items, dateKey = "date") => [...new Set(items.map(i => (i[dateKey]||"").slice(0,4)).filter(Boolean))].sort((a,b) => b-a);
+  const getMonths = (items, dateKey = "date") => [...new Set(items.map(i => (i[dateKey]||"").slice(5,7)).filter(Boolean))].sort();
+
   const reportListForTab =
-    detailTab === "rapporte-aktiv" ? linkedActive : detailTab === "rapporte-archiv" ? linkedArchive : null;
+    detailTab === "rapporte-aktiv" ? filterItems(linkedActive) : detailTab === "rapporte-archiv" ? filterItems(linkedArchive) : null;
   const invoiceListForTab =
-    detailTab === "rechnungen-offen" ? invoicesActive : detailTab === "rechnungen-gesendet" ? invoicesGesendet : detailTab === "rechnungen-archiv" ? invoicesArchive : null;
+    detailTab === "rechnungen-offen" ? filterItems(invoicesActive) : detailTab === "rechnungen-gesendet" ? filterItems(invoicesGesendet) : detailTab === "rechnungen-archiv" ? filterItems(invoicesArchive) : null;
 
   const emptyTabHint =
     detailTab === "rapporte-aktiv"
@@ -339,6 +362,20 @@ export function KundenDetail({ language = "DE",
       </div>
 
       <h3 style={{ marginBottom: 10 }}>{tr.nav.reports} & {tr.nav.invoices}</h3>
+      <div style={{ marginBottom: 12 }}>
+        <input placeholder={tr.common.search + "..."} value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, width: "100%", marginBottom: 8 }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <select value={selectedYear} onChange={e => { setSelectedYear(e.target.value); setSelectedMonth("all"); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, minWidth: 80 }}>
+            <option value="all">Alle Jahre</option>
+            {getYears([...linkedActive,...linkedArchive,...custInvoices]).map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          {selectedYear !== "all" && <select value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setPageReport(0); setPageInvoice(0); }} style={{ ...iStyle, minWidth: 80 }}>
+            <option value="all">Alle Monate</option>
+            {getMonths([...linkedActive,...linkedArchive,...custInvoices]).map(m => <option key={m} value={m}>{mn[m] || m}</option>)}
+          </select>}
+        </div>
+      </div>
+
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {tabBtn("rapporte-aktiv", tr.nav.reports + " Aktiv", linkedActive.length)}
         {tabBtn("rapporte-archiv", tr.pdf.rapport + " Archiv", linkedArchive.length)}
