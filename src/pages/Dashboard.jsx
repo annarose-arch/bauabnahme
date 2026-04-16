@@ -1,0 +1,474 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { supabase } from "../supabase.js";
+import { BG, PANEL, TEXT, GOLD, BORDER, iStyle, pBtn, gBtn } from "../lib/constants.js";
+import { toNum, calcHours, parseReport, parseCustomerMeta, formatDateCH } from "../lib/utils.js";
+import { buildRapportHtml, buildRechnungHtml, buildSwissQR } from "../lib/pdfBuilder.js";
+import { NoticeBanner, DemoBanner } from "../components/UI.jsx";
+import { RechnungModal } from "../features/rechnungen/RechnungenViews.jsx";
+import { RenderView } from "./RenderView.jsx";
+
+/** `reports.date` is Postgres `date` — must be YYYY-MM-DD, not a full ISO timestamp. */
+function toPgDate(value) {
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+  }
+  const d = value instanceof Date ? value : new Date(value);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
+}
+
+const UI_LANG_CODES = new Set(["DE", "FR", "IT", "EN"]);
+function normalizeUiLanguage(raw) {
+  const u = String(raw || "DE").toUpperCase();
+  return UI_LANG_CODES.has(u) ? u : "DE";
+}
+
+function invoiceIdEq(a, b) {
+  return String(a) === String(b);
+}
+
+/**
+ * Stored in `reports.description` only. Matches table columns: user_id, customer, date, status, description.
+ * Omits internal UI keys (_customEmployee, etc.) from row spreads.
+ */
+function buildReportDescriptionPayload({
+  rapportNr,
+  reportForm,
+  sp,
+  workRows,
+  materialRows,
+  expenses,
+  subtotal,
+  vat,
+  total
+}) {
+  return {
+    rapportNr,
+    customer: reportForm.customer.trim(),
+    customerEmail: (reportForm.customerEmail || "").trim(),
+    address: (reportForm.address || "").trim(),
+    zip: reportForm.zip || "",
+    city: reportForm.city || "",
+    orderNo: (reportForm.orderNo || "").trim(),
+    date: reportForm.date,
+    status: reportForm.status,
+    customerId: reportForm.selectedCustomerId || null,
+    projectId: reportForm.selectedProjectId || null,
+    projectName: sp?.name || reportForm.projectSearch || "",
+    photos: {
+      before: reportForm.beforePhoto || "",
+      after: reportForm.afterPhoto || ""
+    },
+    workRows: workRows.map((r) => ({
+      employee: r.employee || "",
+      from: r.from || "",
+      to: r.to || "",
+      rate: r.rate || "",
+      hours: calcHours(r.from, r.to),
+      total: calcHours(r.from, r.to) * toNum(r.rate)
+    })),
+    materialRows: materialRows.map((r) => ({
+      name: r.name || "",
+      qty: r.qty || "",
+      unit: r.unit || "",
+      price: r.price || "",
+      total: toNum(r.qty) * toNum(r.price)
+    })),
+    costs: { expenses, notes: reportForm.notes || "" },
+    totals: {
+      subtotal: Number.isFinite(subtotal) ? subtotal : 0,
+      vat: Number.isFinite(vat) ? vat : 0,
+      total: Number.isFinite(total) ? total : 0
+    },
+    signature: {
+      name: reportForm.signerName || "",
+      image: reportForm.signatureImage || ""
+    }
+  };
+}
+
+export default function Dashboard({ session, onLogout, onNavigate, isDemo = false }) {
+  const userId    = session?.user?.id;
+  const userEmail = session?.user?.email || "";
+  const [view, setView]                         = useState("home");
+  const [openedReport, setOpenedReport]         = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [editingReport, setEditingReport]       = useState(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [invoiceBeingEdited, setInvoiceBeingEdited] = useState(null);
+  const goTo = (v) => {
+    setOpenedReport(null);
+    setSelectedCustomer(null);
+    setEditingReport(null);
+    const targetView = v === "rechnungen" ? "invoices" : v;
+    if (targetView !== "rechnung-bearbeiten") setInvoiceBeingEdited(null);
+    setView(targetView);
+    setMobileSidebarOpen(false);
+  };
+  const [reports, setReports]                 = useState([]);
+  const [trashReports, setTrashReports]       = useState([]);
+  const [archivedReports, setArchivedReports] = useState([]);
+  const [customers, setCustomers]             = useState([]);
+  const [projects, setProjects]               = useState([]);
+  const [notice, setNotice]                   = useState("");
+  const showNotice = useCallback((msg) => { setNotice(msg); setTimeout(() => setNotice(""), 4000); }, []);
+  const [uiLanguage, setUiLanguage] = useState(() =>
+    normalizeUiLanguage(localStorage.getItem("bauabnahme_language_pref"))
+  );
+  const pickUiLanguage = useCallback((code) => {
+    const next = normalizeUiLanguage(code);
+    setUiLanguage(next);
+    localStorage.setItem("bauabnahme_language_pref", next);
+    window.dispatchEvent(new CustomEvent("bauabnahme-language-change", { detail: next }));
+  }, []);
+  useEffect(() => {
+    if (view !== "settings") return;
+    const stored = normalizeUiLanguage(localStorage.getItem("bauabnahme_language_pref"));
+    setUiLanguage((prev) => (prev === stored ? prev : stored));
+  }, [view]);
+  const [invoices, setInvoices] = useState(() => { try { return JSON.parse(localStorage.getItem("bauabnahme_invoices") || "[]"); } catch { return []; } });
+  const saveInvoiceToStorage = useCallback((inv) => {
+    setInvoices((prev) => {
+      const u = [inv, ...prev.filter((i) => i.id !== inv.id)];
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const onSaveInvoice = (data) => {
+    saveInvoiceToStorage(data);
+    goTo("invoices");
+    showNotice("Rechnung gespeichert.");
+  };
+  const onEditInvoice = (inv) => {
+    setInvoiceBeingEdited(inv);
+    goTo("rechnung-bearbeiten");
+  };
+  /** Soft-delete: status `geloescht`, keep in localStorage (Papierkorb). */
+  const moveInvoiceToTrash = useCallback((id) => {
+    setInvoices((prev) => {
+      const u = prev.map((i) =>
+        invoiceIdEq(i.id, id)
+          ? {
+              ...i,
+              status: "geloescht",
+              _preTrashStatus:
+                i.status === "versendet" ? "versendet" : i.status === "bezahlt" ? "bezahlt" : "entwurf",
+            }
+          : i
+      );
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const restoreInvoice = useCallback((inv) => {
+    setInvoices((prev) => {
+      const u = prev.map((i) => {
+        if (!invoiceIdEq(i.id, inv.id)) return i;
+        const back = i._preTrashStatus === "versendet" || i._preTrashStatus === "entwurf" ? i._preTrashStatus : "entwurf";
+        const { _preTrashStatus, ...rest } = i;
+        return { ...rest, status: back };
+      });
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const hardDeleteInvoice = useCallback((id) => {
+    setInvoices((prev) => {
+      const u = prev.filter((i) => !invoiceIdEq(i.id, id));
+      localStorage.setItem("bauabnahme_invoices", JSON.stringify(u));
+      return u;
+    });
+  }, []);
+  const visibleInvoices = useMemo(
+    () => invoices.filter((i) => String(i.status || "").trim().toLowerCase() !== "geloescht"),
+    [invoices]
+  );
+  const trashInvoices = useMemo(
+    () => invoices.filter((i) => String(i.status || "").trim().toLowerCase() === "geloescht"),
+    [invoices]
+  );
+  const [nextRapportNr, setNextRapportNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_rapport_nr") || "1001"));
+  const [nextInvoiceNr, setNextInvoiceNrState] = useState(() => parseInt(localStorage.getItem("bauabnahme_next_invoice_nr") || "1001"));
+  const bumpRapportNr = () => { const n = nextRapportNr; setNextRapportNrState(n+1); localStorage.setItem("bauabnahme_next_rapport_nr", String(n+1)); return n; };
+  const bumpInvoiceNr = () => { const n = nextInvoiceNr; setNextInvoiceNrState(n+1); localStorage.setItem("bauabnahme_next_invoice_nr", String(n+1)); return n; };
+  const [catalog, setCatalog] = useState(() => { try { return JSON.parse(localStorage.getItem("bauabnahme_catalog") || '{"employees":[],"materials":[]}'); } catch { return {employees:[],materials:[]}; } });
+  const saveCatalog = (u) => { setCatalog(u); localStorage.setItem("bauabnahme_catalog", JSON.stringify(u)); };
+  const emptyForm = { selectedCustomerId:"", selectedProjectId:"", customer:"", address:"", zip:"", city:"", orderNo:"", customerEmail:"", date: new Date().toISOString().slice(0,10), status:"offen", expenses:"", notes:"", beforePhoto:"", afterPhoto:"", signerName:"", signatureImage:"" };
+  const [customerForm, setCustomerForm] = useState({ company:"", firstName:"", lastName:"", address:"", zip:"", city:"", phone:"", email:"" });
+  const [reportForm, setReportForm]     = useState(emptyForm);
+  const [workRows, setWorkRows]         = useState([{ employee:"", from:"", to:"", rate:"" }]);
+  const [materialRows, setMaterialRows] = useState([{ name:"", qty:"", unit:"", price:"" }]);
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+  const customerProjects = useMemo(() => projects.filter(p => String(p.customer_id) === String(reportForm.selectedCustomerId)), [projects, reportForm.selectedCustomerId]);
+  const workSubtotal     = useMemo(() => workRows.reduce((s,r) => s + calcHours(r.from,r.to)*toNum(r.rate), 0), [workRows]);
+  const materialSubtotal = useMemo(() => materialRows.reduce((s,r) => s + toNum(r.qty)*toNum(r.price), 0), [materialRows]);
+  const expenses = toNum(reportForm.expenses);
+  const subtotal = workSubtotal + materialSubtotal + expenses;
+  const vat      = subtotal * 0.081;
+  const total    = subtotal + vat;
+  const [invoiceModal, setInvoiceModal]           = useState(null);
+  const [invoiceDiscount, setInvoiceDiscount]     = useState("0");
+  const [invoiceSkonto, setInvoiceSkonto]         = useState("0");
+  const [invoicePayDays, setInvoicePayDays]       = useState("30");
+  const [invoiceSkontoDays, setInvoiceSkontoDays] = useState("10");
+  const openInvoice = (r) => { setInvoiceDiscount("0"); setInvoiceSkonto("0"); setInvoicePayDays("30"); setInvoiceSkontoDays("10"); setInvoiceModal(r); };
+  const fetchCustomers = async () => { if(!userId) return []; const {data} = await supabase.from("customers").select("*").eq("user_id",userId).order("id",{ascending:false}); setCustomers(data||[]); return data||[]; };
+  const fetchProjects = async (list) => { if(!list?.length){setProjects([]);return;} const{data}=await supabase.from("projects").select("*").in("customer_id",list.map(c=>c.id)); setProjects(data||[]); };
+  const fetchReports = async () => {
+    if (!userId) return;
+    const { data, error } = await supabase.from("reports").select("*").eq("user_id", userId).order("id", { ascending: false });
+    if (error) {
+      showNotice("Ladefehler: " + error.message);
+      return;
+    }
+    const all = data || [];
+    setTrashReports(all.filter((r) => r.status === "geloescht"));
+    const active = all.filter((r) => r.status !== "geloescht");
+    setReports(active.filter((r) => r.status !== "archiviert" && r.status !== "gesendet"));
+    setArchivedReports(active.filter((r) => r.status === "archiviert" || r.status === "gesendet"));
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap: fetch* recreated each render
+  useEffect(() => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setTrashReports(all.filter(r=>r.status==="geloescht")); return;} if(!userId) return; fetchCustomers().then(c=>fetchProjects(c)); fetchReports(); }, [userId,isDemo]);
+  const handleCustomerSelect = (id) => {
+    const c = customers.find((x) => String(x.id) === String(id));
+    if (!c) return;
+    const m = parseCustomerMeta(c);
+    setShowCustomerSuggestions(false);
+    setReportForm((p) => ({
+      ...p,
+      selectedCustomerId: String(c.id),
+      selectedProjectId: "",
+      customer: c.name || "",
+      customerEmail: c.email || "",
+      address: m.address || "",
+      zip: m.zip || "",
+      city: m.city || ""
+    }));
+  };
+  const handleSave = async () => {
+    setShowCustomerSuggestions(false);
+    if (!reportForm.customer.trim()) {
+      showNotice("Bitte Firmenname eingeben.");
+      return;
+    }
+    if (!isDemo && !userId) {
+      showNotice("Nicht angemeldet.");
+      return;
+    }
+    const sp = customerProjects.find((p) => String(p.id) === String(reportForm.selectedProjectId));
+    const wasEditing = !!editingReport;
+    const rapportNr = editingReport ? (parseReport(editingReport).rapportNr || editingReport.id) : bumpRapportNr();
+    const payload = buildReportDescriptionPayload({
+      rapportNr,
+      reportForm,
+      sp,
+      workRows,
+      materialRows,
+      expenses,
+      subtotal,
+      vat,
+      total
+    });
+    const pgDate = toPgDate(reportForm.date);
+    const statusStr = String(reportForm.status || "offen");
+    const customerStr = reportForm.customer.trim();
+    const insertRow = {
+      user_id: userId,
+      customer: customerStr,
+      date: pgDate,
+      status: statusStr,
+      description: payload
+    };
+    const updateRow = {
+      customer: customerStr,
+      date: pgDate,
+      status: statusStr,
+      description: payload
+    };
+    if (isDemo) {
+      const row = { ...insertRow };
+      const all = JSON.parse(localStorage.getItem("demo_reports") || "[]");
+      if (editingReport) {
+        const i = all.findIndex((r) => r.id === editingReport.id);
+        if (i >= 0) all[i] = { ...row, id: editingReport.id };
+      } else {
+        all.unshift({ ...row, id: Date.now(), created_at: new Date().toISOString() });
+      }
+      localStorage.setItem("demo_reports", JSON.stringify(all));
+      setReports(all.filter((r) => r.status !== "geloescht" && r.status !== "archiviert" && r.status !== "gesendet"));
+    } else {
+      let err;
+      if (editingReport) {
+        ({ error: err } = await supabase.from("reports").update(updateRow).eq("id", editingReport.id).eq("user_id", userId));
+      } else {
+        ({ error: err } = await supabase.from("reports").insert(insertRow));
+      }
+      if (err) {
+        showNotice("❌ Fehler: " + (err.message || JSON.stringify(err)));
+        return;
+      }
+      await fetchReports();
+    }
+    setEditingReport(null);
+    setReportForm(emptyForm);
+    setWorkRows([{ employee: "", from: "", to: "", rate: "" }]);
+    setMaterialRows([{ name: "", qty: "", unit: "", price: "" }]);
+    showNotice(wasEditing ? "Rapport aktualisiert." : "Rapport gespeichert.");
+    goTo("reports");
+  };
+  const startEdit = (r) => { const p=parseReport(r); setReportForm({selectedCustomerId:String(p.customerId||""),selectedProjectId:String(p.projectId||""),customer:r.customer||"",address:p.address||"",zip:p.zip||"",city:p.city||"",orderNo:p.orderNo||"",customerEmail:p.customerEmail||"",date:toPgDate(r.date||emptyForm.date),status:r.status||"offen",expenses:p.costs?.expenses?String(p.costs.expenses):"",notes:p.costs?.notes||"",beforePhoto:p.photos?.before||"",afterPhoto:p.photos?.after||"",signerName:p.signature?.name||"",signatureImage:p.signature?.image||""}); setWorkRows(p.workRows?.length?p.workRows.map(r=>({employee:r.employee||"",from:r.from||"",to:r.to||"",rate:r.rate?String(r.rate):""})):[{employee:"",from:"",to:"",rate:""}]); setMaterialRows(p.materialRows?.length?p.materialRows.map(r=>({name:r.name||"",qty:r.qty?String(r.qty):"",unit:r.unit||"",price:r.price?String(r.price):""})):[{name:"",qty:"",unit:"",price:""}]); setEditingReport(r); setOpenedReport(null); setView("new-report"); };
+  const moveToTrash = async (r) => { if(!window.confirm("Löschen?")) return; const deleted={...r,status:"geloescht"}; if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?deleted:x)));}else{const{error}=await supabase.from("reports").update({status:"geloescht"}).eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setReports(p=>p.filter(x=>x.id!==r.id)); setArchivedReports(p=>p.filter(x=>x.id!==r.id)); setTrashReports(p=>[...p,deleted]); if(openedReport?.id===r.id) setOpenedReport(null); };
+  const restore = async (r) => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]"); localStorage.setItem("demo_reports",JSON.stringify(all.map(x=>x.id===r.id?{...x,status:"offen"}:x)));}else{const{error}=await supabase.from("reports").update({status:"offen"}).eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setTrashReports(p=>p.filter(x=>x.id!==r.id)); setReports(p=>[{...r,status:"offen"},...p]); };
+  const hardDelete = async (r) => { if(!window.confirm("Endgültig löschen?")) return; if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]").filter(x=>x.id!==r.id); localStorage.setItem("demo_reports",JSON.stringify(all)); setTrashReports(all.filter(x=>x.status==="geloescht"));}else{const{error}=await supabase.from("reports").delete().eq("id",r.id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;}} setTrashReports(p=>p.filter(x=>x.id!==r.id)); showNotice("Gelöscht."); };
+  const updateStatus = async (id, status) => { if(isDemo){const all=JSON.parse(localStorage.getItem("demo_reports")||"[]").map(x=>x.id===id?{...x,status}:x); localStorage.setItem("demo_reports",JSON.stringify(all)); setReports(all.filter(r=>r.status!=="geloescht"&&r.status!=="archiviert"&&r.status!=="gesendet")); setArchivedReports(all.filter(r=>r.status==="archiviert"||r.status==="gesendet")); setOpenedReport(null); return;} const{error}=await supabase.from("reports").update({status}).eq("id",id).eq("user_id",userId); if(error){showNotice("Fehler: "+error.message);return;} await fetchReports(); setOpenedReport(null); if(status==="archiviert"||status==="gesendet") showNotice("✅ Rapport zum Kunden verschoben."); };
+  const saveCustomer = async () => { if(!userId||!customerForm.company.trim()){showNotice("Firmenname fehlt.");return;} const meta={kundennummer:`K-${String(customers.length+1).padStart(3,"0")}`,firstName:customerForm.firstName,lastName:customerForm.lastName,address:customerForm.address,zip:customerForm.zip,city:customerForm.city}; const{data,error}=await supabase.from("customers").insert({user_id:userId,name:customerForm.company.trim(),address:JSON.stringify(meta),phone:customerForm.phone,email:customerForm.email}).select("*").single(); if(error){showNotice("Fehler beim Speichern.");return;} setCustomers(p=>[data,...p]); showNotice("Kunde gespeichert."); setCustomerForm({company:"",firstName:"",lastName:"",address:"",zip:"",city:"",phone:"",email:""}); };
+  const deleteCustomer = async (c) => { if(!window.confirm("Löschen?")) return; await supabase.from("customers").delete().eq("id",c.id); setCustomers(p=>p.filter(x=>x.id!==c.id)); };
+  const getFirmMeta = () => { const meta=session?.user?.user_metadata||{}; return {firmName:meta.company_name||"",firmLogo:meta.company_logo||"",firmAddress:meta.address?`${meta.address}, ${meta.zip||""} ${meta.city||""}`:"",firmContact:[meta.first_name,meta.last_name].filter(Boolean).join(" "),firmPhone:meta.phone?`Tel: ${meta.phone}`:"",firmEmail:meta.email||userEmail,firmIban:meta.iban||"",firmZip:meta.zip||"",firmCity:meta.city||""}; };
+  const openPDF = (report) => { const p=parseReport(report); const{firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail}=getFirmMeta(); const isPro=localStorage.getItem("bauabnahme_plan")==="pro"||localStorage.getItem("bauabnahme_plan")==="team"; const isDemoMode=!userId; const email=p.customerEmail||""; const subj=`Rapport Nr. ${p.rapportNr||report.id} – ${report.customer||"-"} – ${formatDateCH(report.date)}`; const body=`Guten Tag\n\nIm Anhang finden Sie den Rapport.\n\nKunde: ${report.customer||"-"}\nDatum: ${formatDateCH(report.date)}\nTOTAL CHF: ${Number(p.totals?.total||0).toFixed(2)}\n\nFreundliche Grüsse\n${firmContact||firmName}`; const mailto=`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`; const win=window.open("","_blank","width=980,height=760"); if(!win) return; win.document.write(buildRapportHtml(report,p,firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail,isPro,isDemoMode,mailto,customers,parseCustomerMeta)); win.document.close(); };
+  const downloadAndEmail = async (report) => { openPDF(report); await updateStatus(report.id,"archiviert"); showNotice("✅ Rapport gesendet und ins Kundenarchiv verschoben."); };
+  const generateInvoice = async (report, discountPct, skontoPct, payDays, skontoDays) => { setInvoiceModal(null); const p=parseReport(report); const{firmName,firmLogo,firmAddress,firmContact,firmPhone,firmEmail,firmIban,firmZip,firmCity}=getFirmMeta(); const isPro=localStorage.getItem("bauabnahme_plan")==="pro"||localStorage.getItem("bauabnahme_plan")==="team"; const isDemoMode=!userId; const custRecord=customers.find(c=>String(c.id)===String(p.customerId)||c.name===report.customer); const custMeta=custRecord?parseCustomerMeta(custRecord):{}; const custStreet=p.address||custMeta.address||""; const custZip=p.zip||custMeta.zip||""; const custCity=p.city||custMeta.city||""; const custAddr=[custStreet,[custZip,custCity].filter(Boolean).join(" ")].filter(Boolean).join("\n"); const tot=p.totals||{},costs=p.costs||{}; const invoiceNr=`RE-${bumpInvoiceNr()}`; const validWork=(p.workRows||[]).filter(r=>r.employee||toNum(r.hours)>0); const validMat=(p.materialRows||[]).filter(r=>r.name||toNum(r.qty)>0); const sub=Number(tot.subtotal||0); const discountAmt=sub*(discountPct/100); const subAD=sub-discountAmt; const vatAmt=subAD*0.081; const totalAmount=subAD+vatAmt+toNum(costs.expenses); const skontoAmt=totalAmount*(skontoPct/100); const payDaysNum=parseInt(payDays)||30; const skontoDaysNum=parseInt(skontoDays)||10; const dueDate=formatDateCH(new Date(new Date(report.date).getTime()+payDaysNum*86400000).toISOString().slice(0,10)); const skontoDueDate=formatDateCH(new Date(new Date(report.date).getTime()+skontoDaysNum*86400000).toISOString().slice(0,10)); const qrUrl=firmIban?buildSwissQR(firmIban,totalAmount,firmName||firmContact,firmAddress,firmZip,firmCity,report.customer||"",custAddr,"","","",`Rechnung ${invoiceNr}`):""; const firmDetails=[firmContact&&firmName?firmContact:"",firmAddress,firmPhone,firmEmail].filter(Boolean).join("<br/>"); const win=window.open("","_blank","width=980,height=860"); if(!win) return; win.document.write(buildRechnungHtml({invoiceNr,firmName,firmLogo,firmContact,firmAddress,firmDetails,name:report.customer||"-",custAddr,custStreet,custZip,custCity,validWork,validMat,costs,subtotal:sub,discountPct,discountAmt,subtotalAfterDiscount:subAD,vat:vatAmt,totalAmount,skontoPct,skontoAmt,payDays:payDaysNum,skontoDays:skontoDaysNum,dueDate,skontoDueDate,qrUrl,isPro,isDemoMode,reportDate:report.date,projectName:p.projectName,rapportNr:p.rapportNr||String(report.id),custEmail:(p.customerEmail||custRecord?.email||"").trim()})); win.document.close(); saveInvoiceToStorage({id:Date.now(),invoiceNr,customer:report.customer,customerId:p.customerId,date:report.date,totalAmount,status:"entwurf",reportData:p}); };
+  const reopenInvoice = (inv) => {
+    const win = window.open("", "_blank", "width=980,height=860");
+    if (!win) return;
+    const { firmName, firmLogo, firmContact, firmAddress, firmPhone, firmEmail, firmIban, firmZip, firmCity } = getFirmMeta();
+    const firmDetails = [firmContact && firmName ? firmContact : "", firmAddress, firmPhone, firmEmail].filter(Boolean).join("<br/>");
+    const p = inv.reportData || {};
+    const hasLineItems = inv.lineItems && inv.lineItems.length > 0;
+    const validWork = hasLineItems
+      ? inv.lineItems.map((r) => ({
+          employee: r.description,
+          hours: Number(r.qty),
+          rate: Number(r.price),
+          total: Number(r.qty) * Number(r.price),
+        }))
+      : (p.workRows || []).filter((r) => r.employee || toNum(r.hours) > 0);
+    const validMat = hasLineItems ? [] : (p.materialRows || []).filter((r) => r.name || toNum(r.qty) > 0);
+
+    const addrStr = String(inv.customerAddress ?? p.customerAddress ?? "").trim();
+    let custStreet = p.address || "";
+    let custZip = p.zip || "";
+    let custCity = p.city || "";
+    if (addrStr) {
+      const lines = addrStr.split("\n").map((s) => s.trim()).filter(Boolean);
+      if (lines[0]) custStreet = lines[0];
+      const last = lines[lines.length - 1] || "";
+      const plzOrt = /^(\d{4,5})\s+(.+)$/.exec(last);
+      if (plzOrt) {
+        custZip = plzOrt[1];
+        custCity = plzOrt[2];
+      } else if (lines.length > 1) {
+        custCity = lines.slice(1).join(" ");
+      }
+    }
+    const custAddr = [custStreet, [custZip, custCity].filter(Boolean).join(" ")].filter(Boolean).join("\n");
+
+    const subtotal = Number(inv.subtotal ?? p.totals?.subtotal ?? 0);
+    const discountPct = toNum(inv.discount ?? inv.discountPercent ?? p.discountPercent ?? 0);
+    const discountAmt =
+      inv.discountAmount != null ? toNum(inv.discountAmount) : Math.round(subtotal * (discountPct / 100) * 100) / 100;
+    const vat = Number(inv.vatAmount ?? p.totals?.vat ?? 0);
+    const totalAmount = Number(inv.totalAmount ?? p.totals?.total ?? 0);
+    const skontoPct = toNum(inv.skontoPct ?? inv.skontoPercent ?? p.skontoPct ?? p.skontoPercent ?? 0);
+    const skontoAmt = Math.round(totalAmount * (skontoPct / 100) * 100) / 100;
+    const payDaysNum = parseInt(String(inv.paymentDays ?? inv.payDays ?? p.payDays ?? 30), 10) || 30;
+    const skontoDaysNum = parseInt(String(inv.skontoDays ?? p.skontoDays ?? 10), 10) || 10;
+    const reportDate = inv.date || "";
+    const dateKey = typeof reportDate === "string" && /^\d{4}-\d{2}-\d{2}/.test(reportDate) ? reportDate.slice(0, 10) : "";
+    const dueDate = dateKey
+      ? formatDateCH(new Date(new Date(`${dateKey}T12:00:00`).getTime() + payDaysNum * 86400000).toISOString().slice(0, 10))
+      : "–";
+    const skontoDueDate = dateKey
+      ? formatDateCH(new Date(new Date(`${dateKey}T12:00:00`).getTime() + skontoDaysNum * 86400000).toISOString().slice(0, 10))
+      : "–";
+
+    const qrUrl = firmIban
+      ? buildSwissQR(
+          firmIban,
+          totalAmount,
+          firmName || firmContact,
+          firmAddress,
+          firmZip,
+          firmCity,
+          inv.customer || "-",
+          custAddr,
+          "",
+          "",
+          "",
+          `Rechnung ${inv.invoiceNr}`
+        )
+      : "";
+
+    const projectName = inv.projektbezeichnung ?? p.projectName ?? "";
+    const isPro = localStorage.getItem("bauabnahme_plan") === "pro" || localStorage.getItem("bauabnahme_plan") === "team";
+
+    win.document.write(
+      buildRechnungHtml({
+        invoiceNr: inv.invoiceNr,
+        firmName,
+        firmLogo,
+        firmContact,
+        firmAddress,
+        firmDetails,
+        name: inv.customer || "-",
+        custAddr,
+        custStreet,
+        custZip,
+        custCity,
+        validWork,
+        validMat,
+        costs: p.costs || {},
+        subtotal,
+        discountPct,
+        discountAmt,
+        vat,
+        totalAmount,
+        skontoPct,
+        skontoAmt,
+        dueDate,
+        skontoDueDate,
+        qrUrl,
+        isPro,
+        isDemoMode: !userId,
+        reportDate,
+        projectName,
+        rapportNr: p.rapportNr || "",
+        custEmail: (p.customerEmail || customers.find((c) => String(c.id) === String(inv.customerId))?.email || "").trim(),
+      })
+    );
+    win.document.close();
+  };
+  const markInvoicePaid = useCallback((inv) => { saveInvoiceToStorage({ ...inv, status: "bezahlt" }); }, [saveInvoiceToStorage]);
+  const navItems = [{key:"home",label:"Start"},{key:"customers",label:"Kunden"},{key:"catalog",label:"Katalog"},{key:"new-report",label:"Neuer Rapport"},{key:"reports",label:"Offene Rapporte"},{key:"invoices",label:"Rechnungen"},{key:"trash",label:"Papierkorb"},{key:"settings",label:"Einstellungen"}];
+  const activeView = editingReport?"new-report":openedReport?"reports":selectedCustomer?"customers":view==="rechnung-bearbeiten"?"invoices":view;
+  return (
+    <div style={{minHeight:"100vh",background:BG,color:TEXT,fontFamily:"Inter,system-ui,sans-serif"}}>
+      <style>{`*{box-sizing:border-box}input,select,textarea{max-width:100%}@media(max-width:768px){.dash-sidebar{display:none!important}.dash-sidebar.open{display:block!important;position:fixed;top:0;left:0;width:240px;height:100vh;z-index:200;overflow-y:auto}.dash-mh{display:flex!important}.dash-grid{grid-template-columns:1fr!important}}@media(min-width:769px){.dash-mh{display:none!important}}`}</style>
+      <RechnungModal invoiceModal={invoiceModal} onClose={()=>setInvoiceModal(null)} invoiceDiscount={invoiceDiscount} setInvoiceDiscount={setInvoiceDiscount} invoiceSkonto={invoiceSkonto} setInvoiceSkonto={setInvoiceSkonto} invoicePayDays={invoicePayDays} setInvoicePayDays={setInvoicePayDays} invoiceSkontoDays={invoiceSkontoDays} setInvoiceSkontoDays={setInvoiceSkontoDays} onGenerate={generateInvoice} parseReport={parseReport}/>
+      <div className="dash-mh" style={{display:"none",position:"sticky",top:0,zIndex:150,background:PANEL,borderBottom:`1px solid ${BORDER}`,padding:"10px 16px",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{fontWeight:700,fontSize:18}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
+        <button type="button" onClick={()=>setMobileSidebarOpen(p=>!p)} style={{...gBtn,minHeight:34,padding:"0 10px"}}>{mobileSidebarOpen?"✕":"☰"}</button>
+      </div>
+      {mobileSidebarOpen&&<div onClick={()=>setMobileSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:199}}/>}
+      <div className="dash-grid" style={{display:"grid",gridTemplateColumns:"240px 1fr",minHeight:"100vh"}}>
+        <aside className={`dash-sidebar${mobileSidebarOpen?" open":""}`} style={{borderRight:`1px solid ${BORDER}`,background:PANEL,padding:16}}>
+          <div style={{fontWeight:700,fontSize:20,marginBottom:16}}>Bau<span style={{color:GOLD}}>Abnahme</span></div>
+          <nav style={{display:"grid",gap:6}}>
+            {navItems.map(item=>(
+              <button key={item.key} type="button" onClick={()=>goTo(item.key)} style={{...iStyle,minHeight:42,cursor:"pointer",textAlign:"left",background:activeView===item.key?"rgba(212,168,83,0.15)":"#111",borderColor:activeView===item.key?GOLD:BORDER,color:activeView===item.key?GOLD:TEXT,fontWeight:activeView===item.key?700:400}}>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+        <main style={{padding:20,minWidth:0}}>
+          {isDemo&&<DemoBanner onNavigate={onNavigate} pBtn={pBtn} gBtn={gBtn}/>}
+          <NoticeBanner message={notice}/>
+          <RenderView view={view} openedReport={openedReport} selectedCustomer={selectedCustomer} editingReport={editingReport} isDemo={isDemo} reports={reports} archivedReports={archivedReports} trashReports={trashReports} customers={customers} invoices={visibleInvoices} trashInvoices={trashInvoices} catalog={catalog} reportForm={reportForm} setReportForm={setReportForm} workRows={workRows} setWorkRows={setWorkRows} materialRows={materialRows} setMaterialRows={setMaterialRows} customerForm={customerForm} setCustomerForm={setCustomerForm} workSubtotal={workSubtotal} materialSubtotal={materialSubtotal} vat={vat} total={total} showCustomerSuggestions={showCustomerSuggestions} setShowCustomerSuggestions={setShowCustomerSuggestions} session={session} userEmail={userEmail} nextRapportNr={nextRapportNr} setNextRapportNrState={setNextRapportNrState} nextInvoiceNr={nextInvoiceNr} setNextInvoiceNrState={setNextInvoiceNrState} language={uiLanguage} onPickLanguage={pickUiLanguage} setOpenedReport={setOpenedReport} setSelectedCustomer={setSelectedCustomer} setEditingReport={setEditingReport} startEdit={startEdit} openPDF={openPDF} moveToTrash={moveToTrash} restore={restore} hardDelete={hardDelete} updateStatus={updateStatus} handleCustomerSelect={handleCustomerSelect} handleSave={handleSave} saveCustomer={saveCustomer} deleteCustomer={deleteCustomer} saveCatalog={saveCatalog} saveInvoiceToStorage={saveInvoiceToStorage} deleteInvoice={moveInvoiceToTrash} restoreInvoice={restoreInvoice} hardDeleteInvoice={hardDeleteInvoice} reopenInvoice={reopenInvoice} markInvoicePaid={markInvoicePaid} openInvoice={openInvoice} downloadAndEmail={downloadAndEmail} showNotice={showNotice} onLogout={onLogout} onNavigate={onNavigate} goTo={goTo} emptyForm={emptyForm} userId={userId} invoiceForEdit={invoiceBeingEdited} onSaveInvoice={onSaveInvoice} onEditInvoice={onEditInvoice}/>
+        </main>
+      </div>
+    </div>
+  );
+}
