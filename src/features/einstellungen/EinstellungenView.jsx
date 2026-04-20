@@ -14,7 +14,15 @@ export function EinstellungenView({
   nextInvoiceNr, setNextInvoiceNrState,
   language,
   onPickLanguage,
+  isAdmin = true,
 }) {
+  const adminGuard = (e) => {
+    if (isAdmin) return true;
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    showNotice("Keine Berechtigung (nur Admin).");
+    return false;
+  };
+
   const meta = session?.user?.user_metadata || {};
   const [currentPlan, setCurrentPlan] = useState(() => (localStorage.getItem("bauabnahme_plan") || "starter").toLowerCase());
   const [showLegal, setShowLegal] = useState(null);
@@ -24,11 +32,18 @@ export function EinstellungenView({
   const [teamLoading, setTeamLoading] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
 
-  const isTeamPlan = currentPlan === "pro" || currentPlan === "team";
   const userId = session?.user?.id;
 
   const loadTeam = useCallback(async () => {
-    if (!userId || !isTeamPlan) return;
+    if (!userId) return;
+    const plan = (typeof localStorage !== "undefined" ? localStorage.getItem("bauabnahme_plan") : null) || "starter";
+    const tier = String(plan).toLowerCase();
+    if (tier !== "pro" && tier !== "team") {
+      setTeamMembers([]);
+      setTeamInvites([]);
+      setTeamLoading(false);
+      return;
+    }
     setTeamLoading(true);
     const [memRes, invRes] = await Promise.all([
       supabase
@@ -38,9 +53,9 @@ export function EinstellungenView({
         .order("created_at", { ascending: false }),
       supabase
         .from("team_invitations")
-        .select("id, email, token, created_at, accepted_at")
+        .select("id, member_email, token, role, status, created_at, accepted_at")
         .eq("admin_id", userId)
-        .is("accepted_at", null)
+        .eq("status", "pending")
         .order("created_at", { ascending: false }),
     ]);
     if (!memRes.error) setTeamMembers(memRes.data ?? []);
@@ -48,17 +63,11 @@ export function EinstellungenView({
     if (!invRes.error) setTeamInvites(invRes.data ?? []);
     else showNotice("Team (Einladungen): " + invRes.error.message);
     setTeamLoading(false);
-  }, [userId, isTeamPlan, showNotice]);
+  }, [userId, showNotice]);
 
   useEffect(() => {
     void loadTeam();
   }, [loadTeam]);
-
-  const randomInviteToken = () => {
-    const a = new Uint8Array(24);
-    crypto.getRandomValues(a);
-    return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
-  };
 
   const sendInvite = async () => {
     const email = inviteEmail.trim().toLowerCase();
@@ -66,11 +75,30 @@ export function EinstellungenView({
       showNotice("Bitte eine gültige E-Mail eingeben.");
       return;
     }
+    const plan = (typeof localStorage !== "undefined" ? localStorage.getItem("bauabnahme_plan") : null) || "starter";
+    const tier = String(plan).toLowerCase();
+    if (tier === "starter") {
+      showNotice("Team-Einladungen sind im Starter-Plan nicht verfügbar.");
+      return;
+    }
+    if (tier === "pro") {
+      const seats = teamMembers.length + teamInvites.length;
+      if (seats >= 5) {
+        showNotice("Pro-Plan: maximal 5 Teammitglieder (inkl. ausstehende Einladungen).");
+        return;
+      }
+    }
     setInviteSending(true);
-    const token = randomInviteToken();
+    const token = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const { data: row, error: insErr } = await supabase
       .from("team_invitations")
-      .insert({ admin_id: userId, email, token })
+      .insert({
+        admin_id: userId,
+        member_email: email,
+        token,
+        role: "member",
+        status: "pending",
+      })
       .select("id")
       .single();
     if (insErr) {
@@ -84,14 +112,13 @@ export function EinstellungenView({
         app_origin: typeof window !== "undefined" ? window.location.origin : "",
       },
     });
-    if (fnErr) {
-      showNotice("E-Mail Versand: " + fnErr.message);
-      setInviteSending(false);
-      return;
-    }
-    setInviteEmail("");
-    showNotice("Einladung gesendet.");
     await loadTeam();
+    setInviteEmail("");
+    if (fnErr) {
+      showNotice("Einladung gespeichert. E-Mail-Versand fehlgeschlagen: " + fnErr.message);
+    } else {
+      showNotice("Einladung erfolgreich erstellt und E-Mail gesendet.");
+    }
     setInviteSending(false);
   };
 
@@ -100,6 +127,13 @@ export function EinstellungenView({
   const saveMeta = async (patch) => {
     await supabase.auth.updateUser({ data: { ...meta, ...patch } });
   };
+
+  const planFromStorage = (typeof localStorage !== "undefined" ? localStorage.getItem("bauabnahme_plan") : null) || "starter";
+  const planTier = String(planFromStorage).toLowerCase();
+  const showTeamSection = planTier === "pro" || planTier === "team";
+  const TEAM_PRO_MAX = 5;
+  const teamSeatCount = teamMembers.length + teamInvites.length;
+  const proTeamLimitReached = planTier === "pro" && teamSeatCount >= TEAM_PRO_MAX;
 
   const deleteAccount = async () => {
     if (!window.confirm("Konto wirklich löschen? Alle Daten gehen verloren!")) return;
@@ -154,6 +188,7 @@ export function EinstellungenView({
           <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", border: `1px solid ${BORDER}`, borderRadius: 8, cursor: "pointer", color: MUTED, fontSize: 13 }}>
             📁 Logo hochladen
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+              if (!adminGuard(e)) return;
               const f = e.target.files?.[0]; if (!f) return;
               const reader = new FileReader();
               reader.onload = async (ev) => {
@@ -171,7 +206,8 @@ export function EinstellungenView({
           <div style={{ display: "flex", gap: 8 }}>
             <input placeholder="CH56 0483 5012 3456 7800 9" defaultValue={meta.iban || ""} id="iban-input"
               style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13, letterSpacing: "0.5px" }} />
-            <button type="button" style={pBtn} onClick={async () => {
+            <button type="button" style={pBtn} onClick={async (e) => {
+              if (!adminGuard(e)) return;
               const val = document.getElementById("iban-input").value.trim();
               await saveMeta({ iban: val });
               showNotice("✅ IBAN gespeichert!");
@@ -186,7 +222,8 @@ export function EinstellungenView({
             <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>📋 Nächste Rapport-Nr:</div>
             <div style={{ display: "flex", gap: 6 }}>
               <input type="number" defaultValue={nextRapportNr} id="next-rapport-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
-              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => {
+              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={(e) => {
+                if (!adminGuard(e)) return;
                 const val = parseInt(document.getElementById("next-rapport-nr").value) || 1001;
                 setNextRapportNrState(val);
                 localStorage.setItem("bauabnahme_next_rapport_nr", String(val));
@@ -199,7 +236,8 @@ export function EinstellungenView({
             <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>🧾 Nächste Rechnungs-Nr:</div>
             <div style={{ display: "flex", gap: 6 }}>
               <input type="number" defaultValue={nextInvoiceNr} id="next-invoice-nr" style={{ ...iStyle, flex: 1, fontFamily: "monospace", fontSize: 13 }} />
-              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={() => {
+              <button type="button" style={{ ...pBtn, padding: "0 10px", fontSize: 12 }} onClick={(e) => {
+                if (!adminGuard(e)) return;
                 const val = parseInt(document.getElementById("next-invoice-nr").value) || 1001;
                 setNextInvoiceNrState(val);
                 localStorage.setItem("bauabnahme_next_invoice_nr", String(val));
@@ -242,6 +280,9 @@ export function EinstellungenView({
                   href={pl.link}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    if (!adminGuard(e)) return;
+                  }}
                   style={{
                     ...pBtn,
                     display: "block",
@@ -265,7 +306,8 @@ export function EinstellungenView({
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              if (!adminGuard(e)) return;
               localStorage.setItem("bauabnahme_plan", "pro");
               setCurrentPlan("pro");
               showNotice("✅ Pro Plan aktiviert!");
@@ -276,7 +318,8 @@ export function EinstellungenView({
           </button>
           <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              if (!adminGuard(e)) return;
               localStorage.setItem("bauabnahme_plan", "team");
               setCurrentPlan("team");
               showNotice("✅ Team Plan aktiviert!");
@@ -288,13 +331,31 @@ export function EinstellungenView({
         </div>
       </div>
 
-      {/* ── Team (Pro / Team) ── */}
-      {isTeamPlan && (
-        <div style={{ marginBottom: 20, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14, background: "rgba(212,168,83,0.04)" }}>
+      {/* ── Team (Starter: ausgeblendet | Pro: max. 5 | Team: unbegrenzt) — Plan: localStorage bauabnahme_plan ── */}
+      {showTeamSection && (
+      <div style={{ marginBottom: 20, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14, background: "rgba(212,168,83,0.04)" }}>
           <div style={{ color: GOLD, fontWeight: 700, marginBottom: 8 }}>👥 Team-Verwaltung</div>
           <p style={{ color: MUTED, fontSize: 13, marginTop: 0, marginBottom: 12 }}>
-            Lade Mitglieder aus der Datenbank und lade neue Kolleginnen per E-Mail ein.
+            {planTier === "team"
+              ? "Team-Plan: unbegrenzt viele Mitglieder und Einladungen."
+              : `Pro-Plan: bis zu ${TEAM_PRO_MAX} Mitglieder inkl. ausstehender Einladungen.`}
           </p>
+          {proTeamLimitReached && (
+            <div
+              role="status"
+              style={{
+                marginBottom: 12,
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid #c9a227",
+                background: "rgba(201,162,39,0.12)",
+                color: "#e8d4a0",
+                fontSize: 13,
+              }}
+            >
+              Hinweis: Du hast das Pro-Limit von {TEAM_PRO_MAX} Plätzen erreicht (Mitglieder + offene Einladungen). Für mehr Plätze wechsle zum Team-Plan.
+            </div>
+          )}
           <div style={{ marginBottom: 14 }}>
             <div style={{ color: MUTED, fontSize: 12, marginBottom: 6 }}>Neue Einladung</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -303,15 +364,19 @@ export function EinstellungenView({
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="kollegin@firma.ch"
-                style={{ ...iStyle, flex: 1, minWidth: 200, fontSize: 13 }}
+                disabled={proTeamLimitReached}
+                style={{ ...iStyle, flex: 1, minWidth: 200, fontSize: 13, opacity: proTeamLimitReached ? 0.55 : 1 }}
               />
               <button
                 type="button"
-                disabled={inviteSending}
-                onClick={() => void sendInvite()}
-                style={{ ...pBtn, opacity: inviteSending ? 0.6 : 1 }}
+                disabled={inviteSending || proTeamLimitReached}
+                onClick={(e) => {
+                  if (!adminGuard(e)) return;
+                  void sendInvite();
+                }}
+                style={{ ...pBtn, opacity: inviteSending || proTeamLimitReached ? 0.6 : 1 }}
               >
-                {inviteSending ? "Sende…" : "Einladung senden"}
+                {inviteSending ? "Sende…" : "Einladen"}
               </button>
             </div>
           </div>
@@ -338,8 +403,8 @@ export function EinstellungenView({
                   ))}
                   {teamInvites.map((inv) => (
                     <tr key={`i-${inv.id}`} style={{ borderTop: `1px solid ${BORDER}` }}>
-                      <td style={{ padding: "8px 10px", color: TEXT }}>{inv.email}</td>
-                      <td style={{ padding: "8px 10px", color: MUTED }}>Einladung ausstehend</td>
+                      <td style={{ padding: "8px 10px", color: TEXT }}>{inv.member_email || "—"}</td>
+                      <td style={{ padding: "8px 10px", color: MUTED }}>{inv.status === "pending" ? "Einladung ausstehend" : String(inv.status || "")}</td>
                     </tr>
                   ))}
                   {teamMembers.length === 0 && teamInvites.length === 0 && (
@@ -372,8 +437,14 @@ export function EinstellungenView({
           <button type="button" onClick={() => setShowLegal("datenschutz")} style={{ ...gBtn, fontSize: 12, minHeight: 32, padding: "0 10px" }}>Datenschutz</button>
           <div style={{ width: 1, height: 20, background: BORDER, margin: "0 4px" }} />
           <button type="button" onClick={() => { if (onLogout) onLogout(); else if (onNavigate) onNavigate("/"); }} style={{ ...gBtn, fontSize: 12, minHeight: 32, padding: "0 10px" }}>🚪 Logout</button>
-          <button type="button" onClick={() => { if (window.confirm("Konto wirklich pausieren?")) showNotice("Konto pausiert. Bitte kontaktiere den Support."); }} style={{ ...gBtn, fontSize: 12, minHeight: 32, padding: "0 10px" }}>⏸ Pausieren</button>
-          <button type="button" onClick={() => void deleteAccount()} style={{ ...gBtn, fontSize: 12, minHeight: 32, padding: "0 10px", color: "#e05c5c", borderColor: "#e05c5c" }}>🗑 Löschen</button>
+          <button type="button" onClick={(e) => {
+            if (!adminGuard(e)) return;
+            if (window.confirm("Konto wirklich pausieren?")) showNotice("Konto pausiert. Bitte kontaktiere den Support.");
+          }} style={{ ...gBtn, fontSize: 12, minHeight: 32, padding: "0 10px" }}>⏸ Pausieren</button>
+          <button type="button" onClick={(e) => {
+            if (!adminGuard(e)) return;
+            void deleteAccount();
+          }} style={{ ...gBtn, fontSize: 12, minHeight: 32, padding: "0 10px", color: "#e05c5c", borderColor: "#e05c5c" }}>🗑 Löschen</button>
         </div>
       </div>
 
