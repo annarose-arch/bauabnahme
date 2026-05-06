@@ -68,7 +68,7 @@ th{background:#f9f4ec}
 ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:14px">
 ${!isPro ? '<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#d4a853;color:#111;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
-<button class="btn noprint" onclick="window.print()">💾 PDF / Drucken</button>
+<button onclick="window.close()" style="background:#555;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:14px;cursor:pointer;margin-right:8px">✕ Schliessen</button><button class="btn noprint" onclick="window.print()">💾 PDF / Drucken</button>
 <a class="btn noprint" href="${mailto}">📧 E-Mail öffnen</a>
 </div>
 <div class="letterhead">
@@ -179,7 +179,7 @@ ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ""}
 <div class="noprint" style="margin-bottom:20px">
 ${!isPro ? '<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ Testversion</strong><a href="https://buy.stripe.com/bJe5kD18Cc2m3y59Ux9AA02" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">Pro CHF 29/Mt →</a></div>' : ""}
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-<button type="button" class="btn" onclick="window.print()">Drucken / PDF</button>
+<button onclick="window.close()" style="background:#555;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:14px;cursor:pointer;margin-right:8px">✕ Schliessen</button><button class="btn noprint" onclick="window.print()">💾 PDF / Drucken</button>
 ${mailtoHref ? `<a class="btn" href="${escHref(mailtoHref)}">📧 E-Mail</a>` : `<span class="btn btn-muted" title="Keine Kunden-E-Mail hinterlegt">📧 E-Mail</span>`}
 </div>
 </div>
