@@ -19,26 +19,10 @@ export function calcHours(from, to) {
 
 // ─── JSON Parsing ──────────────────────────────────────────────────────────
 export function parseJson(v, fb = {}) {
-  try {
-    return JSON.parse(v) || fb;
-  } catch {
-    return fb;
-  }
+  try { return JSON.parse(v) || fb; } catch { return fb; }
 }
-/** Supabase returns `description` as an object (json/jsonb); legacy rows may store JSON as a string. */
-export function parseReport(r) {
-  const d = r?.description;
-  if (d != null && typeof d === "object" && !Array.isArray(d)) {
-    return d;
-  }
-  if (typeof d === "string") {
-    return parseJson(d, {});
-  }
-  return {};
-}
-export function parseCustomerMeta(c) {
-  return parseJson(c?.address, {});
-}
+export function parseReport(r) { const d = r?.description; if (!d) return {}; if (typeof d === "object") return d; try { return JSON.parse(d); } catch { return {}; } }
+export function parseCustomerMeta(c) { return parseJson(c?.address, {}); }
 
 // ─── Datum ─────────────────────────────────────────────────────────────────
 export function formatDateCH(dateStr) {
@@ -55,14 +39,21 @@ export function formatReportCardSummary(r) {
   const project = (p.projectName && String(p.projectName).trim()) ? String(p.projectName).trim() : "—";
   const customer = (r.customer && String(r.customer).trim()) ? String(r.customer).trim() : "—";
   const date = formatDateCH(r.date);
-  const total = toNum(p.totals?.total).toFixed(2);
+  const total = formatCHF(toNum(p.totals?.total));
   return `Nr.${nr} · ${project} · ${customer} · ${date} · CHF ${total}`;
 }
 
 // ─── localStorage Nummern ──────────────────────────────────────────────────
 export function getNextNr(key, fallback = 1001) {
-  return parseInt(localStorage.getItem(key) || String(fallback), 10);
+  return parseInt(localStorage.getItem(key) || String(fallback));
 }
 export function setNextNr(key, value) {
   localStorage.setItem(key, String(value));
+}
+
+export function formatCHF(amount) {
+  const n = Number(amount) || 0;
+  const parts = n.toFixed(2).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return parts.join(".");
 }
