@@ -1,432 +1,188 @@
-import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "../../lib/translations.js";
+import { useState } from "react";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { toNum, formatDateCH, calcHours } from "../../lib/utils.js";
+import { formatCHF } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
-const VAT_RATE = 0.081;
+export function RechnungForm({ language = "DE", invoice, catalog = { employees: [], materials: [] }, reports = [], archivedReports = [], onSave, onCancel, onPreview, onBackToCustomer }) {
+  const tr = useTranslation(language);
+  const rd = invoice?.reportData || {};
+  const [showAbzuege, setShowAbzuege] = useState(false);
+  const [showRapport, setShowRapport] = useState(false);
+  const [rapportSearch, setRapportSearch] = useState("");
+  const [descSearch, setDescSearch] = useState({});
+  const [descFocus, setDescFocus] = useState({});
 
-function emptyLine() {
-  return { description: "", quantity: "", unitPrice: "" };
-}
+  const backLabel = language==="FR"?"Retour":language==="IT"?"Indietro":language==="EN"?"Back":tr.common?.back||"Zurück";
+  const saveLabel = language==="FR"?"Enregistrer":language==="IT"?"Salva":language==="EN"?"Save":tr.common?.save||"Speichern";
+  const customerLabel = language==="FR"?"Nom du client":language==="IT"?"Nome cliente":language==="EN"?"Customer name":"Kundenname";
+  const addressLabel = language==="FR"?"Adresse":language==="IT"?"Indirizzo":language==="EN"?"Address":"Adresse";
+  const projectLabel = language==="FR"?"Nom du projet":language==="IT"?"Nome progetto":language==="EN"?"Project name":"Projektname";
+  const rapportLabel = language==="FR"?"Joindre rapport":language==="IT"?"Allega rapporto":language==="EN"?"Attach report":"Rapport anhängen";
+  const abzuegeLabel = language==="FR"?"Déductions & Conditions":language==="IT"?"Deduzioni & Condizioni":language==="EN"?"Deductions & Conditions":"Abzüge & Konditionen";
+  const addRowLabel = language==="FR"?"Ajouter ligne":language==="IT"?"Aggiungi riga":language==="EN"?"Add row":"Zeile hinzufügen";
 
-/** Adresse aus Rapport: Strasse + PLZ/Ort (eine Zeile PLZ und Ort). */
-function customerAddressFromReportData(p) {
-  if (!p || typeof p !== "object") return "";
-  const street = String(p.address ?? "").trim();
-  const zip = String(p.zip ?? "").trim();
-  const city = String(p.city ?? "").trim();
-  const line2 = [zip, city].filter(Boolean).join(" ");
-  const built = [street, line2].filter(Boolean).join("\n");
-  if (built) return built;
-  if (p.customerAddress != null && String(p.customerAddress).trim()) return String(p.customerAddress).trim();
-  return "";
-}
+  const initRows = () => {
+    if (invoice?.lineItems?.length) return invoice.lineItems;
+    const rows = [];
+    (rd.workRows || []).filter(r => r.employee || r.hours > 0).forEach(r => {
+      rows.push({ description: r.employee || "Arbeit", qty: r.hours || 1, unit: "h", price: r.rate || 0 });
+    });
+    (rd.materialRows || []).filter(r => r.name).forEach(r => {
+      rows.push({ description: r.name, qty: r.qty || 1, unit: r.unit || "St", price: r.price || 0 });
+    });
+    return rows.length ? rows : [{ description: "", qty: 1, unit: "St", price: 0 }];
+  };
 
-function mapInvoiceLine(l) {
-  return {
-    description: l.description != null ? String(l.description) : "",
-    quantity: l.quantity != null && l.quantity !== "" ? String(l.quantity) : "",
-    unitPrice: l.unitPrice != null && l.unitPrice !== "" ? String(l.unitPrice) : "",
-  };
-}
+  const [form, setForm] = useState({
+    customerName: invoice?.customerName || invoice?.customer || "",
+    customerAddress: rd.address ? `${rd.address}, ${rd.zip || ""} ${rd.city || ""}`.trim() : "",
+    projektbezeichnung: invoice?.projektbezeichnung || rd.projectName || "",
+    rapportRef: invoice?.reportData?.rapportNr || "",
+    attachedReportIds: invoice?.attachedReportIds || [],
+    paymentDays: invoice?.paymentDays || 30,
+    skontoPct: invoice?.skontoPct || 0,
+    skontoDays: invoice?.skontoDays || 10,
+    iban: invoice?.iban || "",
+    notes: invoice?.notes || "",
+    discount: invoice?.discount || 0,
+    date: invoice?.date || new Date().toISOString().slice(0,10),
+  });
+  const [rows, setRows] = useState(initRows);
 
-/** Positionen aus Rapport-Zeilen, wenn noch keine invoiceLines. */
-function lineItemsFromReportWorkAndMaterial(p) {
-  if (!p || typeof p !== "object") return null;
-  const out = [];
-  for (const r of p.workRows || []) {
-    const h = toNum(r.hours) > 0 ? toNum(r.hours) : calcHours(r.from, r.to);
-    const rate = r.rate != null ? String(r.rate) : "";
-    if (!String(r.employee || "").trim() && h <= 0) continue;
-    out.push({
-      description: String(r.employee || "").trim() ? `Arbeit: ${String(r.employee).trim()}` : "Arbeit",
-      quantity: h > 0 ? String(h) : "",
-      unitPrice: rate,
-    });
-  }
-  for (const r of p.materialRows || []) {
-    if (!String(r.name || "").trim() && toNum(r.qty) <= 0) continue;
-    out.push({
-      description: String(r.name || "").trim() || "Material",
-      quantity: r.qty != null && r.qty !== "" ? String(r.qty) : "",
-      unitPrice: r.price != null && r.price !== "" ? String(r.price) : "",
-    });
-  }
-  return out.length > 0 ? out : null;
-}
+  const set = (field, val) => setForm(p => ({ ...p, [field]: val }));
+  const updateRow = (i, field, val) => setRows(r => r.map((x, j) => j === i ? { ...x, [field]: val } : x));
+  const addRow = () => setRows(r => [...r, { description: "", qty: 1, unit: "St", price: 0 }]);
+  const removeRow = (i) => setRows(r => r.filter((_, j) => j !== i));
 
-function stateFromInvoice(inv) {
-  if (!inv) {
-    return {
-      invoiceNr: "",
-      date: new Date().toISOString().slice(0, 10),
-      customer: "",
-      customerAddress: "",
-      projectTitle: "",
-      rapportNrRef: "",
-      iban: "",
-      payDays: "30",
-      discountPercent: "0",
-      skontoPercent: "0",
-      skontoDays: "10",
-      notes: "",
-      lineItems: [emptyLine()],
-      customerId: "",
-      status: "entwurf",
-    };
-  }
-  const p = inv.reportData && typeof inv.reportData === "object" ? inv.reportData : {};
-  const rawLines = Array.isArray(p.invoiceLines) ? p.invoiceLines : [];
-  const fromRapport = lineItemsFromReportWorkAndMaterial(p);
-  const lines =
-    rawLines.length > 0
-      ? rawLines.map(mapInvoiceLine)
-      : fromRapport != null
-        ? fromRapport.map(mapInvoiceLine)
-        : [emptyLine()];
-  return {
-    invoiceNr: inv.invoiceNr != null ? String(inv.invoiceNr) : "",
-    date: inv.date || new Date().toISOString().slice(0, 10),
-    customer: inv.customer != null ? String(inv.customer) : "",
-    customerAddress: customerAddressFromReportData(p),
-    projectTitle: p.projectName != null ? String(p.projectName) : "",
-    rapportNrRef: p.rapportNr != null ? String(p.rapportNr) : "",
-    iban: p.iban != null ? String(p.iban) : inv.iban != null ? String(inv.iban) : "",
-    payDays: String(inv.payDays != null ? inv.payDays : 30),
-    discountPercent: String(inv.discountPercent != null ? inv.discountPercent : p.discountPercent != null ? p.discountPercent : "0"),
-    skontoPercent: String(
-      inv.skontoPercent != null ? inv.skontoPercent : p.skontoPct != null ? p.skontoPct : p.skontoPercent != null ? p.skontoPercent : "0"
-    ),
-    skontoDays: String(inv.skontoDays != null ? inv.skontoDays : p.skontoDays != null ? p.skontoDays : "10"),
-    notes: inv.notes != null ? String(inv.notes) : p.costs?.notes != null ? String(p.costs.notes) : "",
-    lineItems: lines,
-    customerId: inv.customerId != null ? String(inv.customerId) : "",
-    status: inv.status != null ? String(inv.status) : "entwurf",
-  };
-}
+  const subtotal = rows.reduce((s, r) => s + (Number(r.qty) * Number(r.price)), 0);
+  const discountAmt = subtotal * (Number(form.discount) / 100);
+  const afterDiscount = subtotal - discountAmt;
+  const vat = afterDiscount * 0.081;
+  const total = afterDiscount + vat;
+  const skontoAmt = total * (Number(form.skontoPct) / 100);
 
-function buildPayload(form, invoice) {
-  const lines = form.lineItems
-    .map((row) => {
-      const qty = toNum(row.quantity);
-      const up = toNum(row.unitPrice);
-      const lineTotal = Math.round(qty * up * 100) / 100;
-      return {
-        description: String(row.description || "").trim(),
-        quantity: qty,
-        unitPrice: up,
-        lineTotal,
-      };
-    })
-    .filter((l) => l.description || l.lineTotal > 0);
+  const buildInvoice = () => {
+    const workRows = rows.filter(r => (catalog.employees||[]).find(e => e.name === r.description));
+    const materialRows = rows.filter(r => (catalog.materials||[]).find(m => m.name === r.description));
+    const workRowsMapped = workRows.map(r => ({ employee: r.description, from: "", to: "", hours: Number(r.qty), rate: Number(r.price), total: Number(r.qty)*Number(r.price) }));
+    const matRowsMapped = materialRows.map(r => ({ name: r.description, qty: Number(r.qty), unit: r.unit||"St", price: Number(r.price), total: Number(r.qty)*Number(r.price) }));
+    const otherRows = rows.filter(r => !workRows.includes(r) && !materialRows.includes(r)).map(r => ({ employee: r.description, from: "", to: "", hours: Number(r.qty), rate: Number(r.price), total: Number(r.qty)*Number(r.price) }));
+    const reportData = { ...(invoice?.reportData||{}), workRows: [...workRowsMapped, ...otherRows], materialRows: matRowsMapped };
+    return { ...invoice, ...form, lineItems: rows, reportData, subtotal, vat, total, totalAmount: total, discountAmt, skontoAmt, date: form.date };
+  };
 
-  const subtotal = Math.round(lines.reduce((s, l) => s + l.lineTotal, 0) * 100) / 100;
-  const dPct = toNum(form.discountPercent);
-  const discountAmount = Math.round(subtotal * (dPct / 100) * 100) / 100;
-  const netAfterDiscount = Math.round((subtotal - discountAmount) * 100) / 100;
-  const vatAmount = Math.round(netAfterDiscount * VAT_RATE * 100) / 100;
-  const totalAmount = Math.round((netAfterDiscount + vatAmount) * 100) / 100;
-  const payDaysNum = Math.max(1, parseInt(String(form.payDays), 10) || 30);
-  const skontoPct = toNum(form.skontoPercent);
-  const skontoDaysNum = Math.max(1, parseInt(String(form.skontoDays), 10) || 10);
+  const handleBack = () => { if(onBackToCustomer) onBackToCustomer(); else if(onCancel) onCancel(); };
 
-  const baseReport =
-    invoice?.reportData && typeof invoice.reportData === "object" && !Array.isArray(invoice.reportData) ? { ...invoice.reportData } : {};
+  const allCatalog = [...(catalog.employees||[]).map(e => ({name:e.name, detail:"CHF "+e.rate+"/h", unit:"h", price:e.rate})), ...(catalog.materials||[]).map(m => ({name:m.name, detail:"CHF "+m.price+" ("+m.unit+")", unit:m.unit, price:m.price}))];
 
-  const addrLines = String(form.customerAddress || "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const streetLine = addrLines[0] || "";
-  const lastLine = addrLines[addrLines.length - 1] || "";
-  const plzOrt = /^(\d{4,5})\s+(.+)$/.exec(lastLine);
-  const zip = plzOrt ? plzOrt[1] : baseReport.zip || "";
-  const city = plzOrt ? plzOrt[2] : baseReport.city || "";
+  return (
+    <SectionCard>
+      {/* Header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <button type="button" onClick={handleBack} style={{ background:"transparent", color:GOLD, border:"1px solid "+GOLD, borderRadius:8, padding:"8px 14px", fontWeight:600, fontSize:14, cursor:"pointer" }}>{backLabel}</button>
+        <div style={{ color:GOLD, fontWeight:700, fontSize:18 }}>{tr.invoice?.title||"Rechnung"}</div>
+        <div style={{ minWidth:80 }}></div>
+      </div>
 
-  const rapportNr = String(form.rapportNrRef || "").trim() || baseReport.rapportNr;
+      <div style={{ display: "grid", gap: 10 }}>
+        <input placeholder={customerLabel+" *"} value={form.customerName} onChange={e => set("customerName", e.target.value)} style={iStyle} />
+        <input placeholder={addressLabel} value={form.customerAddress} onChange={e => set("customerAddress", e.target.value)} style={iStyle} />
+        <input placeholder={projectLabel} value={form.projektbezeichnung} onChange={e => set("projektbezeichnung", e.target.value)} style={iStyle} />
+        <div><div style={{ fontSize:12, color:MUTED, marginBottom:2 }}>{language==="FR"?"Date":language==="IT"?"Data":language==="EN"?"Date":"Datum"}</div><input type="date" value={form.date||new Date().toISOString().slice(0,10)} onChange={e => set("date", e.target.value)} style={{ ...iStyle, width:"100%" }} /></div>
 
-  return {
-    id: invoice?.id ?? Date.now(),
-    invoiceNr: String(form.invoiceNr || "").trim(),
-    customer: String(form.customer || "").trim(),
-    customerId: form.customerId || invoice?.customerId || "",
-    date: form.date,
-    status: form.status || invoice?.status || "entwurf",
-    totalAmount,
-    payDays: payDaysNum,
-    discountPercent: dPct,
-    skontoPercent: skontoPct,
-    skontoDays: skontoDaysNum,
-    iban: String(form.iban || "").trim(),
-    notes: form.notes,
-    rapportNr,
-    lineItems: lines,
-    subtotal,
-    discountAmount,
-    netAfterDiscount,
-    vatRate: VAT_RATE,
-    vatAmount,
-    reportData: {
-      ...baseReport,
-      rapportNr,
-      projectName: String(form.projectTitle || "").trim(),
-      customerAddress: String(form.customerAddress || "").trim(),
-      address: streetLine,
-      zip,
-      city,
-      iban: String(form.iban || "").trim(),
-      invoiceLines: lines,
-      discountPercent: dPct,
-      skontoPct,
-      skontoDays: skontoDaysNum,
-      totals: {
-        subtotal,
-        discountAmount,
-        subtotalAfterDiscount: netAfterDiscount,
-        vat: vatAmount,
-        total: totalAmount,
-      },
-      costs: { ...(baseReport.costs && typeof baseReport.costs === "object" ? baseReport.costs : {}), notes: form.notes },
-    },
-  };
-}
+        {/* Positionen */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
+          <h3 style={{ margin:0 }}>{tr.invoice?.positions||"Positionen"}</h3>
+          <button type="button" onClick={addRow} style={{ ...pBtn, minHeight:32, padding:"0 12px", fontSize:13 }}>+ {addRowLabel}</button>
+        </div>
+        {rows.map((row, i) => {
+          const rowTotal = Number(row.qty) * Number(row.price);
+          const dq = descSearch[i] ?? row.description ?? "";
+          const filtered = allCatalog.filter(c => c.name.toLowerCase().includes(dq.toLowerCase()));
+          return (
+            <div key={i} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid "+BORDER, borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:8, marginBottom:6, position:"relative" }}>
+                <div style={{ position:"relative" }}>
+                  <input placeholder={tr.invoice?.description||"Beschreibung"} value={dq}
+                    onChange={e => { setDescSearch(p => ({...p, [i]: e.target.value})); updateRow(i, "description", e.target.value); }}
+                    style={{ ...iStyle, width:"100%" }} autoComplete="off" onFocus={() => setDescFocus(p => ({...p, [i]: true}))} onBlur={() => setTimeout(() => setDescFocus(p => ({...p, [i]: false})), 150)} />
+                  {dq.length > 0 && filtered.length > 0 && descFocus[i] && (
+                    <div style={{ position:"absolute", top:"100%", left:0, right:0, zIndex:50, background:"#1a1a1a", border:"1px solid "+BORDER, borderRadius:8, marginTop:2, maxHeight:160, overflowY:"auto" }}>
+                      {filtered.map((c,j) => (
+                        <button key={j} type="button" onMouseDown={() => { updateRow(i,"description",c.name); updateRow(i,"price",c.price||0); updateRow(i,"unit",c.unit||"St"); setDescSearch(p => ({...p, [i]: c.name})); }}
+                          style={{ display:"block", width:"100%", textAlign:"left", padding:"8px 12px", background:"transparent", border:"none", color:TEXT, cursor:"pointer", borderBottom:"1px solid "+BORDER, fontSize:13 }}>
+                          {c.name} — {c.detail}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button type="button" onClick={() => removeRow(i)} style={{ ...dBtn, minWidth:34 }}>✕</button>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 80px 80px", gap:8 }}>
+                <input placeholder={tr.invoice?.qty||"Menge"} type="number" value={row.qty} onChange={e => updateRow(i,"qty",e.target.value)} style={iStyle} />
+                <input placeholder={tr.invoice?.unit||"Einheit"} value={row.unit} onChange={e => updateRow(i,"unit",e.target.value)} style={iStyle} />
+                <input placeholder={tr.invoice?.price||"CHF"} type="number" value={row.price} onChange={e => updateRow(i,"price",e.target.value)} style={iStyle} />
+              </div>
+              <div style={{ textAlign:"right", color:GOLD, fontWeight:700, fontSize:13, marginTop:6 }}>CHF {formatCHF(rowTotal)}</div>
+            </div>
+          );
+        })}
 
-/**
- * @param {object|null} invoice — bestehende Rechnung oder null für neu
- * @param {(data: object) => void} onSave
- * @param {() => void} [onCancel]
- * @param {(form: object) => void} [onPreview] — aktueller Formularzustand für PDF-Vorschau
- */
-export function RechnungForm({ invoice = null, onSave, onCancel, onPreview }) {
-  const [form, setForm] = useState(() => stateFromInvoice(invoice));
+        <textarea placeholder={tr.report?.notes||"Notizen"} value={form.notes} onChange={e => set("notes", e.target.value)} rows={2} style={{ ...iStyle, minHeight:60, padding:10 }} />
 
-  const invoiceKey = invoice?.id ?? "new";
-  useEffect(() => {
-    setForm(stateFromInvoice(invoice));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync when invoice id changes only
-  }, [invoiceKey]);
+        {/* Abzüge einklappbar */}
+        <button type="button" onClick={() => setShowAbzuege(p=>!p)} style={{ background:showAbzuege?"rgba(212,168,83,0.15)":"rgba(212,168,83,0.05)", color:GOLD, border:"1px solid "+GOLD, borderRadius:8, padding:"10px 16px", fontWeight:600, fontSize:13, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          {showAbzuege ? "▲" : "▼"} {abzuegeLabel}
+        </button>
+        {showAbzuege && (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:8, padding:12, border:"1px solid rgba(212,168,83,0.2)", borderRadius:8 }}>
+            <div><div style={{ fontSize:12, color:MUTED, marginBottom:2 }}>{tr.invoice?.discount||"Rabatt %"}</div><input placeholder="0" type="number" value={form.discount} onChange={e => set("discount", e.target.value)} style={iStyle} /></div>
+            <div><div style={{ fontSize:12, color:MUTED, marginBottom:2 }}>{tr.invoice?.payDays||"Zahlungsziel (Tage)"}</div><input placeholder="30" type="number" value={form.paymentDays} onChange={e => set("paymentDays", e.target.value)} style={iStyle} /></div>
+            <div><div style={{ fontSize:12, color:MUTED, marginBottom:2 }}>{tr.invoice?.skonto||"Skonto %"}</div><input placeholder="0" type="number" value={form.skontoPct} onChange={e => set("skontoPct", e.target.value)} style={iStyle} /></div>
+            <div><div style={{ fontSize:12, color:MUTED, marginBottom:2 }}>{tr.invoice?.skontoDays||"Skonto-Frist"}</div><input placeholder="10" type="number" value={form.skontoDays} onChange={e => set("skontoDays", e.target.value)} style={iStyle} /></div>
+            <input placeholder="IBAN" value={form.iban} onChange={e => set("iban", e.target.value)} style={{ ...iStyle, gridColumn:"1/-1" }} />
+          </div>
+        )}
 
-  const { subtotal, discountAmount, netAfterDiscount, vatAmount, totalAmount } = useMemo(() => {
-    const parts = form.lineItems.map((row) => toNum(row.quantity) * toNum(row.unitPrice));
-    const sub = Math.round(parts.reduce((s, l) => s + l, 0) * 100) / 100;
-    const dPct = toNum(form.discountPercent);
-    const disc = Math.round(sub * (dPct / 100) * 100) / 100;
-    const net = Math.round((sub - disc) * 100) / 100;
-    const vat = Math.round(net * VAT_RATE * 100) / 100;
-    const tot = Math.round((net + vat) * 100) / 100;
-    return { subtotal: sub, discountAmount: disc, netAfterDiscount: net, vatAmount: vat, totalAmount: tot };
-  }, [form.lineItems, form.discountPercent]);
+        {/* Rapport anhängen einklappbar */}
+        <button type="button" onClick={() => setShowRapport(p=>!p)} style={{ background:showRapport?"rgba(212,168,83,0.15)":"rgba(212,168,83,0.05)", color:GOLD, border:"1px solid "+GOLD, borderRadius:8, padding:"10px 16px", fontWeight:600, fontSize:13, cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          {showRapport ? "▲" : "▼"} 📎 {rapportLabel}
+        </button>
+        {showRapport && (
+          <div style={{ padding:12, border:"1px solid rgba(212,168,83,0.2)", borderRadius:8 }}>
+            <input placeholder={tr.offerte?.rapportSearch||"Rapport suchen..."} value={rapportSearch} onChange={e => setRapportSearch(e.target.value)} style={{ ...iStyle, width:"100%", marginBottom:8 }} />
+            <div style={{ maxHeight:160, overflowY:"auto", border:"1px solid "+BORDER, borderRadius:8, padding:6 }}>
+              {[...reports, ...archivedReports].filter(r => (!form.customerName || r.customer === form.customerName) && (!rapportSearch || r.customer?.toLowerCase().includes(rapportSearch.toLowerCase()) || String(r.description?.rapportNr||r.id).includes(rapportSearch))).map(r => {
+                const rp = r.description || {};
+                const id = String(r.id);
+                const sel = (form.attachedReportIds||[]).includes(id);
+                return <div key={id} onClick={() => set("attachedReportIds", sel ? (form.attachedReportIds||[]).filter(x=>x!==id) : [...(form.attachedReportIds||[]), id])}
+                  style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 8px", borderRadius:6, cursor:"pointer", marginBottom:2, background:sel?"rgba(212,168,83,0.15)":"transparent", border:"1px solid "+(sel?GOLD:"transparent") }}>
+                  <span style={{ color:sel?GOLD:TEXT, fontSize:13 }}>{sel?"☑":"☐"} Nr.{rp.rapportNr||id.slice(0,6)} — {r.customer} — {r.date}</span>
+                </div>;
+              })}
+            </div>
+          </div>
+        )}
 
-  const payDaysNum = Math.max(1, parseInt(String(form.payDays), 10) || 30);
-  let dueLabel = "—";
-  try {
-    const t = new Date(form.date + "T12:00:00").getTime() + payDaysNum * 86400000;
-    dueLabel = formatDateCH(new Date(t).toISOString().slice(0, 10));
-  } catch {
-    dueLabel = "—";
-  }
+        {/* Totals */}
+        <div style={{ borderTop:"1px solid "+BORDER, paddingTop:12 }}>
+          <div style={{ color:MUTED, fontSize:13 }}>Subtotal: CHF {formatCHF(subtotal)}</div>
+          {Number(form.discount) > 0 && <div style={{ color:MUTED, fontSize:13 }}>{tr.invoice?.discount||"Rabatt"} {form.discount}%: -CHF {formatCHF(discountAmt)}</div>}
+          <div style={{ color:MUTED, fontSize:13 }}>{tr.report?.vat||"MwSt 8.1%"}: CHF {formatCHF(vat)}</div>
+          {Number(form.skontoPct) > 0 && <div style={{ color:MUTED, fontSize:13 }}>{tr.invoice?.skonto||"Skonto"} {form.skontoPct}% ({form.skontoDays} {tr.common?.days||"Tage"}): -CHF {formatCHF(skontoAmt)}</div>}
+          <div style={{ color:GOLD, fontWeight:800, fontSize:20, marginTop:8 }}>Total CHF {formatCHF(total)}</div>
+        </div>
 
-  const setLines = (fn) => setForm((p) => ({ ...p, lineItems: fn(p.lineItems) }));
-
-  const tableHeaderStyle = {
-    display: "grid",
-    gridTemplateColumns: "minmax(120px, 2fr) 72px 100px 88px 40px",
-    gap: 8,
-    alignItems: "center",
-    color: MUTED,
-    fontSize: 11,
-    fontWeight: 600,
-    marginBottom: 4,
-    paddingLeft: 2,
-  };
-
-  const rowGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "minmax(120px, 2fr) 72px 100px 88px 40px",
-    gap: 8,
-    alignItems: "center",
-  };
-
-  return (
-    <SectionCard>
-      <h2 style={{ marginTop: 0 }}>{invoice ? "Rechnung bearbeiten" : "Neue Rechnung"}</h2>
-      <div style={{ display: "grid", gap: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input placeholder="Rechnungsnummer" value={form.invoiceNr} onChange={(e) => setForm((p) => ({ ...p, invoiceNr: e.target.value }))} style={iStyle} />
-          <input type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))} style={iStyle} />
-        </div>
-
-        <h3 style={{ marginBottom: 4 }}>👤 Kunde</h3>
-        <input placeholder="Kundenname *" value={form.customer} onChange={(e) => setForm((p) => ({ ...p, customer: e.target.value }))} style={iStyle} />
-        <textarea
-          placeholder="Adresse (mehrzeilig möglich)"
-          value={form.customerAddress}
-          onChange={(e) => setForm((p) => ({ ...p, customerAddress: e.target.value }))}
-          rows={3}
-          style={{ ...iStyle, minHeight: 72, padding: 10 }}
-        />
-
-        <h3 style={{ marginBottom: 4 }}>📎 Auftrag</h3>
-        <input
-          placeholder="Projektbezeichnung"
-          value={form.projectTitle}
-          onChange={(e) => setForm((p) => ({ ...p, projectTitle: e.target.value }))}
-          style={iStyle}
-        />
-        <input
-          placeholder="Rapport-Referenznummer"
-          value={form.rapportNrRef}
-          onChange={(e) => setForm((p) => ({ ...p, rapportNrRef: e.target.value }))}
-          style={iStyle}
-        />
-
-        <h3 style={{ marginBottom: 4 }}>📋 Positionen</h3>
-        <div style={tableHeaderStyle}>
-          <span>Beschreibung</span>
-          <span>Menge</span>
-          <span>EP CHF</span>
-          <span>Total</span>
-          <span />
-        </div>
-        {form.lineItems.map((row, i) => {
-          const lineTotal = Math.round(toNum(row.quantity) * toNum(row.unitPrice) * 100) / 100;
-          return (
-            <div
-              key={i}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: `1px solid ${BORDER}`,
-                borderRadius: 8,
-                padding: "10px 12px",
-                marginBottom: 6,
-              }}
-            >
-              <div style={rowGridStyle}>
-                <input
-                  placeholder="Beschreibung"
-                  value={row.description}
-                  onChange={(e) => setLines((rows) => rows.map((r, j) => (j === i ? { ...r, description: e.target.value } : r)))}
-                  style={{ ...iStyle, width: "100%", minWidth: 0 }}
-                />
-                <input
-                  placeholder="1"
-                  value={row.quantity}
-                  onChange={(e) => setLines((rows) => rows.map((r, j) => (j === i ? { ...r, quantity: e.target.value } : r)))}
-                  style={iStyle}
-                />
-                <input
-                  placeholder="0.00"
-                  value={row.unitPrice}
-                  onChange={(e) => setLines((rows) => rows.map((r, j) => (j === i ? { ...r, unitPrice: e.target.value } : r)))}
-                  style={iStyle}
-                />
-                <input readOnly value={lineTotal.toFixed(2)} style={{ ...iStyle, color: GOLD, fontWeight: 700, textAlign: "right" }} />
-                <button type="button" onClick={() => setLines((rows) => rows.filter((_, j) => j !== i))} style={{ ...dBtn, minWidth: 34, padding: "0 6px" }} disabled={form.lineItems.length === 1}>
-                  ✕
-                </button>
-              </div>
-            </div>
-          );
-        })}
-        <button type="button" onClick={() => setLines((rows) => [...rows, emptyLine()])} style={{ ...pBtn, width: 200, justifySelf: "start" }}>
-          + Zeile hinzufügen
-        </button>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "end" }}>
-          <div>
-            <div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Rabatt %</div>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={0.5}
-              placeholder="z. B. 0"
-              value={form.discountPercent}
-              onChange={(e) => setForm((p) => ({ ...p, discountPercent: e.target.value }))}
-              style={iStyle}
-            />
-          </div>
-          <div>
-            <div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Zahlungsziel (Tage)</div>
-            <input
-              type="number"
-              min={1}
-              max={365}
-              placeholder="30"
-              value={form.payDays}
-              onChange={(e) => setForm((p) => ({ ...p, payDays: e.target.value }))}
-              style={iStyle}
-            />
-          </div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "end" }}>
-          <div>
-            <div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Skonto %</div>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={0.5}
-              placeholder="z. B. 0"
-              value={form.skontoPercent}
-              onChange={(e) => setForm((p) => ({ ...p, skontoPercent: e.target.value }))}
-              style={iStyle}
-            />
-          </div>
-          <div>
-            <div style={{ color: MUTED, fontSize: 11, marginBottom: 3 }}>Skonto-Frist (Tage)</div>
-            <input
-              type="number"
-              min={1}
-              max={120}
-              placeholder="10"
-              value={form.skontoDays}
-              onChange={(e) => setForm((p) => ({ ...p, skontoDays: e.target.value }))}
-              style={iStyle}
-            />
-          </div>
-        </div>
-        <div style={{ color: MUTED, fontSize: 13 }}>
-          Standard 30 Tage · Fällig am <b style={{ color: TEXT }}>{dueLabel}</b>
-        </div>
-        {toNum(form.discountPercent) > 0 && (
-          <div style={{ color: MUTED, fontSize: 13 }}>
-            Rabattbetrag: <span style={{ color: GOLD, fontWeight: 700 }}>− CHF {discountAmount.toFixed(2)}</span>
-          </div>
-        )}
-
-        <h3 style={{ marginBottom: 4 }}>🏦 Zahlung</h3>
-        <input placeholder="IBAN" value={form.iban} onChange={(e) => setForm((p) => ({ ...p, iban: e.target.value }))} style={iStyle} />
-
-        <textarea
-          placeholder="Notizen"
-          value={form.notes}
-          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-          rows={3}
-          style={{ ...iStyle, minHeight: 80, padding: 10 }}
-        />
-
-        <div style={{ color: MUTED, fontSize: 13 }}>Zwischensumme: CHF {subtotal.toFixed(2)}</div>
-        <div style={{ color: MUTED, fontSize: 13 }}>Nach Rabatt: CHF {netAfterDiscount.toFixed(2)}</div>
-        <div style={{ color: MUTED, fontSize: 13 }}>MwSt 8.1%: CHF {vatAmount.toFixed(2)}</div>
-        <div style={{ color: GOLD, fontSize: 26, fontWeight: 800 }}>Total CHF {totalAmount.toFixed(2)}</div>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", position: "relative", zIndex: 30, marginTop: 4 }}>
-          <button type="button" onClick={() => onSave?.(buildPayload(form, invoice))} style={pBtn}>
-            Rechnung speichern
-          </button>
-          {onPreview && (
-            <button type="button" onClick={() => onPreview({ ...form })} style={gBtn}>
-              PDF Vorschau
-            </button>
-          )}
-          {onCancel && (
-            <button type="button" onClick={onCancel} style={gBtn}>
-              Abbrechen
-            </button>
-          )}
-        </div>
-      </div>
-    </SectionCard>
-  );
+        {/* Buttons */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:8, marginTop:8 }}>
+          <button type="button" onClick={handleBack} style={{ background:"transparent", color:GOLD, border:"1px solid "+GOLD, borderRadius:10, padding:"14px", fontWeight:700, fontSize:15, cursor:"pointer" }}>{backLabel}</button>
+          <button type="button" onClick={() => onSave(buildInvoice())} style={pBtn}>{saveLabel}</button>
+        </div>
+        {onPreview && <button type="button" onClick={() => onPreview(buildInvoice())} style={{ ...gBtn, color:GOLD, borderColor:GOLD, marginTop:8, width:"100%" }}>PDF</button>}
+      </div>
+    </SectionCard>
+  );
 }
