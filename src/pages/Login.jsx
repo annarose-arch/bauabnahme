@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { VideoPlayer } from "../components/VideoPlayer.jsx";
-import { Mail, Lock, Globe, Building2, User, MapPin, Phone } from "lucide-react";
+import { Mail, Lock, Globe, Building2, User, MapPin, Phone, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../supabase.js";
 
 const COLORS = {
