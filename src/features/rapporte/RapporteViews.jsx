@@ -1,63 +1,66 @@
-import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn } from "../../lib/constants.js";
-import { parseReport, formatReportCardSummary, formatDateCH } from "../../lib/utils.js";
+import { useState } from "react";
+import { useTranslation } from "../../lib/translations.js";
+import { GOLD, BORDER, MUTED, TEXT, pBtn, gBtn, dBtn, iStyle } from "../../lib/constants.js";
+import { parseReport, formatCHF, formatReportCardSummary, formatDateCH, toNum } from "../../lib/utils.js";
 import { SectionCard } from "../../components/UI.jsx";
 
-/** Rapport-Nr. used when matching invoices (`reportData.rapportNr` from Rechnung). */
-export function getReportRapportNrKey(report) {
-  const p = parseReport(report);
-  if (p?.rapportNr != null && String(p.rapportNr).trim() !== "") return String(p.rapportNr).trim();
-  return String(report.id);
-}
-
-export function reportHasActiveInvoice(report, invoices) {
-  if (!invoices?.length) return false;
-  const key = getReportRapportNrKey(report);
-  return invoices.some((inv) => {
-    if (String(inv?.status || "").trim().toLowerCase() === "geloescht") return false;
-    const invNr = inv?.reportData?.rapportNr;
-    if (invNr == null || String(invNr).trim() === "") return false;
-    return String(invNr).trim() === key;
-  });
-}
-
-const invoiceCreatedBadgeStyle = {
-  fontSize: 11,
-  fontWeight: 700,
-  padding: "2px 8px",
-  borderRadius: 4,
-  border: `1px solid ${GOLD}`,
-  color: GOLD,
-  background: "rgba(212,168,83,0.12)",
-  whiteSpace: "nowrap",
-};
-
 // ─── Offene Rapporte Liste ─────────────────────────────────────────────────
-export function RapporteListe({ reports, archivedReports, invoices = [], onOpen, onEdit, onPDF, onDelete }) {
+const PAGE_SIZE = 20;
+function Pagination({ total, page, setPage, language = "DE" }) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return null;
+  return (<div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16 }}><button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0} style={{ ...gBtn, minWidth: 80 }}>{ language==="FR" ? "Précédent" : language==="IT" ? "Precedente" : language==="EN" ? "Previous" : "← Zurück" }</button><span style={{ color: MUTED, fontSize: 13 }}>{ language==="FR" ? "Page" : language==="IT" ? "Pagina" : language==="EN" ? "Page" : "Seite" } {page+1} / {pages}</span><button onClick={() => setPage(p => Math.min(pages-1, p+1))} disabled={page >= pages-1} style={{ ...gBtn, minWidth: 80 }}>{ language==="FR" ? "Suivant" : language==="IT" ? "Avanti" : language==="EN" ? "Next" : "Weiter →" }</button></div>);
+}
+export function RapporteListe({ reports, archivedReports, invoices = [], onOpen, onEdit, onPDF, onDelete, language = "DE", goTo, customers = [] }) {
+  const tr = useTranslation(language);
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState("");
+  const filtered = search.trim() ? reports.filter(r => { const rp = parseReport(r); return r.customer?.toLowerCase().includes(search.toLowerCase()) || String(rp.rapportNr||"").includes(search) || (rp.projectName||"").toLowerCase().includes(search.toLowerCase()); }) : reports;
+  const pagedReports = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   return (
     <SectionCard>
-      <h2 style={{ marginTop: 0 }}>Offene Rapporte</h2>
-      {archivedReports.length > 0 && (
-        <div style={{ marginBottom: 10, padding: "8px 12px", background: "rgba(212,168,83,0.08)", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 13, color: MUTED }}>
-          📁 {archivedReports.length} archivierte/gesendete Rapporte sind beim jeweiligen Kunden sichtbar.
-        </div>
-      )}
-      {reports.length === 0 && <p style={{ color: MUTED }}>Noch keine Rapporte.</p>}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}><button type="button" onClick={() => goTo("home")} style={{ background:"transparent", color:GOLD, border:"1px solid "+GOLD, borderRadius:8, padding:"8px 14px", fontWeight:600, fontSize:14, cursor:"pointer" }}>{tr.common.back}</button><div style={{ color:GOLD, fontWeight:700, fontSize:18 }}>{tr.nav.reports}</div><button type="button" onClick={() => goTo("new-report")} style={{ background:"#d4a853", color:"#111", border:"none", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:14, cursor:"pointer" }}>{tr.nav.newReport}</button></div>
+
+      <input list="rapport-search-list" placeholder={language==="FR"?"Rechercher...":language==="IT"?"Cerca...":language==="EN"?"Search...":"Suchen..."} value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} style={{ ...iStyle, width:"100%", marginBottom:8 }} />
+      <datalist id="rapport-search-list">
+        {customers.map((c,i) => <option key={i} value={c.name} />)}
+      </datalist>
+      {filtered.length === 0 && <p style={{ color: MUTED }}>{language==="FR"?"Aucun résultat":language==="IT"?"Nessun risultato":language==="EN"?"No results":"Keine Treffer"}.</p>}
       <div style={{ display: "grid", gap: 8 }}>
-        {reports.map((r) => {
-          const hasInv = reportHasActiveInvoice(r, invoices);
+        {pagedReports.map((r) => {
+          const pr = parseReport(r);
+          const hasInvoice = invoices.some((inv) => inv.reportData?.rapportNr === pr.rapportNr);
+          const nr = pr.rapportNr != null && String(pr.rapportNr).trim() !== "" ? String(pr.rapportNr).trim() : "—";
+          const project = pr.projectName && String(pr.projectName).trim() ? String(pr.projectName).trim() : "—";
+          const customer = r.customer && String(r.customer).trim() ? String(r.customer).trim() : "—";
+          const date = formatDateCH(r.date);
+          const total = formatCHF(toNum(pr.totals?.total));
           return (
           <div key={r.id} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(212,168,83,0.2)`, borderRadius: 10, padding: "12px 14px", display: "grid", gap: 8 }}>
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, flex: "1 1 200px", minWidth: 0 }}>
-                <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45 }}>{formatReportCardSummary(r)}</div>
-                {hasInv && <span style={invoiceCreatedBadgeStyle}>🧾 Rechnung erstellt</span>}
+              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, flex: "1 1 200px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
+                <span style={{ fontWeight: 600 }}>Nr.{nr}</span>
+                {hasInvoice && (
+                  <span
+                    title="Rechnung erstellt"
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 1,
+                      padding: "2px 5px",
+                      borderRadius: 4,
+                      border: `1px solid ${GOLD}`,
+                      color: GOLD,
+                      background: "rgba(212,168,83,0.12)",
+                    }}
+                  >
+                    🧾
+                  </span>
+                )}
+                <span>{` · ${project} · ${customer} · ${date} · CHF ${total}`}</span>
               </div>
-              <span style={{ color: GOLD, fontWeight: 700, fontSize: 13 }}>{r.status}</span>
+              <button type="button" onClick={() => onOpen(r)} style={{ color: GOLD, fontWeight: 700, fontSize: 13, background: "transparent", border: `1px solid ${GOLD}`, borderRadius: 6, padding: "2px 10px", cursor: "pointer" }}>{r.status === "offen" ? tr.report.status : r.status === "gesendet" ? tr.report.statusSent : r.status === "archiviert" ? tr.report.statusArchived : r.status}</button>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" onClick={() => onOpen(r)} style={{ ...pBtn, minHeight: 34 }}>
-                Öffnen
-              </button>
               <button type="button" onClick={() => onEdit(r)} style={{ ...gBtn, minHeight: 34 }}>
                 ✏️
               </button>
@@ -65,7 +68,7 @@ export function RapporteListe({ reports, archivedReports, invoices = [], onOpen,
                 PDF
               </button>
               <button type="button" onClick={() => onDelete(r)} style={dBtn}>
-                Löschen
+                {tr.common.delete}
               </button>
             </div>
           </div>
@@ -77,29 +80,29 @@ export function RapporteListe({ reports, archivedReports, invoices = [], onOpen,
 }
 
 // ─── Rapport Detail ────────────────────────────────────────────────────────
-export function RapportDetail({ report, invoices = [], onBack, onEdit, onPDF, onEmail, onInvoice, onStatusChange }) {
+export function RapportDetail({ report, onBack, onEdit, onPDF, onEmail, onInvoice, onStatusChange, language = "DE" }) {
   const p = parseReport(report);
+  const tr = useTranslation(language);
   const { totals: tot = {}, photos = {}, signature: sig = {} } = p;
-  const hasInvoice = reportHasActiveInvoice(report, invoices);
 
   return (
     <SectionCard>
-      <h2 style={{ marginTop: 0 }}>Rapport Details</h2>
+      <h2 style={{ marginTop: 0 }}>{tr.nav.reports} Details</h2>
       <p style={{ color: MUTED, fontSize: 14, lineHeight: 1.5, marginTop: 0, marginBottom: 12 }}>{formatReportCardSummary(report)}</p>
       <div style={{ display: "grid", gap: 5, marginBottom: 12 }}>
         <div>
-          <b>Auftrag-Nr:</b> {p.orderNo || "-"}
+          <b>{tr.report.orderNo}:</b> {p.orderNo || "-"}
         </div>
         <div>
-          <b>Status:</b> <span style={{ color: GOLD }}>{report.status}</span>
+          <b>Status:</b> <span style={{ color: GOLD }}>{report.status === "offen" ? tr.report.status : report.status === "gesendet" ? tr.report.statusSent : report.status === "archiviert" ? tr.report.statusArchived : report.status === "bearbeitet" ? tr.report.statusEdited : report.status}</span>
         </div>
       </div>
 
       {/* Status ändern */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>Status ändern:</div>
+        <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>{tr.report.status} ändern:</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["offen", "bearbeitet", "gesendet", "archiviert"].map((s) => (
+          {["bearbeitet", "gesendet", "archiviert"].map((s) => (
             <button
               key={s}
               type="button"
@@ -116,12 +119,12 @@ export function RapportDetail({ report, invoices = [], onBack, onEdit, onPDF, on
                 border: report.status === s ? "none" : `1px solid ${s === "gesendet" || s === "archiviert" ? GOLD : BORDER}`,
               }}
             >
-              {s === "gesendet" ? "📤 gesendet" : s === "archiviert" ? "📁 archiviert" : s}
+              {s === "gesendet" ? "📤 " + tr.report.statusSent : s === "archiviert" ? "📁 " + tr.report.statusArchived : s === "offen" ? tr.report.status : s === "bearbeitet" ? tr.report.statusEdited : s}
             </button>
           ))}
         </div>
         {(report.status === "gesendet" || report.status === "archiviert") && (
-          <div style={{ fontSize: 12, color: GOLD, marginTop: 6 }}>✅ Wird zum Kunden verschoben</div>
+          <div style={{ fontSize: 12, color: GOLD, marginTop: 6 }}>{"✅ " + tr.report.saved}</div>
         )}
       </div>
 
@@ -130,9 +133,9 @@ export function RapportDetail({ report, invoices = [], onBack, onEdit, onPDF, on
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
           {["before", "after"].map((k) => (
             <div key={k}>
-              <div style={{ color: MUTED, fontSize: 12 }}>{k === "before" ? "Vorher" : "Nachher"}</div>
+              <div style={{ color: MUTED, fontSize: 12 }}>{k === "before" ? tr.pdf.before : tr.pdf.after}</div>
               {photos[k] ? (
-                <img src={photos[k]} alt={k === "before" ? "Vorher" : "Nachher"} style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8 }} />
+                <img src={photos[k]} alt={k === "before" ? tr.pdf.before : tr.pdf.after} style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8 }} />
               ) : (
                 <span style={{ color: MUTED }}>Kein Foto</span>
               )}
@@ -143,33 +146,15 @@ export function RapportDetail({ report, invoices = [], onBack, onEdit, onPDF, on
 
       <div style={{ marginBottom: 12 }}>
         <div>
-          <b>MwSt 8.1%:</b> CHF {Number(tot.vat || 0).toFixed(2)}
+          <b>{tr.pdf.vat}:</b> CHF {formatCHF(tot.vat || 0)}
         </div>
-        <div style={{ color: GOLD, fontWeight: 800, fontSize: 22 }}>Total CHF {Number(tot.total || 0).toFixed(2)}</div>
+        <div style={{ color: GOLD, fontWeight: 800, fontSize: 22 }}>Total CHF {formatCHF(tot.total || 0)}</div>
       </div>
       {sig.image && <img src={sig.image} alt="Unterschrift" style={{ width: 280, border: `1px solid ${BORDER}`, borderRadius: 8, marginBottom: 12 }} />}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={onBack} style={gBtn}>
-          Zurück
-        </button>
-        <button type="button" onClick={() => onEdit(report)} style={pBtn}>
-          ✏️ Bearbeiten
-        </button>
-        <button type="button" onClick={() => onPDF(report)} style={pBtn}>
-          🖨 PDF / Drucken
-        </button>
-        <button type="button" onClick={() => onEmail(report)} style={{ ...pBtn, background: "transparent", border: `1px solid ${GOLD}`, color: GOLD }}>
-          📧 Per E-Mail senden
-        </button>
-        {hasInvoice && (
-          <div style={{ width: "100%", fontSize: 13, color: GOLD, padding: "8px 10px", border: `1px solid ${GOLD}`, borderRadius: 8, background: "rgba(212,168,83,0.08)" }}>
-            Bereits eine Rechnung erstellt
-          </div>
-        )}
-        <button type="button" onClick={() => onInvoice(report)} style={{ ...pBtn, background: "#1a472a", border: `1px solid #2d7a45`, color: "#7ddb9a" }}>
-          🧾 Rechnung erstellen
-        </button>
+        <button type="button" onClick={onBack} style={gBtn}>{tr.common.back}</button>
+        <button type="button" onClick={() => onPDF(report)} style={pBtn}>🖨 {tr.invoice.pdf}</button>
       </div>
     </SectionCard>
   );
@@ -177,52 +162,80 @@ export function RapportDetail({ report, invoices = [], onBack, onEdit, onPDF, on
 
 function invoiceTrashSummary(inv) {
   const projectName = (inv.reportData?.projectName && String(inv.reportData.projectName).trim()) || "—";
-  return `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${Number(inv.totalAmount).toFixed(2)}`;
+  return `${inv.invoiceNr} · ${projectName} · ${inv.customer || "—"} · ${formatDateCH(inv.date)} · CHF ${formatCHF(inv.totalAmount)}`;
 }
 
 // ─── Papierkorb ────────────────────────────────────────────────────────────
-export function Papierkorb({ trashReports = [], trashInvoices = [], onRestore, onHardDelete, onRestoreInvoice, onHardDeleteInvoice }) {
-  const empty = trashReports.length === 0 && trashInvoices.length === 0;
-  return (
-    <SectionCard>
-      <h2 style={{ marginTop: 0 }}>Papierkorb</h2>
-      {empty && <p style={{ color: MUTED }}>Papierkorb ist leer.</p>}
-      {trashReports.length > 0 && (
-        <>
-          <h3 style={{ color: MUTED, fontSize: 14, marginBottom: 10 }}>Rapporte</h3>
-          {trashReports.map((r) => (
-            <div key={r.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
-              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, marginBottom: 8 }}>{formatReportCardSummary(r)}</div>
-              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => onRestore(r)} style={pBtn}>
-                  Wiederherstellen
-                </button>
-                <button type="button" onClick={() => onHardDelete(r)} style={dBtn}>
-                  Endgültig löschen
-                </button>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {trashInvoices.length > 0 && (
-        <>
-          <h3 style={{ color: MUTED, fontSize: 14, marginBottom: 10, marginTop: trashReports.length ? 16 : 0 }}>Rechnungen</h3>
-          {trashInvoices.map((inv) => (
-            <div key={inv.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
-              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45, marginBottom: 8 }}>{invoiceTrashSummary(inv)}</div>
-              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => onRestoreInvoice(inv)} style={pBtn}>
-                  Wiederherstellen
-                </button>
-                <button type="button" onClick={() => onHardDeleteInvoice(inv.id)} style={dBtn}>
-                  Endgültig löschen
-                </button>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-    </SectionCard>
-  );
+export function Papierkorb({ language = "DE", trashReports = [], trashInvoices = [], trashCustomers = [], trashOfferten = [], onRestore, onHardDelete, onRestoreInvoice, onHardDeleteInvoice, onRestoreCustomer, onHardDeleteCustomer, onRestoreOfferte, onHardDeleteOfferte, isAdmin = true }) {
+  const tr = useTranslation(language);
+  const confirmDelete = language==="FR"?"Vraiment supprimer?":language==="IT"?"Eliminare definitivamente?":language==="EN"?"Really delete permanently?":"Wirklich endgültig löschen?";
+  const empty = trashReports.length === 0 && trashInvoices.length === 0 && trashCustomers.length === 0 && trashOfferten.length === 0;
+  const emptyMsg = language==="FR"?"La corbeille est vide.":language==="IT"?"Il cestino è vuoto.":language==="EN"?"Trash is empty.":"Papierkorb ist leer.";
+  return (
+    <SectionCard>
+      <h2 style={{ marginTop: 0 }}>{tr.nav.trash || "Papierkorb"}</h2>
+      <div style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>⏱ {tr.nav?.trashAutoDelete || "Elemente werden nach 30 Tagen automatisch gelöscht."}</div>
+      {empty && <p style={{ color: MUTED }}>{emptyMsg}</p>}
+
+      {trashOfferten.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ color: GOLD, marginBottom: 10 }}>{tr.nav?.offerten || "Offerten"}</h3>
+          {trashOfferten.map(o => (
+            <div key={o.id} style={{ border: "1px solid " + BORDER, borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45 }}>OF-{o.offerte_nr} — {o.customer} — {o.date}</div>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <button type="button" onClick={() => onRestoreOfferte && onRestoreOfferte(o)} style={pBtn}>{tr.common.restore}</button>
+                <button type="button" onClick={() => { if(!isAdmin){ alert("⛔ "+(language==="FR"?"Réservé à l admin":language==="IT"?"Solo amministratore":language==="EN"?"Admin only":"Nur Admin")); return; } if(window.confirm(confirmDelete)) onHardDeleteOfferte && onHardDeleteOfferte(o); }} style={dBtn}>{tr.common.delete}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {trashReports.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ color: GOLD, marginBottom: 10 }}>{tr.nav.reports}</h3>
+          {trashReports.map((r) => (
+            <div key={r.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45 }}>{formatReportCardSummary(r)}</div>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <button type="button" onClick={() => onRestore(r)} style={pBtn}>{tr.common.restore}</button>
+                <button type="button" onClick={() => { if(!isAdmin){ alert("⛔ "+(language==="FR"?"Réservé à l admin":language==="IT"?"Solo amministratore":language==="EN"?"Admin only":"Nur Admin")); return; } if(window.confirm(confirmDelete)) onHardDelete(r); }} style={dBtn}>{tr.common.delete}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {trashInvoices.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ color: GOLD, marginBottom: 10 }}>{tr.nav.invoices}</h3>
+          {trashInvoices.map((inv) => (
+            <div key={inv.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ color: TEXT, fontSize: 13, lineHeight: 1.45 }}>{invoiceTrashSummary(inv)}</div>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <button type="button" onClick={() => onRestoreInvoice(inv)} style={pBtn}>{tr.common.restore}</button>
+                <button type="button" onClick={() => { if(window.confirm(confirmDelete)) onHardDeleteInvoice(inv.id); }} style={dBtn}>{tr.common.delete}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {trashCustomers.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ color: GOLD, marginBottom: 10 }}>{tr.nav.customers}</h3>
+          {trashCustomers.map(cu => (
+            <div key={cu.id} style={{ border: "1px solid " + BORDER, borderRadius: 8, padding: "10px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: TEXT }}>{cu.name}</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" onClick={() => onRestoreCustomer && onRestoreCustomer(cu)} style={pBtn}>{tr.common.restore}</button>
+                <button type="button" onClick={() => { if(window.confirm(confirmDelete)) onHardDeleteCustomer && onHardDeleteCustomer(cu); }} style={dBtn}>{tr.common.delete}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
 }
