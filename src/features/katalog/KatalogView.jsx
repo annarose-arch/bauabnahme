@@ -17,7 +17,10 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice, language = "DE
   const [search, setSearch] = useState("");
   const tr = useTranslation(language);
   const [newEmployee, setNewEmployee] = useState({ name: "", rate: "" });
-  const [newMaterial, setNewMaterial] = useState({ name: "", unit: "", price: "" });
+  const [newMaterial, setNewMaterial] = useState({ name: "", unit: "", price: "", category: "" });
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const allCategories = [...new Set((catalog.materials||[]).map(m=>m.category).filter(Boolean))].sort();
 
   const empCount = catalog.employees?.length ?? 0;
   const matCount = catalog.materials?.length ?? 0;
@@ -179,13 +182,21 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice, language = "DE
               onChange={(e) => setNewMaterial((p) => ({ ...p, price: e.target.value }))}
               style={{ ...compactInput, flex: "0 1 80px", width: 80 }}
             />
+            <input
+              placeholder="Kategorie"
+              value={newMaterial.category}
+              onChange={(e) => setNewMaterial((p) => ({ ...p, category: e.target.value }))}
+              list="cat-suggestions"
+              style={{ ...compactInput, flex: "1 1 120px", minWidth: 0 }}
+            />
+            <datalist id="cat-suggestions">{allCategories.map(cat=><option key={cat} value={cat}/>)}</datalist>
             <button
               type="button"
               style={{ ...pBtn, minHeight: 34, padding: "0 14px", fontSize: 13 }}
               onClick={() => {
                 if (!newMaterial.name.trim()) return;
                 if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} onSaveCatalog({ ...catalog, materials: [...catalog.materials, { id: Date.now(), ...newMaterial }] });
-                setNewMaterial({ name: "", unit: "", price: "" });
+                setNewMaterial({ name: "", unit: "", price: "", category: "" });
                 showNotice("✅ Material gespeichert.");
               }}
             >
@@ -194,7 +205,8 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice, language = "DE
           </div>
           {matCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>Noch keine Materialien hinterlegt.</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
-            {[...catalog.materials].filter(mat => !search.trim() || (mat.name||"").toLowerCase().includes(search.toLowerCase())).sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((mat) => (
+            {allCategories.length > 0 && <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}><button type="button" onClick={()=>setSelectedCategory("")} style={{...gBtn,minHeight:28,padding:"0 10px",fontSize:12,borderColor:!selectedCategory?GOLD:BORDER,color:!selectedCategory?GOLD:MUTED}}>Alle</button>{allCategories.map(cat=><button key={cat} type="button" onClick={()=>setSelectedCategory(cat===selectedCategory?"":cat)} style={{...gBtn,minHeight:28,padding:"0 10px",fontSize:12,borderColor:selectedCategory===cat?GOLD:BORDER,color:selectedCategory===cat?GOLD:MUTED}}>{cat}</button>)}</div>}
+          {[...catalog.materials].filter(mat => !search.trim() || (mat.name||"").toLowerCase().includes(search.toLowerCase())).filter(mat => !selectedCategory || mat.category===selectedCategory).sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((mat) => (
               <div
                 key={mat.id}
                 style={{
