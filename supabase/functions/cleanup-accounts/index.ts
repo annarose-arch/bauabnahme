@@ -122,11 +122,79 @@ serve(async (req) => {
       processed.push(uid);
     }
 
+    // ── Papierkorb auto-cleanup nach 30 Tagen ──────────────────────────
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const trashResults: Record<string, number> = {};
+
+    for (const table of ["reports", "invoices", "offerten"] as const) {
+      const { data: deleted, error: trashErr } = await sb
+        .from(table)
+        .delete()
+        .eq("status", "geloescht")
+        .lt("deleted_at", thirtyDaysAgo)
+        .select("id");
+      if (trashErr) {
+        errors.push({ id: "trash", step: table, message: trashErr.message });
+      } else {
+        trashResults[table] = deleted?.length ?? 0;
+      }
+    }
+
+    // Customers use phone="__geloescht__" as trash marker
+    const { data: deletedCustomers, error: custTrashErr } = await sb
+      .from("customers")
+      .delete()
+      .eq("phone", "__geloescht__")
+      .lt("deleted_at", thirtyDaysAgo)
+      .select("id");
+    if (custTrashErr) {
+      errors.push({ id: "trash", step: "customers", message: custTrashErr.message });
+    } else {
+      trashResults["customers"] = deletedCustomers?.length ?? 0;
+    }
+
+
+    // ── Jahresarchiv nach 60 Tagen ──────────────────────────────────────
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const archivResults: Record<string, number> = {};
+
+    // Rapporte: archiviert/gesendet seit 60 Tagen → jahresarchiv
+    const { data: archRep, error: archRepErr } = await sb
+      .from("reports")
+      .update({ status: "jahresarchiv" })
+      .in("status", ["archiviert", "gesendet"])
+      .lt("archived_at", sixtyDaysAgo)
+      .select("id");
+    if (archRepErr) errors.push({ id: "archiv", step: "reports", message: archRepErr.message });
+    else archivResults["reports"] = archRep?.length ?? 0;
+
+    // Offerten: angenommen/abgelehnt seit 60 Tagen → jahresarchiv
+    const { data: archOff, error: archOffErr } = await sb
+      .from("offerten")
+      .update({ status: "jahresarchiv" })
+      .in("status", ["angenommen", "abgelehnt"])
+      .lt("archived_at", sixtyDaysAgo)
+      .select("id");
+    if (archOffErr) errors.push({ id: "archiv", step: "offerten", message: archOffErr.message });
+    else archivResults["offerten"] = archOff?.length ?? 0;
+
+    // Rechnungen: bezahlt seit 60 Tagen → jahresarchiv
+    const { data: archInv, error: archInvErr } = await sb
+      .from("invoices")
+      .update({ status: "jahresarchiv" })
+      .eq("status", "bezahlt")
+      .lt("archived_at", sixtyDaysAgo)
+      .select("id");
+    if (archInvErr) errors.push({ id: "archiv", step: "invoices", message: archInvErr.message });
+    else archivResults["invoices"] = archInv?.length ?? 0;
+
     return new Response(
       JSON.stringify({
         success: true,
         deleted: processed.length,
         processed,
+        trashCleanup: trashResults,
+        jahresarchiv: archivResults,
         errors,
         mailLog,
       }),
