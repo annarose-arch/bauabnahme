@@ -145,6 +145,15 @@ const DEMO_DATA = {
 
 export default function Dashboard({ session, onLogout, onNavigate, isDemo = false }) {
   const userId    = session?.user?.id;
+  // Auto-Logout nach 8 Stunden
+  useEffect(() => {
+    if (!userId || isDemo) return;
+    const EIGHT_HOURS = 8 * 60 * 60 * 1000;
+    let timer = setTimeout(() => onLogout(), EIGHT_HOURS);
+    const reset = () => { clearTimeout(timer); timer = setTimeout(() => onLogout(), EIGHT_HOURS); };
+    ["mousemove","keydown","click","touchstart"].forEach(e => window.addEventListener(e, reset));
+    return () => { clearTimeout(timer); ["mousemove","keydown","click","touchstart"].forEach(e => window.removeEventListener(e, reset)); };
+  }, [userId, isDemo]);
   const [showOnboarding, setShowOnboarding] = useState(() => isDemo ? true : !localStorage.getItem("bauabnahme_onboarding_done"));
   const [userRole, setUserRole] = useState(isDemo ? "admin" : (localStorage.getItem("bauabnahme_user_role") || "admin"));
   const [teamAdminId, setTeamAdminId] = useState(null);

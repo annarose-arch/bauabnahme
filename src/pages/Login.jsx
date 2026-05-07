@@ -60,6 +60,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
   // Step 1 fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [companyLogo, setCompanyLogo] = useState("");
 
@@ -238,7 +239,7 @@ setMode("login");
               <div style={{ marginBottom: 18 }}>
                 <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.password}</div>
                 {inputRow(<Lock size={16} color={COLORS.gold} />,
-                  <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} style={fieldStyle} />
+                  <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} style={fieldStyle} /><button type="button" onClick={() => setShowPassword(p=>!p)} style={{background:"transparent",border:"none",cursor:"pointer",fontSize:16,color:"#888"}}>{showPassword ? "🙈" : "👁"}</button>
                 )}
               </div>
 
@@ -293,13 +294,13 @@ setMode("login");
               <div style={{ marginBottom: 14 }}>
                 <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.password} * (min. 6)</div>
                 {inputRow(<Lock size={16} color={COLORS.gold} />,
-                  <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} style={fieldStyle} />
+                  <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} style={fieldStyle} /><button type="button" onClick={() => setShowPassword(p=>!p)} style={{background:"transparent",border:"none",cursor:"pointer",fontSize:16,color:"#888"}}>{showPassword ? "🙈" : "👁"}</button>
                 )}
               </div>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.passConfirm}</div>
                 {inputRow(<Lock size={16} color={COLORS.gold} />,
-                  <input type="password" placeholder="••••••••" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} style={fieldStyle} />
+                  <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} style={fieldStyle} /><button type="button" onClick={() => setShowPassword(p=>!p)} style={{background:"transparent",border:"none",cursor:"pointer",fontSize:16,color:"#888"}}>{showPassword ? "🙈" : "👁"}</button>
                 )}
               </div>
 
