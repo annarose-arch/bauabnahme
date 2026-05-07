@@ -183,7 +183,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice, language = "DE
               style={{ ...compactInput, flex: "0 1 80px", width: 80 }}
             />
             <input
-              placeholder="Kategorie"
+              placeholder={tr.catalog?.category || "Kategorie"}
               value={newMaterial.category}
               onChange={(e) => setNewMaterial((p) => ({ ...p, category: e.target.value }))}
               list="cat-suggestions"
@@ -205,7 +205,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice, language = "DE
           </div>
           {matCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>Noch keine Materialien hinterlegt.</p>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
-            {allCategories.length > 0 && <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}><button type="button" onClick={()=>setSelectedCategory("")} style={{...gBtn,minHeight:28,padding:"0 10px",fontSize:12,borderColor:!selectedCategory?GOLD:BORDER,color:!selectedCategory?GOLD:MUTED}}>Alle</button>{allCategories.map(cat=><button key={cat} type="button" onClick={()=>setSelectedCategory(cat===selectedCategory?"":cat)} style={{...gBtn,minHeight:28,padding:"0 10px",fontSize:12,borderColor:selectedCategory===cat?GOLD:BORDER,color:selectedCategory===cat?GOLD:MUTED}}>{cat}</button>)}</div>}
+            {allCategories.length > 0 && <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}><button type="button" onClick={()=>setSelectedCategory("")} style={{...gBtn,minHeight:28,padding:"0 10px",fontSize:12,borderColor:!selectedCategory?GOLD:BORDER,color:!selectedCategory?GOLD:MUTED}}>{tr.catalog?.allCategories || "Alle"}</button>{allCategories.map(cat=><button key={cat} type="button" onClick={()=>setSelectedCategory(cat===selectedCategory?"":cat)} style={{...gBtn,minHeight:28,padding:"0 10px",fontSize:12,borderColor:selectedCategory===cat?GOLD:BORDER,color:selectedCategory===cat?GOLD:MUTED}}>{cat}</button>)}</div>}
           {[...catalog.materials].filter(mat => !search.trim() || (mat.name||"").toLowerCase().includes(search.toLowerCase())).filter(mat => !selectedCategory || mat.category===selectedCategory).sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((mat) => (
               <div
                 key={mat.id}
