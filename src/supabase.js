@@ -1,10 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://tgtyuxtrrafxalajxenw.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndHl1eHRycmFmeGFsYWp4ZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjMzOTYsImV4cCI6MjA4OTIzOTM5Nn0.ePbGVxCbj_mr_RMLtf4uphnvxdx267QmTfTuMknPhK8";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndHl1eHRycmFmeGFsYWp4ZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjMzOTYsImV4cCI6MjA4OTIzOTM5Nn0.ePbGVxCbj_mr_RMLtf4uphnvxdx267QmTfTuMknPhK8";
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false } });
 
 // SQL to create required application tables in Supabase SQL editor.
 export const TABLE_SETUP_SQL = {
@@ -36,48 +35,6 @@ create table if not exists public.projects (
   projektnummer text default '',
   created_at timestamptz not null default now()
 );
-`,
-  team_members: `
-create table if not exists public.team_members (
-  id uuid primary key default gen_random_uuid(),
-  admin_id uuid not null references auth.users(id) on delete cascade,
-  member_user_id uuid references auth.users(id) on delete set null,
-  email text not null,
-  status text not null default 'pending' check (status in ('pending', 'active')),
-  created_at timestamptz not null default now()
-);
-create index if not exists team_members_admin_id_idx on public.team_members (admin_id);
-alter table public.team_members enable row level security;
-create policy "team_members_select_admin" on public.team_members
-  for select using (auth.uid() = admin_id);
-create policy "team_members_select_member" on public.team_members
-  for select using (auth.uid() = member_user_id);
-create policy "team_members_insert_admin" on public.team_members
-  for insert with check (auth.uid() = admin_id);
-create policy "team_members_update_admin" on public.team_members
-  for update using (auth.uid() = admin_id);
-create policy "team_members_delete_admin" on public.team_members
-  for delete using (auth.uid() = admin_id);
-`,
-  team_invitations: `
-create table if not exists public.team_invitations (
-  id uuid primary key default gen_random_uuid(),
-  admin_id uuid not null references auth.users(id) on delete cascade,
-  email text not null,
-  token text not null unique,
-  created_at timestamptz not null default now(),
-  accepted_at timestamptz
-);
-create index if not exists team_invitations_admin_id_idx on public.team_invitations (admin_id);
-alter table public.team_invitations enable row level security;
-create policy "team_invitations_select_admin" on public.team_invitations
-  for select using (auth.uid() = admin_id);
-create policy "team_invitations_insert_admin" on public.team_invitations
-  for insert with check (auth.uid() = admin_id);
-create policy "team_invitations_update_admin" on public.team_invitations
-  for update using (auth.uid() = admin_id);
-create policy "team_invitations_delete_admin" on public.team_invitations
-  for delete using (auth.uid() = admin_id);
 `
 };
 
@@ -112,3 +69,4 @@ export async function fetchProjectsByCustomer(customerId) {
 export async function createProject(payload) {
   return supabase.from("projects").insert(payload).select().single();
 }
+// cache bust Mi 29 Apr 2026 11:02:34 CEST
