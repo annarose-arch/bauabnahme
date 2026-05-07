@@ -637,5 +637,3 @@ saveCatalog={saveCatalog} saveInvoiceToStorage={saveInvoiceToStorage} deleteInvo
     </div>
   );
 }
-// 1775074260
-// Fr  1 Mai 2026 12:35:02 CEST
