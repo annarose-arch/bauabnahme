@@ -3,15 +3,21 @@ import { SectionCard } from "../components/UI.jsx";
 import { RapporteListe, RapportDetail, Papierkorb } from "../features/rapporte/RapporteViews.jsx";
 import { RapportForm } from "../features/rapporte/RapportForm.jsx";
 import { KundenView, KundenDetail } from "../features/kunden/KundenViews.jsx";
+import { HomeView } from "../features/rapporte/HomeView.jsx";
 import { RechnungenView } from "../features/rechnungen/RechnungenViews.jsx";
 import { RechnungForm } from "../features/rechnungen/RechnungForm.jsx";
 import { KatalogView } from "../features/katalog/KatalogView.jsx";
 import { EinstellungenView } from "../features/einstellungen/EinstellungenView.jsx";
+import { useState, useRef } from "react";
 import { supabase } from "../supabase.js";
+import { OffertenListe } from "../features/offerten/OffertenViews.jsx";
+import { OfferteDetail } from "../features/offerten/OfferteDetail.jsx";
+import { OfferteForm } from "../features/offerten/OfferteForm.jsx";
+import { useTranslation } from "../lib/translations.js";
 
 export function RenderView({
   view, openedReport, selectedCustomer, editingReport, isDemo,
-  reports, archivedReports, trashReports, customers, invoices, trashInvoices, catalog,
+  reports, archivedReports, trashReports, trashCustomers, customers, invoices, trashInvoices, catalog, editingInvoice, onSaveInvoice,
   reportForm, setReportForm, workRows, setWorkRows, materialRows, setMaterialRows,
   customerForm, setCustomerForm,
   workSubtotal, materialSubtotal, vat, total,
@@ -19,29 +25,32 @@ export function RenderView({
   session, userEmail, nextRapportNr, setNextRapportNrState, nextInvoiceNr, setNextInvoiceNrState,
   language, onPickLanguage,
   // callbacks
-  setOpenedReport, setSelectedCustomer, setEditingReport, startEdit, openPDF, moveToTrash,
+  setOpenedReport, setSelectedCustomer, setEditingReport, startEdit, openPDF, previewReportPDF, moveToTrash,
   restore, hardDelete, updateStatus, handleCustomerSelect, handleSave,
-  saveCustomer, deleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice,
-  restoreInvoice, hardDeleteInvoice,
-  reopenInvoice, markInvoicePaid, openInvoice, downloadAndEmail, showNotice,
-  onLogout, onNavigate, goTo,
+ saveCustomer, deleteCustomer, restoreCustomer, hardDeleteCustomer, saveCatalog, saveInvoiceToStorage, deleteInvoice, editCustomer,
+  reopenInvoice, openInvoice, downloadAndEmail, showNotice, allInvoices, restoreInvoice,
+  onLogout, onNavigate, goTo, setEditingInvoice, hardDeleteInvoice, stornoInvoice = ()=>{}, isAdmin = true, firmSettings = null, currentPlan = "starter", offerten = [], archivedOfferten = [], saveOfferte, nextOfferteNr = 1001, openOffertePDF, previewOffertePDF, updateOfferteStatus, deleteOfferte, createRapportFromOfferte, createInvoiceFromOfferte, openedOfferte, setOpenedOfferte, trashOfferten = [], restoreOfferte, hardDeleteOfferte,
   emptyForm,
   userId,
-  invoiceForEdit,
-  onSaveInvoice,
-  onEditInvoice,
+  onMahnung,
+  onRefreshFirm,
 }) {
+  const tr = useTranslation(language);
+  const [editingOfferte, setEditingOfferte] = useState(null);
+  const [editingOfferteFromCustomer, setEditingOfferteFromCustomer] = useState(false);
+  const savedCustomerRef = useRef(null);
   // ── Rapport Detail ──────────────────────────────────────────────────────
   if (openedReport) return (
     <RapportDetail
       report={openedReport}
-      invoices={invoices}
       onBack={() => setOpenedReport(null)}
       onEdit={startEdit}
       onPDF={openPDF}
       onEmail={downloadAndEmail}
       onInvoice={openInvoice}
       onStatusChange={updateStatus}
+      language={language}
+      isDemo={isDemo}
     />
   );
 
@@ -51,77 +60,67 @@ export function RenderView({
       customer={selectedCustomer}
       reports={reports}
       archivedReports={archivedReports}
-      invoices={invoices}
+      invoices={allInvoices || invoices}
       onBack={() => setSelectedCustomer(null)}
-      onOpenReport={r => { setSelectedCustomer(null); setOpenedReport(r); }}
-      onEditReport={r => { setSelectedCustomer(null); startEdit(r); }}
+      onOpenReport={r => { setOpenedReport(r); }}
+      onEditReport={r => { savedCustomerRef.current = selectedCustomer; console.log("savedCustomerRef set to:", selectedCustomer?.name); startEdit(r); }}
       onPDF={openPDF}
       onInvoice={openInvoice}
-      onDeleteReport={async (r) => {
-        if (!isDemo) {
-          const { error } = await supabase.from("reports").update({ status: "geloescht" }).eq("id", r.id).eq("user_id", userId);
-          if (error) { showNotice("Fehler: " + error.message); return; }
-        }
-        setSelectedCustomer(prev => prev);
-        showNotice("🗑 Rapport in den Papierkorb verschoben.");
-      }}
-      onReopenInvoice={reopenInvoice}
-      onEditInvoice={onEditInvoice}
-      onMarkInvoiceSent={inv => { saveInvoiceToStorage({ ...inv, status: "versendet" }); showNotice("✅ Als versendet markiert."); }}
-      onMarkInvoicePaid={(inv) => {
-        markInvoicePaid(inv);
-        showNotice("✅ Rechnung als bezahlt markiert.");
-      }}
-      onDeleteInvoice={deleteInvoice}
+      onDeleteReport={(r) => { moveToTrash(r); }}
+      onReopenInvoice={(inv) => { savedCustomerRef.current = selectedCustomer; setEditingInvoice(inv); goTo("edit-invoice"); }}
+      onPreviewInvoice={reopenInvoice}
+      onMarkInvoiceSent={inv => { if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} saveInvoiceToStorage({ ...inv, status: "versendet" }); showNotice("✅ Als versendet markiert."); }}
+      onMarkInvoicePaid={inv => { if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} saveInvoiceToStorage({ ...inv, status: "bezahlt" }); showNotice("✅ Rechnung als bezahlt markiert."); }}
+      onMahnung={onMahnung}
+      isAdmin={isAdmin}
+      onDeleteInvoice={isAdmin ? deleteInvoice : ()=>showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin"))} onStorno={stornoInvoice}
+      language={language}
+      isAdmin={isAdmin}
+      offerten={[...offerten, ...archivedOfferten, ...trashOfferten]}
+      onOpenOfferte={o => { savedCustomerRef.current = selectedCustomer; setOpenedOfferte(o); goTo("offerte-detail"); }}
+      onEditOfferte={o => { savedCustomerRef.current = selectedCustomer; setEditingOfferte(o); setEditingOfferteFromCustomer(true); goTo("new-offerte"); }}
+      onPDFOfferte={openOffertePDF}
+      onDeleteOfferte={deleteOfferte}
+      onCreateInvoice={createInvoiceFromOfferte}
     />
   );
 
-  // ── Rechnung bearbeiten ─────────────────────────────────────────────────
-  if (view === "rechnung-bearbeiten") {
-    return (
-      <RechnungForm
-        invoice={invoiceForEdit ?? null}
-        onSave={onSaveInvoice}
-        onCancel={() => goTo("rechnungen")}
-      />
-    );
-  }
+  // -- Offerten
+  if (view === "offerten") return <OffertenListe offerten={offerten} invoices={allInvoices||invoices} language={language} onNew={() => { setEditingOfferte(null); goTo("new-offerte"); }} onOpen={o => { setOpenedOfferte(o); goTo("offerte-detail"); }} onEdit={o => { setEditingOfferte(o); setOpenedOfferte(null); goTo("new-offerte"); }} onPDF={openOffertePDF} onDelete={deleteOfferte} goTo={goTo} />;
+  if (view === "offerte-detail" && openedOfferte) return <OfferteDetail offerte={openedOfferte} language={language} onBack={() => { if(savedCustomerRef.current){ const c = savedCustomerRef.current; savedCustomerRef.current = null; setSelectedCustomer(c); setView("customers"); } else goTo("offerten"); }} onEdit={o => { setEditingOfferte(o); setOpenedOfferte(null); goTo("new-offerte"); }} onPDF={openOffertePDF} onStatusChange={updateOfferteStatus} onDelete={deleteOfferte} onCreateRapport={createRapportFromOfferte} onCreateInvoice={createInvoiceFromOfferte} isAdmin={isAdmin} />;
+      isDemo={isDemo}
+  if (view === "new-offerte") return <OfferteForm key={editingOfferte?.id || "new"} language={language} catalog={catalog} customers={customers} reports={[...reports, ...archivedReports]} nextNr={nextOfferteNr} editingOfferte={editingOfferte} onSave={saveOfferte} onBack={() => { setEditingOfferteFromCustomer(false); goTo("offerten"); }} onBackToCustomer={editingOfferteFromCustomer ? () => { setEditingOfferteFromCustomer(false); setEditingOfferte(null); setSelectedCustomer(savedCustomerRef.current); } : null} onPDF={openOffertePDF} onPreview={previewOffertePDF} />;
 
-  // ── Home ────────────────────────────────────────────────────────────────
+  // -- Home
   if (view === "home") return (
-    <SectionCard>
-      <h2 style={{ marginTop: 0 }}>Start</h2>
-      <p style={{ color: MUTED }}>Willkommen, {userEmail || "Demo"}</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-        {[
-          { l: "Rapporte", v: reports.length },
-          { l: "Offen", v: reports.filter(r => r.status === "offen").length },
-          { l: "Kunden", v: customers.length },
-        ].map(s => (
-          <div key={s.l} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14 }}>
-            <div style={{ color: MUTED, fontSize: 13 }}>{s.l}</div>
-            <strong style={{ fontSize: 26, color: GOLD }}>{s.v}</strong>
-          </div>
-        ))}
-      </div>
-    </SectionCard>
+    <HomeView
+      customers={customers}
+      reports={reports}
+      archivedReports={archivedReports}
+      invoices={invoices}
+      offerten={offerten}
+      onSelectCustomer={setSelectedCustomer}
+      goTo={goTo}
+      language={language}
+    />
   );
 
   // ── Kunden Liste ────────────────────────────────────────────────────────
   if (view === "customers") return (
     <KundenView
-      customerForm={customerForm}
+      language={language}      customerForm={customerForm}
       setCustomerForm={setCustomerForm}
       customers={customers}
       onSave={saveCustomer}
       onSelect={setSelectedCustomer}
-      onDelete={deleteCustomer}
+      onDelete={isAdmin ? deleteCustomer : null}
+      onEdit={isAdmin ? editCustomer : null}
     />
   );
 
   // ── Neuer Rapport ───────────────────────────────────────────────────────
   if (view === "new-report") return (
-    <RapportForm
+    <RapportForm language={language}
       editingReport={editingReport}
       reportForm={reportForm}
       setReportForm={setReportForm}
@@ -146,6 +145,9 @@ export function RenderView({
         setMaterialRows([{ name: "", qty: "", unit: "", price: "" }]);
         goTo("reports");
       }}
+      onBackToCustomer={savedCustomerRef.current ? () => { const c = savedCustomerRef.current; savedCustomerRef.current = null; setEditingReport(null); setReportForm(emptyForm); setSelectedCustomer(c); } : selectedCustomer ? () => { setEditingReport(null); setReportForm(emptyForm); } : null}
+      onPDF={openPDF}
+      onPreview={previewReportPDF}
     />
   );
 
@@ -159,43 +161,68 @@ export function RenderView({
       onEdit={startEdit}
       onPDF={openPDF}
       onDelete={moveToTrash}
+      language={language}
+      goTo={goTo}
+      customers={customers}
     />
   );
 
   // ── Rechnungen ──────────────────────────────────────────────────────────
+  if (view === "edit-invoice") return (
+       <RechnungForm
+      language={language}      invoice={editingInvoice}
+      catalog={catalog}
+      reports={reports}
+      archivedReports={archivedReports}
+      onSave={onSaveInvoice}
+      onPreview={(inv) => { const w = window.open("","_blank","width=980,height=860"); if(w) reopenInvoice(inv, w); }}
+      onCancel={() => goTo("invoices")}
+      onBackToCustomer={savedCustomerRef.current ? () => { const c = savedCustomerRef.current; savedCustomerRef.current = null; setEditingInvoice(null); setSelectedCustomer(c); } : null}
+    />
+  );
+
   if (view === "invoices") return (
     <RechnungenView
       invoices={invoices}
+      language={language}
       onReopen={reopenInvoice}
+      onEdit={(inv) => { if(!isAdmin){showNotice("⛔ "+(language==="FR"?"Réservé à l admin":language==="IT"?"Solo amministratore":language==="EN"?"Admin only":"Nur Admin")); return;} setEditingInvoice(inv); goTo("edit-invoice"); }}
       onMarkSent={inv => {
+        if(!isAdmin){showNotice("⛔ "+(language==="FR"?"Réservé à l admin":language==="IT"?"Solo amministratore":language==="EN"?"Admin only":"Nur Admin")); return;}
         saveInvoiceToStorage({ ...inv, status: "versendet" });
         showNotice("✅ Rechnung als versendet markiert.");
       }}
-      onMarkPaid={(inv) => {
-        markInvoicePaid(inv);
-        showNotice("✅ Rechnung als bezahlt markiert.");
-      }}
-      onDelete={(id) => {
+      onStorno={stornoInvoice} onDelete={(id) => {
+        if(!isAdmin){showNotice("⛔ "+(language==="FR"?"Réservé à l admin":language==="IT"?"Solo amministratore":language==="EN"?"Admin only":"Nur Admin")); return;}
         deleteInvoice(id);
         showNotice("🗑 Rechnung in den Papierkorb verschoben.");
       }}
+      goTo={goTo}
+      onMahnung={onMahnung}
+      isAdmin={isAdmin}
     />
   );
 
   // ── Papierkorb ──────────────────────────────────────────────────────────
   if (view === "trash") return (
     <Papierkorb
-      trashReports={trashReports}
-      trashInvoices={trashInvoices}
+      language={language}      trashReports={trashReports}
+      trashInvoices={isAdmin ? trashInvoices : []}
+      trashCustomers={isAdmin ? trashCustomers : []}
+      trashOfferten={trashOfferten}
+      onRestoreOfferte={restoreOfferte}
+      onHardDeleteOfferte={isAdmin ? hardDeleteOfferte : ()=>showNotice("⛔ Nur Admin")} onRestoreCustomer={restoreCustomer} onHardDeleteCustomer={hardDeleteCustomer}
       onRestore={restore}
       onHardDelete={hardDelete}
+      isAdmin={isAdmin}
+      isAdmin={isAdmin}
       onRestoreInvoice={(inv) => {
         restoreInvoice(inv);
         showNotice("✅ Rechnung wiederhergestellt.");
       }}
       onHardDeleteInvoice={(id) => {
-        if (window.confirm("Rechnung endgültig löschen?")) {
-          hardDeleteInvoice(id);
+        if (window.confirm(language==="FR"?"Supprimer la facture?":language==="IT"?"Eliminare la fattura?":language==="EN"?"Delete invoice permanently?":"Rechnung endgültig löschen?")) {
+          if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} hardDeleteInvoice(id);
           showNotice("Rechnung endgültig gelöscht.");
         }
       }}
@@ -204,16 +231,17 @@ export function RenderView({
 
   // ── Katalog ─────────────────────────────────────────────────────────────
   if (view === "catalog") return (
-    <KatalogView
+    <KatalogView isAdmin={isAdmin}
       catalog={catalog}
       onSaveCatalog={saveCatalog}
       showNotice={showNotice}
+      language={language}
     />
   );
 
   // ── Einstellungen ───────────────────────────────────────────────────────
   if (view === "settings") return (
-    <EinstellungenView
+    <EinstellungenView isAdmin={isAdmin} firmSettings={firmSettings} onRefreshFirm={onRefreshFirm} currentPlan={currentPlan} isDemo={isDemo}
       session={session}
       userEmail={userEmail}
       showNotice={showNotice}
@@ -222,6 +250,8 @@ export function RenderView({
       nextRapportNr={nextRapportNr}
       setNextRapportNrState={setNextRapportNrState}
       nextInvoiceNr={nextInvoiceNr}
+      nextOfferteNr={nextOfferteNr}
+      setNextOfferteNrState={v => { setNextOfferteNr(v); }}
       setNextInvoiceNrState={setNextInvoiceNrState}
       language={language}
       onPickLanguage={onPickLanguage}
