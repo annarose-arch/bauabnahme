@@ -161,7 +161,7 @@ setMode("login");
       noAccount: "Noch kein Konto?", next: "Weiter →", back: "{tr.back}", create: "Konto erstellen ✓",
       demo: "🎯 Jetzt testen — ohne Anmeldung!", demoSub: "Keine Registrierung nötig · Daten werden nicht gespeichert",
       company: "Firmenname *", firstName: "Vorname *", lastName: "Nachname *", address: "Strasse & Hausnummer",
-      zip: "PLZ", city: "Ort", phone: "Telefonnummer", passConfirm: "Passwort bestätigen *", forgotPassword: "Passwort vergessen?", user: "Benutzer", reports: "Rapporte", invoices: "Rechnungen", employee: "Mitarbeiter", unlimited: "Unlimitiert", prioritySupport: "Prioritaets-Support", qr: "QR-Rechnung", errEmail: "Bitte E-Mail eingeben.", errEmailPass: "Bitte E-Mail und Passwort eingeben.", errPassword: "Passwort min. 6 Zeichen.", hasAccount: "Bereits ein Konto?", logoOptional: "Firmenlogo (optional)", remove: "Entfernen", uploadLogo: "Logo hochladen", ourPlans: "Unsere Plaene"
+      zip: "PLZ", city: "Ort", phone: "Telefonnummer", passConfirm: "Passwort bestätigen *", forgotPassword: "Passwort vergessen?", user: "Benutzer", reports: "Rapporte", invoices: "Rechnungen", employee: "Mitarbeiter", unlimited: "Unlimitiert", prioritySupport: "Prioritäts-Support", qr: "QR-Rechnung", errEmail: "Bitte E-Mail eingeben.", errEmailPass: "Bitte E-Mail und Passwort eingeben.", errPassword: "Passwort min. 6 Zeichen.", hasAccount: "Bereits ein Konto?", logoOptional: "Firmenlogo (optional)", remove: "Entfernen", uploadLogo: "Logo hochladen", ourPlans: "Unsere Pläne"
     },
     fr: {
       title: { login: "Bon retour", "register-step1": "Créer un compte", "register-step2": "Données entreprise" },
@@ -245,7 +245,7 @@ setMode("login");
 
               {errorMsg && <p style={{ color: COLORS.error, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{errorMsg}</p>}
               {infoMsg && !infoMsg.startsWith("__STRIPE__") && <p style={{ color: COLORS.success, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{infoMsg}</p>}
-              {infoMsg && infoMsg.startsWith("__STRIPE__") && <div style={{ marginBottom: 12 }}><p style={{ color: COLORS.success, fontSize: 14, marginTop: 0 }}>Registrierung erfolgreich! Bitte E-Mail bestaetigen und dann bezahlen:</p><a href={infoMsg.replace("__STRIPE__","")} style={{ display: "block", width: "100%", minHeight: 44, borderRadius: 10, background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 15, textAlign: "center", lineHeight: "44px", textDecoration: "none" }}>Jetzt bezahlen</a></div>}
+              {infoMsg && infoMsg.startsWith("__STRIPE__") && <div style={{ marginBottom: 12 }}><p style={{ color: COLORS.success, fontSize: 14, marginTop: 0 }}>Registrierung erfolgreich! Bitte E-Mail bestätigen und dann bezahlen:</p><a href={infoMsg.replace("__STRIPE__","")} style={{ display: "block", width: "100%", minHeight: 44, borderRadius: 10, background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 15, textAlign: "center", lineHeight: "44px", textDecoration: "none" }}>Jetzt bezahlen</a></div>}
 
               <button onClick={handleLogin} disabled={loading} style={{ width: "100%", minHeight: 48, borderRadius: 10, border: "none", background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer", marginBottom: 10, opacity: loading ? 0.7 : 1 }}>
                 {loading ? "..." : tr.login}
@@ -421,7 +421,7 @@ setMode("login");
           {[
             { name: "Starter", price: "CHF 0", color: COLORS.muted, features: ["1 " + (tr.user||"Benutzer"), "15 " + (tr.reports||"Rapporte"), "15 " + (tr.invoices||"Rechnungen"), "15 " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
             { name: "Pro", price: "CHF 49/Mt", color: COLORS.gold, features: ["1 Admin + 5 " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte"), (tr.unlimited||"Unlimitiert") + " " + (tr.invoices||"Rechnungen"), (tr.unlimited||"Unlimitiert") + " " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
-            { name: "Team", price: "CHF 99/Mt", color: COLORS.gold, features: [(tr.unlimited||"Unlimitiert") + " " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte") + " & " + (tr.invoices||"Rechnungen") + " & " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung", (tr.prioritySupport||"Prioritaets-Support")] }
+            { name: "Team", price: "CHF 99/Mt", color: COLORS.gold, features: [(tr.unlimited||"Unlimitiert") + " " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte") + " & " + (tr.invoices||"Rechnungen") + " & " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung", (tr.prioritySupport||"Prioritäts-Support")] }
           ].map(plan => (
             <div key={plan.name} style={{ border: `1px solid ${plan.name === "Pro" ? COLORS.gold : COLORS.border}`, borderRadius: 12, padding: 20, background: plan.name === "Pro" ? "rgba(212,168,83,0.05)" : "#111" }}>
               <div style={{ fontWeight: 700, fontSize: 18, color: plan.color, marginBottom: 4 }}>{plan.name}</div>
