@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { VideoPlayer } from "../components/VideoPlayer.jsx";
 import { Mail, Lock, Globe, Building2, User, MapPin, Phone } from "lucide-react";
 import { supabase } from "../supabase.js";
 
@@ -25,21 +26,29 @@ const fieldStyle = {
   background: "transparent", color: COLORS.text, fontSize: 16
 };
 
-const mapError = (msg) => {
-  const t = (msg || "").toLowerCase();
-  if (t.includes("invalid login credentials")) return "Ungültige Anmeldedaten. Bitte E-Mail und Passwort prüfen.";
-  if (t.includes("email not confirmed")) return "Bitte bestätige zuerst deine E-Mail-Adresse.";
-  if (t.includes("user already registered")) return "Dieses Konto existiert bereits. Bitte einloggen.";
-  if (t.includes("password")) return "Das Passwort muss mindestens 6 Zeichen lang sein.";
-  if (t.includes("network")) return "Netzwerkfehler. Bitte erneut versuchen.";
-  return "Fehler: " + (msg || "Unbekannter Fehler");
+const mapError = (msg, lang) => {
+  const t = (msg || "").toLowerCase();
+  const errors = {
+    de: { credentials: "Ungültige Anmeldedaten.", confirm: "Bitte E-Mail bestätigen.", exists: "Konto existiert bereits. Bitte einloggen.", password: "Passwort min. 6 Zeichen.", network: "Netzwerkfehler.", unknown: "Fehler: " },
+    fr: { credentials: "Identifiants invalides.", confirm: "Veuillez confirmer votre e-mail.", exists: "Ce compte existe déjà.", password: "Min. 6 caractères.", network: "Erreur réseau.", unknown: "Erreur: " },
+    it: { credentials: "Credenziali non valide.", confirm: "Confermare l'e-mail.", exists: "Account già esistente.", password: "Min. 6 caratteri.", network: "Errore di rete.", unknown: "Errore: " },
+    en: { credentials: "Invalid login credentials.", confirm: "Please confirm your email.", exists: "Account already exists.", password: "Password min. 6 characters.", network: "Network error.", unknown: "Error: " },
+  };
+  const e = errors[lang] || errors.de;
+  if (t.includes("invalid login credentials")) return e.credentials;
+  if (t.includes("email not confirmed")) return e.confirm;
+  if (t.includes("user already registered")) return e.exists;
+  if (t.includes("password")) return e.password;
+  if (t.includes("network")) return e.network;
+  return e.unknown + (msg || "");
 };
 
 export default function Login({ lang: initialLang, setLang, onNavigate }) {
-  const [lang, setLocalLang] = useState(initialLang || localStorage.getItem("bauabnahme_lang") || "de");
+  const [lang, setLocalLang] = useState(initialLang || localStorage.getItem("bauabnahme_language_pref")?.toLowerCase() || localStorage.getItem("bauabnahme_lang") || "de");
+  const [selectedPlan, setSelectedPlan] = useState("starter");
   const handleLang = (code) => {
     setLocalLang(code);
-    localStorage.setItem("bauabnahme_lang", code);
+    localStorage.setItem("bauabnahme_lang", code); localStorage.setItem("bauabnahme_language_pref", code.toUpperCase());
     if (setLang) setLang(code);
   };
   // mode: "login" | "register-step1" | "register-step2"
@@ -67,28 +76,49 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
 
   const handleLogin = async () => {
     clear();
-    if (!email.trim() || !password) { setErrorMsg("Bitte E-Mail und Passwort eingeben."); return; }
+    if (!email.trim() || !password) { setErrorMsg(tr.errEmailPass||"Bitte E-Mail und Passwort eingeben."); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
-    if (error) { setErrorMsg(mapError(error.message)); return; }
+    if (error) { setErrorMsg(mapError(error.message, lang)); return; }
     onNavigate("/dashboard");
   };
+const handleForgotPassword = async () => {
+    if (!email.trim()) { setErrorMsg(tr.errEmail||"Bitte E-Mail eingeben."); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: "https://www.bauabnahme.app/#type=recovery" });
+    if (error) { setErrorMsg("Fehler: " + error.message); return; }
+    setErrorMsg("");
+    alert("Reset-Link wurde an " + email.trim() + " gesendet.");
+  };
+  const handleStep1 = async () => {
+    clear();
+    if (!email.trim()) { setErrorMsg(tr.errEmail||"Bitte E-Mail eingeben."); return; }
+    if (password.length < 6) { setErrorMsg(tr.errPassword||"Passwort muss mindestens 6 Zeichen."); return; }
+    if (password !== passwordConfirm) { setErrorMsg("Passwörter stimmen nicht überein."); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("https://tgtyuxtrrafxalajxenw.supabase.co/functions/v1/check-email", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRndHl1eHRycmFmeGFsYWp4ZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjMzOTYsImV4cCI6MjA4OTIzOTM5Nn0.ePbGVxCbj_mr_RMLtf4uphnvxdx267QmTfTuMknPhK8" }, body: JSON.stringify({ email: email.trim() }) });
+      const d = await res.json();
+      if (d.exists) { setLoading(false); setErrorMsg(mapError("user already registered", lang)); return; }
+    } catch(e) { console.log("check-email error:", e); }
 
-  const handleStep1 = () => {
-    clear();
-    if (!email.trim()) { setErrorMsg("Bitte E-Mail eingeben."); return; }
-    if (password.length < 6) { setErrorMsg("Passwort muss mindestens 6 Zeichen lang sein."); return; }
-    if (password !== passwordConfirm) { setErrorMsg("Passwörter stimmen nicht überein."); return; }
-    setMode("register-step2");
-  };
+    setLoading(false);
+    setMode("register-step2");
+  };
 
   const handleRegister = async () => {
     clear();
     if (!companyName.trim()) { setErrorMsg("Firmenname ist erforderlich."); return; }
     if (!firstName.trim() || !lastName.trim()) { setErrorMsg("Vor- und Nachname sind erforderlich."); return; }
-
+if (selectedPlan === "pro") { window.location.href = "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06"; }
+if (selectedPlan === "team") { window.location.href = "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07"; }
     setLoading(true);
+    const { data: signInCheck } = await supabase.auth.signInWithPassword({ email: email.trim(), password: "check_only_xyz_123" });
+    if (signInCheck?.user || (await supabase.auth.signInWithPassword({ email: email.trim(), password })).data?.user) {
+      setLoading(false);
+      setErrorMsg(mapError("user already registered", lang));
+      return;
+    }
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -108,15 +138,16 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
     });
     setLoading(false);
 
-    if (error) { setErrorMsg(mapError(error.message)); return; }
+    if (error) { setErrorMsg(mapError(error.message, lang)); return; }
 
     if (data?.session) {
       onNavigate("/dashboard");
       return;
     }
 
-    setInfoMsg("Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse und melde dich dann an.");
-    setMode("login");
+   const stripeUrl = selectedPlan === "pro" ? "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06" : selectedPlan === "team" ? "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07" : null;
+if (stripeUrl) { setInfoMsg("__STRIPE__" + stripeUrl); } else { setInfoMsg("Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse."); }
+setMode("login");
   };
 
 
@@ -126,10 +157,10 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
       title: { login: "Willkommen zurück", "register-step1": "Konto erstellen", "register-step2": "Firmendaten erfassen" },
       subtitle: { login: "Melde dich bei BauAbnahme an", "register-step1": "Schritt 1 von 2 — Zugangsdaten", "register-step2": "Schritt 2 von 2 — Deine Firmendaten" },
       email: "E-Mail", password: "Passwort", login: "Einloggen", register: "Jetzt registrieren",
-      noAccount: "Noch kein Konto?", next: "Weiter →", back: "← Zurück", create: "Konto erstellen ✓",
+      noAccount: "Noch kein Konto?", next: "Weiter →", back: "{tr.back}", create: "Konto erstellen ✓",
       demo: "🎯 Jetzt testen — ohne Anmeldung!", demoSub: "Keine Registrierung nötig · Daten werden nicht gespeichert",
       company: "Firmenname *", firstName: "Vorname *", lastName: "Nachname *", address: "Strasse & Hausnummer",
-      zip: "PLZ", city: "Ort", phone: "Telefonnummer", passConfirm: "Passwort bestätigen *"
+      zip: "PLZ", city: "Ort", phone: "Telefonnummer", passConfirm: "Passwort bestätigen *", forgotPassword: "Passwort vergessen?", user: "Benutzer", reports: "Rapporte", invoices: "Rechnungen", employee: "Mitarbeiter", unlimited: "Unlimitiert", prioritySupport: "Prioritaets-Support", qr: "QR-Rechnung", errEmail: "Bitte E-Mail eingeben.", errEmailPass: "Bitte E-Mail und Passwort eingeben.", errPassword: "Passwort min. 6 Zeichen.", hasAccount: "Bereits ein Konto?", logoOptional: "Firmenlogo (optional)", remove: "Entfernen", uploadLogo: "Logo hochladen", ourPlans: "Unsere Plaene"
     },
     fr: {
       title: { login: "Bon retour", "register-step1": "Créer un compte", "register-step2": "Données entreprise" },
@@ -138,7 +169,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
       noAccount: "Pas encore de compte?", next: "Suivant →", back: "← Retour", create: "Créer le compte ✓",
       demo: "🎯 Essayer — sans inscription!", demoSub: "Aucune inscription requise · Données non sauvegardées",
       company: "Nom entreprise *", firstName: "Prénom *", lastName: "Nom *", address: "Rue & numéro",
-      zip: "NPA", city: "Ville", phone: "Téléphone", passConfirm: "Confirmer le mot de passe *"
+      zip: "NPA", city: "Ville", phone: "Téléphone", passConfirm: "Confirmer le mot de passe *", forgotPassword: "Mot de passe oublié?", user: "Utilisateur", reports: "Rapports", invoices: "Factures", employee: "Employe", unlimited: "Illimite", prioritySupport: "Support prioritaire", qr: "Facture QR", errEmail: "Veuillez saisir votre e-mail.", errEmailPass: "Veuillez saisir e-mail et mot de passe.", errPassword: "Mot de passe min. 6 caracteres.", hasAccount: "Deja un compte?", logoOptional: "Logo entreprise (optionnel)", remove: "Supprimer", uploadLogo: "Telecharger logo", ourPlans: "Nos forfaits"
     },
     it: {
       title: { login: "Bentornato", "register-step1": "Crea account", "register-step2": "Dati azienda" },
@@ -147,7 +178,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
       noAccount: "Non hai un account?", next: "Avanti →", back: "← Indietro", create: "Crea account ✓",
       demo: "🎯 Prova — senza registrazione!", demoSub: "Nessuna registrazione · Dati non salvati",
       company: "Nome azienda *", firstName: "Nome *", lastName: "Cognome *", address: "Via e numero",
-      zip: "CAP", city: "Città", phone: "Telefono", passConfirm: "Conferma password *"
+      zip: "CAP", city: "Città", phone: "Telefono", passConfirm: "Conferma password *", forgotPassword: "Password dimenticata?", user: "Utente", reports: "Rapporti", invoices: "Fatture", employee: "Dipendente", unlimited: "Illimitato", prioritySupport: "Supporto prioritario", qr: "Fattura QR", errEmail: "Inserire e-mail.", errEmailPass: "Inserire e-mail e password.", errPassword: "Password min. 6 caratteri.", hasAccount: "Hai gia un account?", logoOptional: "Logo aziendale (opzionale)", remove: "Rimuovi", uploadLogo: "Carica logo", ourPlans: "I nostri piani"
     },
     en: {
       title: { login: "Welcome back", "register-step1": "Create account", "register-step2": "Company details" },
@@ -156,7 +187,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
       noAccount: "No account yet?", next: "Next →", back: "← Back", create: "Create account ✓",
       demo: "🎯 Try now — no sign up!", demoSub: "No registration needed · Data not saved",
       company: "Company name *", firstName: "First name *", lastName: "Last name *", address: "Street & number",
-      zip: "ZIP", city: "City", phone: "Phone", passConfirm: "Confirm password *"
+      zip: "ZIP", city: "City", phone: "Phone", passConfirm: "Confirm password *", forgotPassword: "Forgot password?", user: "User", reports: "Reports", invoices: "Invoices", employee: "Employee", unlimited: "Unlimited", prioritySupport: "Priority Support", qr: "QR Invoice", errEmail: "Please enter your email.", errEmailPass: "Please enter email and password.", errPassword: "Password min. 6 characters.", hasAccount: "Already have an account?", logoOptional: "Company logo (optional)", remove: "Remove", uploadLogo: "Upload logo", ourPlans: "Our plans"
     }
   };
   const tr = translations[lang] || translations.de;
@@ -199,36 +230,40 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
           {mode === "login" && (
             <>
               <div style={{ marginBottom: 14 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>E-Mail</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.email}</div>
                 {inputRow(<Mail size={16} color={COLORS.gold} />,
                   <input type="email" placeholder="firma@email.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} style={fieldStyle} />
                 )}
               </div>
               <div style={{ marginBottom: 18 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Passwort</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.password}</div>
                 {inputRow(<Lock size={16} color={COLORS.gold} />,
                   <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} style={fieldStyle} />
                 )}
               </div>
 
               {errorMsg && <p style={{ color: COLORS.error, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{errorMsg}</p>}
-              {infoMsg && <p style={{ color: COLORS.success, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{infoMsg}</p>}
+              {infoMsg && !infoMsg.startsWith("__STRIPE__") && <p style={{ color: COLORS.success, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{infoMsg}</p>}
+              {infoMsg && infoMsg.startsWith("__STRIPE__") && <div style={{ marginBottom: 12 }}><p style={{ color: COLORS.success, fontSize: 14, marginTop: 0 }}>Registrierung erfolgreich! Bitte E-Mail bestaetigen und dann bezahlen:</p><a href={infoMsg.replace("__STRIPE__","")} style={{ display: "block", width: "100%", minHeight: 44, borderRadius: 10, background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 15, textAlign: "center", lineHeight: "44px", textDecoration: "none" }}>Jetzt bezahlen</a></div>}
 
               <button onClick={handleLogin} disabled={loading} style={{ width: "100%", minHeight: 48, borderRadius: 10, border: "none", background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer", marginBottom: 10, opacity: loading ? 0.7 : 1 }}>
-                {loading ? "Bitte warten..." : "Einloggen"}
+                {loading ? "..." : tr.login}
               </button>
+<button onClick={handleForgotPassword} style={{ width: "100%", minHeight: 36, borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, cursor: "pointer", fontSize: 13, marginBottom: 10 }}>
+  {tr.forgotPassword}
+</button>
 
 
 
               <div style={{ textAlign: "center", color: COLORS.muted, fontSize: 14 }}>
                 {tr.noAccount}{" "}
                 <button onClick={() => { clear(); setMode("register-step1"); }} style={{ border: "none", background: "transparent", color: COLORS.gold, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
-                  Jetzt registrieren
+                  {tr.register}
                 </button>
               </div>
-              <div style={{ borderTop: "1px solid rgba(212,168,83,0.2)", marginTop: 16, paddingTop: 16, textAlign: "center" }}>
+              <div style={{ borderTop: "1px solid rgba(212,168,83,0.2)", marginTop: 16, paddingTop: 16, textAlign: "center" }}><VideoPlayer lang={lang} />
                 <button onClick={() => onNavigate("/demo")} style={{ width: "100%", minHeight: 46, borderRadius: 10, border: "2px solid #d4a853", background: "rgba(212,168,83,0.1)", color: "#d4a853", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
-                  🎯 Jetzt testen — ohne Anmeldung
+                  {tr.demo}
                 </button>
                 <div style={{ color: "#b9b0a3", fontSize: 12, marginTop: 6 }}>{tr.demoSub}</div>
               </div>
@@ -238,20 +273,31 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
           {/* ── REGISTER STEP 1 ── */}
           {mode === "register-step1" && (
             <>
+<div style={{ marginBottom: 16 }}>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 8 }}>{tr.ourPlans||"Plan wählen"}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+                  {["starter","pro","team"].map(p => (
+                    <div key={p} onClick={() => setSelectedPlan(p)}
+                      style={{ border: "2px solid " + (selectedPlan === p ? COLORS.gold : COLORS.border), borderRadius: 8, padding: 10, background: selectedPlan === p ? "rgba(212,168,83,0.1)" : "transparent", color: selectedPlan === p ? COLORS.gold : COLORS.muted, cursor: "pointer", fontSize: 12, fontWeight: selectedPlan === p ? 700 : 400, textAlign: "center" }}>
+                      {p === "starter" ? "Starter / CHF 0" : p === "pro" ? "Pro / CHF 49" : "Team / CHF 99"}
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div style={{ marginBottom: 14 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>E-Mail *</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.email} *</div>
                 {inputRow(<Mail size={16} color={COLORS.gold} />,
                   <input type="email" placeholder="firma@email.com" value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
                 )}
               </div>
               <div style={{ marginBottom: 14 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Passwort * (min. 6 Zeichen)</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.password} * (min. 6)</div>
                 {inputRow(<Lock size={16} color={COLORS.gold} />,
                   <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} style={fieldStyle} />
                 )}
               </div>
               <div style={{ marginBottom: 18 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Passwort bestätigen *</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.passConfirm}</div>
                 {inputRow(<Lock size={16} color={COLORS.gold} />,
                   <input type="password" placeholder="••••••••" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} style={fieldStyle} />
                 )}
@@ -260,12 +306,15 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
               {errorMsg && <p style={{ color: COLORS.error, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{errorMsg}</p>}
 
               <button onClick={handleStep1} style={{ width: "100%", minHeight: 48, borderRadius: 10, border: "none", background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 16, cursor: "pointer", marginBottom: 12 }}>
-                Weiter →
+                {tr.next}
+              </button>
+              <button onClick={() => { clear(); setMode("login"); }} style={{ width: "100%", minHeight: 36, borderRadius: 10, border: "1px solid " + COLORS.border, background: "transparent", color: COLORS.muted, cursor: "pointer", fontSize: 13 }}>
+                {tr.back}
               </button>
               <div style={{ textAlign: "center", color: COLORS.muted, fontSize: 14 }}>
-                Bereits ein Konto?{" "}
+                {tr.hasAccount||"Bereits ein Konto?"}{" "}
                 <button onClick={() => { clear(); setMode("login"); }} style={{ border: "none", background: "transparent", color: COLORS.gold, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
-                  Einloggen
+                  {tr.login}
                 </button>
               </div>
             </>
@@ -275,19 +324,19 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
           {mode === "register-step2" && (
             <>
               <div style={{ marginBottom: 14 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Firmenname *</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.company}</div>
                 {/* Logo Upload */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 8 }}>🏢 Firmenlogo (optional)</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 8 }}>{"🏢 " + (tr.logoOptional||"Firmenlogo (optional)")}</div>
                 {companyLogo ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <img src={companyLogo} alt="Logo" style={{ height: 60, maxWidth: 200, objectFit: "contain", borderRadius: 8, border: `1px solid ${COLORS.border}`, padding: 4, background: "#fff" }} />
-                    <button type="button" onClick={() => setCompanyLogo("")} style={{ border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13 }}>✕ Entfernen</button>
+                    <button type="button" onClick={() => setCompanyLogo("")} style={{ border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13 }}>{"✕ " + (tr.remove||"Entfernen")}</button>
                   </div>
                 ) : (
                   <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", border: `1px dashed ${COLORS.border}`, borderRadius: 10, cursor: "pointer", color: COLORS.muted, fontSize: 13 }}>
                     <span style={{ fontSize: 20 }}>📁</span>
-                    <span>Logo hochladen (PNG, JPG)</span>
+                    <span>{tr.uploadLogo||"Logo hochladen"}</span>
                     <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
                       const f = e.target.files?.[0];
                       if (!f) return;
@@ -305,13 +354,13 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
                 <div>
-                  <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Vorname *</div>
+                  <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.firstName}</div>
                   {inputRow(<User size={14} color={COLORS.gold} />,
                     <input type="text" placeholder="Max" value={firstName} onChange={(e) => setFirstName(e.target.value)} style={fieldStyle} />
                   )}
                 </div>
                 <div>
-                  <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Nachname *</div>
+                  <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.lastName}</div>
                   {inputRow(<User size={14} color={COLORS.gold} />,
                     <input type="text" placeholder="Muster" value={lastName} onChange={(e) => setLastName(e.target.value)} style={fieldStyle} />
                   )}
@@ -319,7 +368,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
               </div>
 
               <div style={{ marginBottom: 14 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Strasse & Hausnummer</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.address}</div>
                 {inputRow(<MapPin size={16} color={COLORS.gold} />,
                   <input type="text" placeholder="Musterstrasse 1" value={address} onChange={(e) => setAddress(e.target.value)} style={fieldStyle} />
                 )}
@@ -327,7 +376,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 14 }}>
                 <div>
-                  <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>PLZ</div>
+                  <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.zip}</div>
                   {inputRow(null,
                     <input type="text" placeholder="6000" value={zip} onChange={(e) => setZip(e.target.value)} style={fieldStyle} />
                   )}
@@ -341,7 +390,7 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
               </div>
 
               <div style={{ marginBottom: 20 }}>
-                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>Telefonnummer</div>
+                <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 6 }}>{tr.phone}</div>
                 {inputRow(<Phone size={16} color={COLORS.gold} />,
                   <input type="tel" placeholder="+41 79 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} style={fieldStyle} />
                 )}
@@ -350,11 +399,11 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
               {errorMsg && <p style={{ color: COLORS.error, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{errorMsg}</p>}
 
               <button onClick={handleRegister} disabled={loading} style={{ width: "100%", minHeight: 48, borderRadius: 10, border: "none", background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer", marginBottom: 12, opacity: loading ? 0.7 : 1 }}>
-                {loading ? "Registrierung läuft..." : "Konto erstellen ✓"}
+                {loading ? "..." : tr.create}
               </button>
 
               <button onClick={() => { clear(); setMode("register-step1"); }} style={{ width: "100%", minHeight: 44, borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, cursor: "pointer", fontSize: 14 }}>
-                ← Zurück
+                {tr.back}
               </button>
             </>
           )}
@@ -363,6 +412,25 @@ export default function Login({ lang: initialLang, setLang, onNavigate }) {
         <p style={{ textAlign: "center", color: COLORS.muted, fontSize: 12, marginTop: 16 }}>
           🇨🇭 Swiss Made · Sicher & DSGVO-konform
         </p>
+    </div>
+
+      <div style={{ maxWidth: 860, margin: "32px auto 0", padding: "0 16px 40px" }}>
+        <div style={{ textAlign: "center", color: COLORS.muted, fontSize: 13, marginBottom: 20 }}>{tr.ourPlans||"Unsere Pläne"}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+          {[
+            { name: "Starter", price: "CHF 0", color: COLORS.muted, features: ["1 " + (tr.user||"Benutzer"), "15 " + (tr.reports||"Rapporte"), "15 " + (tr.invoices||"Rechnungen"), "15 " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
+            { name: "Pro", price: "CHF 49/Mt", color: COLORS.gold, features: ["1 Admin + 5 " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte"), (tr.unlimited||"Unlimitiert") + " " + (tr.invoices||"Rechnungen"), (tr.unlimited||"Unlimitiert") + " " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
+            { name: "Team", price: "CHF 99/Mt", color: COLORS.gold, features: [(tr.unlimited||"Unlimitiert") + " " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte") + " & " + (tr.invoices||"Rechnungen") + " & " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung", (tr.prioritySupport||"Prioritaets-Support")] }
+          ].map(plan => (
+            <div key={plan.name} style={{ border: `1px solid ${plan.name === "Pro" ? COLORS.gold : COLORS.border}`, borderRadius: 12, padding: 20, background: plan.name === "Pro" ? "rgba(212,168,83,0.05)" : "#111" }}>
+              <div style={{ fontWeight: 700, fontSize: 18, color: plan.color, marginBottom: 4 }}>{plan.name}</div>
+              <div style={{ fontSize: 15, color: COLORS.text, marginBottom: 12 }}>{plan.price}</div>
+              {plan.features.map((f, i) => (
+                <div key={i} style={{ color: COLORS.muted, fontSize: 13, marginBottom: 4 }}>✓ {f}</div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
