@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "../../lib/translations.js";
 import { GOLD, BORDER, MUTED, TEXT, iStyle, pBtn, gBtn, dBtn } from "../../lib/constants.js";
 import { SectionCard } from "../../components/UI.jsx";
 
@@ -11,8 +12,10 @@ const EMPLOYEE_BADGE_BG = [
 
 const compactInput = { ...iStyle, minHeight: 34, fontSize: 13, padding: "6px 10px" };
 
-export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
+export function KatalogView({ catalog, onSaveCatalog, showNotice, language = "DE", isAdmin = true }) {
   const [tab, setTab] = useState("employees");
+  const [search, setSearch] = useState("");
+  const tr = useTranslation(language);
   const [newEmployee, setNewEmployee] = useState({ name: "", rate: "" });
   const [newMaterial, setNewMaterial] = useState({ name: "", unit: "", price: "" });
 
@@ -21,15 +24,11 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
 
   return (
     <SectionCard>
-      <h2 style={{ marginTop: 0 }}>📦 Katalog</h2>
-      <p style={{ color: MUTED, marginTop: 0, marginBottom: 10, fontSize: 13, lineHeight: 1.45 }}>
-        Mitarbeiter und Materialien für Rapporte. Auswahl im Rapport-Formular per Dropdown.
-      </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10, alignItems: "center" }}>
         {[
-          ["employees", "👷 Mitarbeiter", empCount],
-          ["materials", "🔧 Material", matCount],
+          ["employees", "👷 " + tr.report.employee, empCount],
+          ["materials", "🔧 " + tr.report.material, matCount],
         ].map(([k, label, n]) => (
           <button
             key={k}
@@ -52,10 +51,11 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
         ))}
       </div>
 
+      <input placeholder={language==="FR"?"Rechercher...":language==="IT"?"Cerca...":language==="EN"?"Search...":"Suchen..."} value={search} onChange={e => setSearch(e.target.value)} style={{ ...iStyle, width:"100%", marginBottom:10 }} />
       {tab === "employees" && (
         <>
           <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>
-            {empCount} Mitarbeiter gespeichert
+            {empCount} {tr.report.employee}
           </div>
           <div
             style={{
@@ -87,23 +87,23 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
               style={{ ...pBtn, minHeight: 34, padding: "0 14px", fontSize: 13 }}
               onClick={() => {
                 if (!newEmployee.name.trim()) return;
-                onSaveCatalog({ ...catalog, employees: [...catalog.employees, { id: Date.now(), ...newEmployee }] });
+                if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} onSaveCatalog({ ...catalog, employees: [...catalog.employees, { id: Date.now(), ...newEmployee }] });
                 setNewEmployee({ name: "", rate: "" });
                 showNotice("✅ Mitarbeiter gespeichert.");
               }}
             >
-              + Hinzufügen
+              + {tr.common.save}
             </button>
           </div>
-          {empCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>Noch keine Mitarbeiter hinterlegt.</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-            {catalog.employees.map((emp, i) => (
+          {empCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>{tr.report.employee}: 0</p>}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+            {[...catalog.employees].filter(emp => !search.trim() || (emp.name||"").toLowerCase().includes(search.toLowerCase())).sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((emp, i) => (
               <div
                 key={emp.id}
                 style={{
                   border: `1px solid ${BORDER}`,
                   borderRadius: 10,
-                  padding: "12px 12px 10px",
+                  padding: "10px 10px 8px",
                   background: "rgba(255,255,255,0.02)",
                   display: "grid",
                   gap: 8,
@@ -114,7 +114,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
                   type="button"
                   title="Entfernen"
                   style={{ ...dBtn, position: "absolute", top: 8, right: 8, minHeight: 28, width: 28, padding: 0, fontSize: 14, lineHeight: 1 }}
-                  onClick={() => onSaveCatalog({ ...catalog, employees: catalog.employees.filter((e) => e.id !== emp.id) })}
+                  onClick={() => { if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} onSaveCatalog({ ...catalog, employees: catalog.employees.filter((e) => e.id !== emp.id) })}}
                 >
                   ✕
                 </button>
@@ -135,7 +135,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
                     border: `1px solid ${BORDER}`,
                   }}
                 >
-                  Stundensatz
+                  {tr.report.rate}
                 </span>
               </div>
             ))}
@@ -146,7 +146,7 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
       {tab === "materials" && (
         <>
           <div style={{ color: MUTED, fontSize: 12, marginBottom: 8 }}>
-            {matCount} {matCount === 1 ? "Material" : "Materialien"} gespeichert
+            {matCount} {tr.report.material}
           </div>
           <div
             style={{
@@ -162,13 +162,13 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
             }}
           >
             <input
-              placeholder="Bezeichnung"
+              placeholder={tr.report.name}
               value={newMaterial.name}
               onChange={(e) => setNewMaterial((p) => ({ ...p, name: e.target.value }))}
               style={{ ...compactInput, flex: "1 1 140px", minWidth: 0 }}
             />
             <input
-              placeholder="Einheit"
+              placeholder={tr.report.unit}
               value={newMaterial.unit}
               onChange={(e) => setNewMaterial((p) => ({ ...p, unit: e.target.value }))}
               style={{ ...compactInput, flex: "0 1 72px", width: 72 }}
@@ -184,23 +184,23 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
               style={{ ...pBtn, minHeight: 34, padding: "0 14px", fontSize: 13 }}
               onClick={() => {
                 if (!newMaterial.name.trim()) return;
-                onSaveCatalog({ ...catalog, materials: [...catalog.materials, { id: Date.now(), ...newMaterial }] });
+                if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} onSaveCatalog({ ...catalog, materials: [...catalog.materials, { id: Date.now(), ...newMaterial }] });
                 setNewMaterial({ name: "", unit: "", price: "" });
                 showNotice("✅ Material gespeichert.");
               }}
             >
-              + Hinzufügen
+              + {tr.common.save}
             </button>
           </div>
           {matCount === 0 && <p style={{ color: MUTED, fontSize: 13 }}>Noch keine Materialien hinterlegt.</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-            {catalog.materials.map((mat) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+            {[...catalog.materials].sort((a,b) => (a.name||"").localeCompare(b.name||"")).map((mat) => (
               <div
                 key={mat.id}
                 style={{
                   border: `1px solid ${BORDER}`,
                   borderRadius: 10,
-                  padding: "12px 12px 10px",
+                  padding: "10px 10px 8px",
                   background: "rgba(255,255,255,0.02)",
                   display: "grid",
                   gap: 6,
@@ -211,13 +211,13 @@ export function KatalogView({ catalog, onSaveCatalog, showNotice }) {
                   type="button"
                   title="Entfernen"
                   style={{ ...dBtn, position: "absolute", top: 8, right: 8, minHeight: 28, width: 28, padding: 0, fontSize: 14, lineHeight: 1 }}
-                  onClick={() => onSaveCatalog({ ...catalog, materials: catalog.materials.filter((m) => m.id !== mat.id) })}
+                  onClick={() => { if(!isAdmin){showNotice("⛔ " + (tr?.common?.adminOnly || "Nur Admin")); return;} onSaveCatalog({ ...catalog, materials: catalog.materials.filter((m) => m.id !== mat.id) })}}
                 >
                   ✕
                 </button>
                 <div style={{ fontWeight: 700, color: TEXT, fontSize: 15, paddingRight: 32, lineHeight: 1.25 }}>{mat.name}</div>
                 <div style={{ fontSize: 13, color: MUTED }}>
-                  Einheit: <span style={{ color: TEXT, fontWeight: 600 }}>{mat.unit || "—"}</span>
+                  {tr.report.unit}: <span style={{ color: TEXT, fontWeight: 600 }}>{mat.unit || "—"}</span>
                 </div>
                 <div style={{ fontSize: 14, color: GOLD, fontWeight: 700 }}>CHF {mat.price || "—"}</div>
               </div>
