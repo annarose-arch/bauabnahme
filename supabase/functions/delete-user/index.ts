@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-/** Decode JWT payload: segment is base64url; normalize for `atob` (avoids ES256 verify). */
+/** Decode JWT payload from middle segment (`token.split(".")[1]`): base64url → `atob` (no ES256 verify). */
 function decodeJwtPayloadJson(segment: string): string {
   const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized + "===".slice((normalized.length + 3) % 4);
