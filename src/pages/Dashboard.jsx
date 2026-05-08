@@ -158,7 +158,7 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   const [showOnboarding, setShowOnboarding] = useState(() => { if(isDemo) return true; const done = localStorage.getItem("bauabnahme_onboarding_done"); if(!done) localStorage.setItem("bauabnahme_onboarding_done","1"); return !done; });
   const [userRole, setUserRole] = useState(isDemo ? "admin" : (localStorage.getItem("bauabnahme_user_role") || "admin"));
   const [teamAdminId, setTeamAdminId] = useState(null);
-  const [firmSettings, setFirmSettings] = useState(isDemo ? {company_name:"Musterbau AG",first_name:"Thomas",last_name:"Müller",address:"Industriestrasse 12",zip:"6000",city:"Luzern",phone:"+41 41 123 45 67",email:"demo@bauabnahme.ch",iban:"CH56 0483 5012 3456 7800 9",bank:"Raiffeisenbank Luzern",mwst_nr:"CHE-123.456.789 MWST",company_logo:"/icon-192.png"} : null);
+  const [firmSettings, setFirmSettings] = useState(isDemo ? {company_name:"Musterbau AG",first_name:"Thomas",last_name:"Müller",address:"Industriestrasse 12",zip:"6000",city:"Luzern",phone:"+41 41 123 45 67",email:"demo@bauabnahme.ch",iban:"CH56 0483 5012 3456 7800 9",bank:"Raiffeisenbank Luzern",mwst_nr:"CHE-123.456.789 MWST",company_logo:"/icon-192.svg"} : null);
   const [currentPlan, setCurrentPlan] = useState(localStorage.getItem("bauabnahme_plan") || "starter");
   const [offerten, setOfferten] = useState([]);
   const [archivedOfferten, setArchivedOfferten] = useState([]);
