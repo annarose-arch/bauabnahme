@@ -42,5 +42,5 @@ if(s?.user?.user_metadata?.account_status==="deactivated")return(
 
   </div>
 );
-return<><IOSInstallBanner/><Dashboard onNavigate={go} onLogout={()=>{ const key=Object.keys(localStorage).find(k=>k.includes("auth-token")); if(key) localStorage.removeItem(key); window.location.href="/"; }} session={s}/></>;
+return<><IOSInstallBanner/><Dashboard onNavigate={go} onLogout={async ()=>{ await supabase.auth.signOut(); window.location.href="/"; }} session={s}/></>;
 }
