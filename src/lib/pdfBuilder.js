@@ -74,16 +74,6 @@ ${!isPro ? `<div style="background:#fff8e6;border:2px solid #d4a853;border-radiu
 <button onclick="window.close()" style="background:#555;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
 <button class="btn noprint" id="share-pdf-btn" style="background:#555" onclick="window.__sharePDF && window.__sharePDF()">${tr.share||'Teilen'} 📤</button>
 <button class="btn noprint" onclick="window.print()">${tr.print}</button>
-<button class="btn noprint" onclick="
-  if(navigator.share){
-    window.print();
-    setTimeout(()=>{
-      navigator.share({title:document.title,text:document.title,url:window.location.href}).catch(()=>{});
-    },500);
-  } else {
-    window.print();
-  }
-" style="background:#555">📤 ${tr.share||'Teilen'}</button>
 <a class="btn noprint" href="${mailto}">📧 ${tr.email}</a>
 </div>
 <div class="letterhead">
@@ -189,16 +179,6 @@ ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
 <button onclick="window.close()" style="background:#555;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
 <button type="button" class="btn" onclick="window.print()">${tr.print||'Drucken / PDF'}</button>
-<button type="button" class="btn noprint" onclick="
-  if(navigator.share){
-    window.print();
-    setTimeout(()=>{
-      navigator.share({title:document.title,text:document.title,url:window.location.href}).catch(()=>{});
-    },500);
-  } else {
-    window.print();
-  }
-" style="background:#555">📤 ${tr.share||'Teilen'}</button>
 ${mailtoHref ? `<a class="btn" href="${mailtoHref.replace(/&/g,'&amp;')}">📧 ${tr.email||'E-Mail'}</a>` : `<span class="btn" style="opacity:0.4;cursor:default">📧 ${tr.email||'E-Mail'}</span>`}
 </div>
 <div style="font-size:11px;color:#888;margin-top:8px">${labelTip}</div>
