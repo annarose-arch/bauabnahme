@@ -72,7 +72,7 @@ ${isDemoMode ? '<div class="watermark">${tr.draft}</div>' : ""}
 <div class="noprint" style="margin-bottom:14px">
 ${!isPro ? `<div style="background:#fff8e6;border:2px solid #d4a853;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ ${language==="FR"?"Version Starter":language==="IT"?"Versione Starter":language==="EN"?"Starter version":"Starter Version"}</strong><a href="https://buy.stripe.com/6oU28r18C8Qad8FfeR9AA09" style="background:#d4a853;color:#111;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">${language==="FR"?"Passer à Pro →":language==="IT"?"Passa a Pro →":language==="EN"?"Upgrade to Pro →":"Upgrade auf Pro →"}</a></div>` : ""}
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
-<button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
+<button class="btn noprint" onclick="if(navigator.share){window.print();setTimeout(()=>{navigator.share({title:document.title,url:window.location.href}).catch(()=>{})},1000)}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
 <button class="btn noprint" onclick="window.print()">${tr.print}</button>
 </div>
 <div class="letterhead">
@@ -177,7 +177,7 @@ ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ''}
 ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ ${labelStarter}</strong><a href="https://buy.stripe.com/6oU28r18C8Qad8FfeR9AA09" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">${labelUpgrade}</a></div>` : ''}
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
-<button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
+<button class="btn noprint" onclick="if(navigator.share){window.print();setTimeout(()=>{navigator.share({title:document.title,url:window.location.href}).catch(()=>{})},1000)}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
 <button type="button" class="btn noprint" onclick="window.print()" style="background:#d4a853;color:#111">${tr.print||'Drucken / PDF'}</button>
 </div>
 <div style="font-size:11px;color:#888;margin-top:8px">${labelTip}</div>
@@ -308,7 +308,7 @@ ${isDemoMode ? '<div class="watermark">ENTWURF</div>' : ''}
 ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ ${lb.starter}</strong><a href="https://buy.stripe.com/6oU28r18C8Qad8FfeR9AA09" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">${lb.upgrade}</a></div>` : ''}
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
-<button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${lb.print||'Teilen'}</button>
+<button class="btn noprint" onclick="if(navigator.share){window.print();setTimeout(()=>{navigator.share({title:document.title,url:window.location.href}).catch(()=>{})},1000)}else{window.print()}" style="background:#d4a853;color:#111">📤 ${lb.print||'Teilen'}</button>
 <button type="button" class="btn noprint" onclick="window.print()" style="background:#d4a853;color:#111">🖨 ${lb.print}</button>
 </div>
 <div style="font-size:11px;color:#888;margin-top:6px">${lb.tip}</div>
@@ -444,7 +444,7 @@ ${isDemoMode ? '<div class="watermark">DEMO</div>' : ""}
 ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><strong>⭐ ${language==="FR"?"Version Starter":language==="IT"?"Versione Starter":language==="EN"?"Starter version":"Starter Version"}</strong><a href="https://buy.stripe.com/6oU28r18C8Qad8FfeR9AA09" style="background:#111;color:#fff;padding:6px 12px;border-radius:6px;font-weight:700;text-decoration:none">${language==="FR"?"Passer à Pro →":language==="IT"?"Passa a Pro →":language==="EN"?"Upgrade to Pro →":"Upgrade auf Pro →"}</a></div>` : ""}
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
-<button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
+<button class="btn noprint" onclick="if(navigator.share){window.print();setTimeout(()=>{navigator.share({title:document.title,url:window.location.href}).catch(()=>{})},1000)}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
 <button type="button" class="btn noprint" onclick="window.print()" style="background:#d4a853;color:#111">${tr.print}</button>
 </div>
 <div style="font-size:11px;color:#888;margin-top:8px">${language==="FR"?"Conseil: Désactivez les en-têtes et pieds de page dans la boîte de dialogue d'impression.":language==="IT"?"Suggerimento: Disattivare intestazioni e piè di pagina nella finestra di stampa.":language==="EN"?"Tip: Disable headers and footers in the print dialog for a clean PDF.":"Tipp: Kopf- und Fusszeilen im Druckdialog deaktivieren für ein sauberes PDF."}</div>
