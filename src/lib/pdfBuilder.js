@@ -178,7 +178,7 @@ ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
 <button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
-<button type="button" class="btn" onclick="window.print()">${tr.print||'Drucken / PDF'}</button>
+<button type="button" class="btn noprint" onclick="window.print()" style="background:#d4a853;color:#111">${tr.print||'Drucken / PDF'}</button>
 </div>
 <div style="font-size:11px;color:#888;margin-top:8px">${labelTip}</div>
 </div>
@@ -309,7 +309,7 @@ ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
 <button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${lb.print||'Teilen'}</button>
-<button type="button" class="btn" onclick="window.print()">🖨 ${lb.print}</button>
+<button type="button" class="btn noprint" onclick="window.print()" style="background:#d4a853;color:#111">🖨 ${lb.print}</button>
 </div>
 <div style="font-size:11px;color:#888;margin-top:6px">${lb.tip}</div>
 </div>
@@ -445,7 +445,7 @@ ${!isPro ? `<div style="background:#f5f5f5;border:2px solid #111;border-radius:8
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
 <button onclick="window.close()" style="background:#d4a853;color:#111;border:none;border-radius:6px;padding:6px 14px;font-size:14px;cursor:pointer;margin-right:8px">✕</button>
 <button class="btn noprint" onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href}).catch(()=>{})}else{window.print()}" style="background:#d4a853;color:#111">📤 ${tr.share||'Teilen'}</button>
-<button type="button" class="btn" onclick="window.print()">${tr.print}</button>
+<button type="button" class="btn noprint" onclick="window.print()" style="background:#d4a853;color:#111">${tr.print}</button>
 </div>
 <div style="font-size:11px;color:#888;margin-top:8px">${language==="FR"?"Conseil: Désactivez les en-têtes et pieds de page dans la boîte de dialogue d'impression.":language==="IT"?"Suggerimento: Disattivare intestazioni e piè di pagina nella finestra di stampa.":language==="EN"?"Tip: Disable headers and footers in the print dialog for a clean PDF.":"Tipp: Kopf- und Fusszeilen im Druckdialog deaktivieren für ein sauberes PDF."}</div>
 </div>
