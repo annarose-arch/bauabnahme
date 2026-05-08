@@ -51,15 +51,15 @@ export function buildRapportHtml(
   return `<!doctype html><html><head><meta charset="utf-8"/>
 <title>Rapport ${p.rapportNr || report.id}</title>
 <style>
-body{font-family:Arial,sans-serif;color:#222;margin:24px;font-size:14px}
+body{font-family:Arial,sans-serif;color:#222;margin:24px;font-size:12px}
 @page{margin:12mm;size:A4}
 .letterhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #d4a853}
 .firm-info{display:flex;align-items:center;gap:14px}
 .firm-details{font-size:12px;color:#444;line-height:1.6}
 .firm-name{font-size:18px;font-weight:800;color:#111;margin-bottom:2px}
 .report-header{text-align:right}
-.report-title{font-size:20px;font-weight:700;color:#d4a853}
-.btn{background:#d4a853;border:none;color:#111;padding:10px 14px;border-radius:8px;font-weight:700;text-decoration:none;margin-right:8px;cursor:pointer;font-size:14px}
+.report-title{font-size:32px;font-weight:700;color:#d4a853}
+.btn{background:#d4a853;border:none;color:#111;padding:10px 14px;border-radius:8px;font-weight:700;text-decoration:none;margin-right:8px;cursor:pointer;font-size:12px}
 .card{border:1px solid rgba(212,168,83,0.4);border-radius:10px;padding:12px;margin-bottom:12px}
 table{width:100%;border-collapse:collapse;margin-top:6px}
 th,td{border:1px solid #ddd;padding:6px 8px;font-size:13px;text-align:left}
@@ -157,7 +157,7 @@ export function buildRechnungHtml({ language = "DE",
 @page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0 auto;padding:32px;font-size:14px;max-width:800px}
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-.invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
+.invoice-label{font-size:32px;font-weight:900;color:#111;text-align:right}
 .invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
 .address-box{width:260px;padding:10px 14px;border-left:3px solid #111;font-size:13px;line-height:1.5}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
@@ -290,7 +290,7 @@ export function buildMahnungHtml({ language = "DE",
 @page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0 auto;padding:32px;font-size:14px;max-width:800px}
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0}
-.invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
+.invoice-label{font-size:32px;font-weight:900;color:#111;text-align:right}
 .invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
 .address-box{width:240px;padding:10px 14px;border-left:3px solid #111}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
@@ -420,7 +420,7 @@ export function buildOfferteHtml({ language = "DE",
 @page{margin:16mm;size:A4}
 body{font-family:Arial,sans-serif;color:#111;margin:0 auto;padding:32px;font-size:14px;max-width:800px}
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-.invoice-label{font-size:28px;font-weight:900;color:#111;text-align:right}
+.invoice-label{font-size:32px;font-weight:900;color:#111;text-align:right}
 .invoice-meta{font-size:13px;color:#333;text-align:right;line-height:1.9}
 .address-box{width:240px;padding:10px 14px;border-left:3px solid #111}
 .address-label{font-size:10px;text-transform:uppercase;color:#666;font-weight:700;margin-bottom:4px;letter-spacing:1px}
