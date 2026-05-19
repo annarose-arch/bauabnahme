@@ -277,11 +277,11 @@ setMode("login");
             <>
 <div style={{ marginBottom: 16 }}>
                 <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 8 }}>{tr.ourPlans||"Plan wählen"}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                 <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 16, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 8, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden" }}>
   <button type="button" onClick={() => setBilling("monthly")} style={{ flex: 1, padding: "8px", border: "none", background: billing === "monthly" ? COLORS.gold : "transparent", color: billing === "monthly" ? "#111" : COLORS.muted, cursor: "pointer", fontWeight: billing === "monthly" ? 700 : 400, fontSize: 13 }}>Monatlich</button>
   <button type="button" onClick={() => setBilling("yearly")} style={{ flex: 1, padding: "8px", border: "none", background: billing === "yearly" ? COLORS.gold : "transparent", color: billing === "yearly" ? "#111" : COLORS.muted, cursor: "pointer", fontWeight: billing === "yearly" ? 700 : 400, fontSize: 13 }}>Jährlich 🎉 2 Mt gratis</button>
 </div>
+<div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
 
                   {["starter","pro","team"].map(p => (
                     <div key={p} onClick={() => setSelectedPlan(p)}
