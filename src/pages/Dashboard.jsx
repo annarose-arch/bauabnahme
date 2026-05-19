@@ -150,10 +150,12 @@ export default function Dashboard({ session, onLogout, onNavigate, isDemo = fals
   useEffect(() => {
     if (!userId || isDemo) return;
     const EIGHT_HOURS = 8 * 60 * 60 * 1000;
-    let timer = setTimeout(() => onLogout(), EIGHT_HOURS);
-    const reset = () => { clearTimeout(timer); timer = setTimeout(() => onLogout(), EIGHT_HOURS); };
-    ["mousemove","keydown","click","touchstart"].forEach(e => window.addEventListener(e, reset));
-    return () => { clearTimeout(timer); ["mousemove","keydown","click","touchstart"].forEach(e => window.removeEventListener(e, reset)); };
+    if (!localStorage.getItem("bauabnahme_login_time")) { localStorage.setItem("bauabnahme_login_time", Date.now().toString()); }
+const checkExpiry = () => { const t = parseInt(localStorage.getItem("bauabnahme_login_time") || "0"); if (Date.now() - t > EIGHT_HOURS) { localStorage.removeItem("bauabnahme_login_time"); onLogout(); } };
+const onVisibility = () => { if (document.visibilityState === "visible") checkExpiry(); };
+document.addEventListener("visibilitychange", onVisibility);
+const timer = setInterval(checkExpiry, 60000);
+return () => { document.removeEventListener("visibilitychange", onVisibility); clearInterval(timer); };
   }, [userId, isDemo]);
   const [showOnboarding, setShowOnboarding] = useState(isDemo ? true : false);
   const [userRole, setUserRole] = useState(isDemo ? "admin" : (localStorage.getItem("bauabnahme_user_role") || "admin"));
