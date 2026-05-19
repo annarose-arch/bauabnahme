@@ -46,6 +46,7 @@ const mapError = (msg, lang) => {
 export default function Login({ lang: initialLang, setLang, onNavigate }) {
   const [lang, setLocalLang] = useState(initialLang || localStorage.getItem("bauabnahme_language_pref")?.toLowerCase() || localStorage.getItem("bauabnahme_lang") || "de");
   const [selectedPlan, setSelectedPlan] = useState("starter");
+  const [billing, setBilling] = useState("monthly");
   const handleLang = (code) => {
     setLocalLang(code);
     localStorage.setItem("bauabnahme_lang", code); localStorage.setItem("bauabnahme_language_pref", code.toUpperCase());
@@ -111,8 +112,8 @@ const handleForgotPassword = async () => {
     clear();
     if (!companyName.trim()) { setErrorMsg("Firmenname ist erforderlich."); return; }
     if (!firstName.trim() || !lastName.trim()) { setErrorMsg("Vor- und Nachname sind erforderlich."); return; }
-if (selectedPlan === "pro") { window.location.href = "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06"; }
-if (selectedPlan === "team") { window.location.href = "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07"; }
+if (selectedPlan === "pro") { window.location.href = billing === "yearly" ? "https://buy.stripe.com/3cI3cv18C8QafgNaYB9AA0c" : "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06"; }
+if (selectedPlan === "team") { window.location.href = billing === "yearly" ? "https://buy.stripe.com/bJe3cv6sW9Ue1pX7Mp9AA0d" : "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07"; }
     setLoading(true);
     const { data: signInCheck } = await supabase.auth.signInWithPassword({ email: email.trim(), password: "check_only_xyz_123" });
     if (signInCheck?.user || (await supabase.auth.signInWithPassword({ email: email.trim(), password })).data?.user) {
@@ -146,7 +147,7 @@ if (selectedPlan === "team") { window.location.href = "https://buy.stripe.com/bJ
       return;
     }
 
-   const stripeUrl = selectedPlan === "pro" ? "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06" : selectedPlan === "team" ? "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07" : null;
+  const stripeUrl = selectedPlan === "pro" ? (billing === "yearly" ? "https://buy.stripe.com/3cI3cv18C8QafgNaYB9AA0c" : "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06") : selectedPlan === "team" ? (billing === "yearly" ? "https://buy.stripe.com/bJe3cv6sW9Ue1pX7Mp9AA0d" : "https://buy.stripe.com/bJecN5cRk7M60lTd6J9AA07") : null;
 if (stripeUrl) { setInfoMsg("__STRIPE__" + stripeUrl); } else { setInfoMsg("Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse."); }
 setMode("login");
   };
@@ -277,10 +278,15 @@ setMode("login");
 <div style={{ marginBottom: 16 }}>
                 <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 8 }}>{tr.ourPlans||"Plan wählen"}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+                 <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 16, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden" }}>
+  <button type="button" onClick={() => setBilling("monthly")} style={{ flex: 1, padding: "8px", border: "none", background: billing === "monthly" ? COLORS.gold : "transparent", color: billing === "monthly" ? "#111" : COLORS.muted, cursor: "pointer", fontWeight: billing === "monthly" ? 700 : 400, fontSize: 13 }}>Monatlich</button>
+  <button type="button" onClick={() => setBilling("yearly")} style={{ flex: 1, padding: "8px", border: "none", background: billing === "yearly" ? COLORS.gold : "transparent", color: billing === "yearly" ? "#111" : COLORS.muted, cursor: "pointer", fontWeight: billing === "yearly" ? 700 : 400, fontSize: 13 }}>Jährlich 🎉 2 Mt gratis</button>
+</div>
+
                   {["starter","pro","team"].map(p => (
                     <div key={p} onClick={() => setSelectedPlan(p)}
                       style={{ border: "2px solid " + (selectedPlan === p ? COLORS.gold : COLORS.border), borderRadius: 8, padding: 10, background: selectedPlan === p ? "rgba(212,168,83,0.1)" : "transparent", color: selectedPlan === p ? COLORS.gold : COLORS.muted, cursor: "pointer", fontSize: 12, fontWeight: selectedPlan === p ? 700 : 400, textAlign: "center" }}>
-                      {p === "starter" ? "Starter / CHF 0" : p === "pro" ? "Pro / CHF 49" : "Team / CHF 99"}
+                     {p === "starter" ? "Starter / CHF 0" : p === "pro" ? (billing === "yearly" ? "Pro / CHF 490/Jahr" : "Pro / CHF 49/Mt") : (billing === "yearly" ? "Team / CHF 990/Jahr" : "Team / CHF 99/Mt")}
                     </div>
                   ))}
                 </div>
