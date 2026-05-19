@@ -31,6 +31,7 @@ export function EinstellungenView({ session, userEmail, showNotice, onLogout, ne
   }, [firmSettings]);
   const tr = useTranslation(language);
   const [tab, setTab] = useState("profil");
+  const [billing, setBilling] = useState("monthly");
   const [showEdit, setShowEdit] = useState(false);
   const [showLegal, setShowLegal] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -170,11 +171,15 @@ export function EinstellungenView({ session, userEmail, showNotice, onLogout, ne
         {/* Aktueller Plan */}
         <div style={{ marginBottom:16 }}>
           <div style={{ color:GOLD, fontWeight:700, marginBottom:10 }}>{tr.common?.settings?.currentPlan || "Aktueller Plan"}</div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:8, marginBottom:10 }}>
-            {[
+<div style={{ display:"flex", gap:0, marginBottom:10, border:`1px solid ${BORDER}`, borderRadius:8, overflow:"hidden" }}>
+  <button type="button" onClick={()=>setBilling("monthly")} style={{ flex:1, padding:"6px", border:"none", background:billing==="monthly"?GOLD:"transparent", color:billing==="monthly"?"#111":MUTED, cursor:"pointer", fontSize:12, fontWeight:billing==="monthly"?700:400 }}>Monatlich</button>
+  <button type="button" onClick={()=>setBilling("yearly")} style={{ flex:1, padding:"6px", border:"none", background:billing==="yearly"?GOLD:"transparent", color:billing==="yearly"?"#111":MUTED, cursor:"pointer", fontSize:12, fontWeight:billing==="yearly"?700:400 }}>Jährlich 🎉</button>
+</div>
+<div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:8, marginBottom:10 }}>
+  {[
               { n:"Starter", p:"CHF 0", link:null, features:["1 "+(tr.common?.settings?.user||"Benutzer"), "15 "+(tr.nav?.reports||"Rapporte"), "15 "+(tr.nav?.invoices||"Rechnungen"), "15 "+(tr.nav?.offerten||"Offerten")] },
-              { n:"Pro", p:"CHF 49/Mt", link:"https://buy.stripe.com/bJefZhbNg0jEb0xc2F9AA08", features:["1 Admin + 5 "+(tr.report?.employee||"Mitarbeiter"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.reports||"Rapporte"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.invoices||"Rechnungen"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.offerten||"Offerten")] },
-              { n:"Team", p:"CHF 99/Mt", link:"https://buy.stripe.com/6oU28r18C8Qad8FfeR9AA09", features:[(tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.report?.employee||"Mitarbeiter"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.reports||"Rapporte")+" & "+(tr.nav?.invoices||"Rechnungen")+" & "+(tr.nav?.offerten||"Offerten"), "Support"] },
+{ n:"Pro", p:billing==="yearly"?"CHF 490/Jahr":"CHF 49/Mt", link:billing==="yearly"?"https://buy.stripe.com/3cI3cv18C8QafgNaYB9AA0c":"https://buy.stripe.com/bJefZhbNg0jEb0xc2F9AA08", features:["1 Admin + 5 "+(tr.report?.employee||"Mitarbeiter"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.reports||"Rapporte"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.invoices||"Rechnungen"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.offerten||"Offerten")] },
+{ n:"Team", p:billing==="yearly"?"CHF 990/Jahr":"CHF 99/Mt", link:billing==="yearly"?"https://buy.stripe.com/bJe3cv6sW9Ue1pX7Mp9AA0d":"https://buy.stripe.com/6oU28r18C8Qad8FfeR9AA09", features:[(tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.report?.employee||"Mitarbeiter"), (tr.common?.settings?.unlimited||"Unlimitiert")+" "+(tr.nav?.reports||"Rapporte")+" & "+(tr.nav?.invoices||"Rechnungen")+" & "+(tr.nav?.offerten||"Offerten"), "Support"] },
             ].map(pl => (
               <div key={pl.n} style={{ border:"2px solid "+(pl.n.toLowerCase()===currentPlan?GOLD:BORDER), borderRadius:8, padding:10, background:pl.n.toLowerCase()===currentPlan?"rgba(212,168,83,0.1)":"transparent" }}>
                 <div style={{ fontWeight:700, color:pl.n.toLowerCase()===currentPlan?GOLD:TEXT }}>{pl.n}</div>
