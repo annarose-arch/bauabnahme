@@ -422,12 +422,16 @@ setMode("login");
     </div>
 
       <div style={{ maxWidth: 860, margin: "32px auto 0", padding: "0 16px 40px" }}>
-        <div style={{ textAlign: "center", color: COLORS.muted, fontSize: 13, marginBottom: 20 }}>{tr.ourPlans||"Unsere Pläne"}</div>
+        <div style={{ textAlign: "center", color: COLORS.muted, fontSize: 13, marginBottom: 20 }}><div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 16, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden", maxWidth: 300, margin: "0 auto 16px" }}>
+  <button type="button" onClick={() => setBilling("monthly")} style={{ flex: 1, padding: "8px", border: "none", background: billing === "monthly" ? COLORS.gold : "transparent", color: billing === "monthly" ? "#111" : COLORS.muted, cursor: "pointer", fontWeight: billing === "monthly" ? 700 : 400, fontSize: 13 }}>Monatlich</button>
+  <button type="button" onClick={() => setBilling("yearly")} style={{ flex: 1, padding: "8px", border: "none", background: billing === "yearly" ? COLORS.gold : "transparent", color: billing === "yearly" ? "#111" : COLORS.muted, cursor: "pointer", fontWeight: billing === "yearly" ? 700 : 400, fontSize: 13 }}>Jährlich 🎉</button>
+</div>
+ {tr.ourPlans||"Unsere Pläne"}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
           {[
             { name: "Starter", price: "CHF 0", color: COLORS.muted, features: ["1 " + (tr.user||"Benutzer"), "15 " + (tr.reports||"Rapporte"), "15 " + (tr.invoices||"Rechnungen"), "15 " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
-            { name: "Pro", price: "CHF 49/Mt", color: COLORS.gold, features: ["1 Admin + 5 " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte"), (tr.unlimited||"Unlimitiert") + " " + (tr.invoices||"Rechnungen"), (tr.unlimited||"Unlimitiert") + " " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
-            { name: "Team", price: "CHF 99/Mt", color: COLORS.gold, features: [(tr.unlimited||"Unlimitiert") + " " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte") + " & " + (tr.invoices||"Rechnungen") + " & " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung", (tr.prioritySupport||"Prioritäts-Support")] }
+            { name: "Pro", price: billing === "yearly" ? "CHF 490/Jahr" : "CHF 49/Mt", color: COLORS.gold, features: ["1 Admin + 5 " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte"), (tr.unlimited||"Unlimitiert") + " " + (tr.invoices||"Rechnungen"), (tr.unlimited||"Unlimitiert") + " " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung"] },
+            { name: "Team", price: billing === "yearly" ? "CHF 990/Jahr" : "CHF 99/Mt", color: COLORS.gold, features: [(tr.unlimited||"Unlimitiert") + " " + (tr.employee||"Mitarbeiter"), (tr.unlimited||"Unlimitiert") + " " + (tr.reports||"Rapporte") + " & " + (tr.invoices||"Rechnungen") + " & " + (tr.offerten||"Offerten"), tr.qr||"QR-Rechnung", (tr.prioritySupport||"Prioritäts-Support")] }
           ].map(plan => (
             <div key={plan.name} style={{ border: `1px solid ${plan.name === "Pro" ? COLORS.gold : COLORS.border}`, borderRadius: 12, padding: 20, background: plan.name === "Pro" ? "rgba(212,168,83,0.05)" : "#111" }}>
               <div style={{ fontWeight: 700, fontSize: 18, color: plan.color, marginBottom: 4 }}>{plan.name}</div>
