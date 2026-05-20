@@ -148,7 +148,7 @@ return (
 
   {/* Hero */}
   <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 24px 80px", textAlign: "center", background: `radial-gradient(ellipse at 50% 0%, rgba(212,168,83,0.12) 0%, transparent 70%)` }}>
-    <h1 style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)", fontWeight: 900, lineHeight: 1.1, marginBottom: 16, maxWidth: 800, letterSpacing: "-0.02em", color: "#ffffff" }}>{t.hero_title}</h1>
+    <h1 style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)", fontWeight: 900, lineHeight: 1.1, marginBottom: 16, maxWidth: 800, letterSpacing: "-0.02em", color: "#d4a853" }}>{t.hero_title}</h1>
     <h2 style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", fontWeight: 700, color: GOLD, marginBottom: 20, maxWidth: 600 }}>{t.hero_sub}</h2>
     <p style={{ fontSize: "clamp(0.9rem, 2vw, 1.1rem)", color: MUTED, maxWidth: 500, marginBottom: 40, lineHeight: 1.6 }}>{t.hero_desc}</p>
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
