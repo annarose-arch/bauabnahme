@@ -133,7 +133,7 @@ return () => window.removeEventListener("scroll", onScroll);
 return (
 <div style={{ background: DARK, color: TEXT, fontFamily: "system-ui, sans-serif", minHeight: "100vh", overflowX: "hidden" }}>
 
-```
+
   {/* Nav */}
   <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? "rgba(10,10,10,0.95)" : "transparent", backdropFilter: scrolled ? "blur(12px)" : "none", borderBottom: scrolled ? `1px solid ${BORDER}` : "none", transition: "all 0.3s", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
     <div style={{ fontWeight: 800, fontSize: 20 }}>Bau<span style={{ color: GOLD }}>Abnahme</span></div>
@@ -235,7 +235,7 @@ return (
     <div>{t.footer_copy}<button onClick={() => {}} style={{ background: "none", border: "none", color: GOLD, cursor: "pointer", fontSize: 13 }}>{t.footer_legal}</button></div>
   </footer>
 </div>
-```
+
 
 );
 }
