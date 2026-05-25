@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import SalesChat from "../components/SalesChat.jsx";
+
 
 const VIDEOS = {
 DE: "mLQly-5_GuA",
@@ -234,6 +236,8 @@ return (
     <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Bau<span style={{ color: GOLD }}>Abnahme</span></div>
     <div>{t.footer_copy}<button onClick={() => {}} style={{ background: "none", border: "none", color: GOLD, cursor: "pointer", fontSize: 13 }}>{t.footer_legal}</button></div>
   </footer>
+  <SalesChat lang={lang} />
+
 </div>
 
 
