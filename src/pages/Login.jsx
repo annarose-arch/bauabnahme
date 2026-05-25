@@ -159,7 +159,7 @@ setMode("login");
       title: { login: "Willkommen zurück", "register-step1": "Konto erstellen", "register-step2": "Firmendaten erfassen" },
       subtitle: { login: "Melde dich bei BauAbnahme an", "register-step1": "Schritt 1 von 2 — Zugangsdaten", "register-step2": "Schritt 2 von 2 — Deine Firmendaten" },
       email: "E-Mail", password: "Passwort", login: "Einloggen", register: "Jetzt registrieren",
-      noAccount: "Noch kein Konto?", next: "Weiter →", back: "{tr.back}", create: "Konto erstellen ✓",
+      noAccount: "Noch kein Konto?", next: "Weiter →", back: "← Zurück", create: "Konto erstellen ✓",
       demo: "🎯 Jetzt testen — ohne Anmeldung!", demoSub: "Keine Registrierung nötig · Daten werden nicht gespeichert",
       company: "Firmenname *", firstName: "Vorname *", lastName: "Nachname *", address: "Strasse & Hausnummer",
       zip: "PLZ", city: "Ort", phone: "Telefonnummer", passConfirm: "Passwort bestätigen *", forgotPassword: "Passwort vergessen?", user: "Benutzer", reports: "Rapporte", invoices: "Rechnungen", employee: "Mitarbeiter", unlimited: "Unlimitiert", prioritySupport: "Prioritäts-Support", qr: "QR-Rechnung", errEmail: "Bitte E-Mail eingeben.", errEmailPass: "Bitte E-Mail und Passwort eingeben.", errPassword: "Passwort min. 6 Zeichen.", hasAccount: "Bereits ein Konto?", logoOptional: "Firmenlogo (optional)", remove: "Entfernen", uploadLogo: "Logo hochladen", ourPlans: "Unsere Pläne"
