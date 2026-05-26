@@ -82,7 +82,7 @@ const reply = data.reply || "Entschuldigung, ich konnte keine Antwort generieren
   };
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 999 }}>
+    <div style={{ position: "fixed", bottom: 40, right: 40, zIndex: 999 }}>
 
       {/* Chat Window */}
       {open && (
