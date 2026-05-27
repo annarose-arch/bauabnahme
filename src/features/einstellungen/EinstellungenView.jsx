@@ -197,9 +197,9 @@ export function EinstellungenView({ session, userEmail, showNotice, onLogout, ne
         <div style={{ marginBottom:16, padding:12, border:`1px solid ${BORDER}`, borderRadius:10 }}>
           <div style={{ color:GOLD, fontWeight:700, marginBottom:8 }}>{tr.common?.settings?.legal || "Rechtliches"}</div>
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            <button type="button" onClick={() => setShowLegal("impressum")} style={{ ...gBtn, fontSize:12, minHeight:32 }}>{tr.common?.settings?.imprint || "Impressum"}</button>
-            <button type="button" onClick={() => setShowLegal("datenschutz")} style={{ ...gBtn, fontSize:12, minHeight:32 }}>{tr.common?.settings?.privacy || "Datenschutz"}</button>
-            <button type="button" onClick={() => setShowLegal("agb")} style={{ ...gBtn, fontSize:12, minHeight:32 }}>{tr.common?.settings?.terms || "AGB"}</button>
+            <button type="button" onClick={() => window.open("https://www.bauabnahme.app/Impressum_BauAbnahme.pdf","_blank")} style={{ ...gBtn, fontSize:12, minHeight:32 }}>{tr.common?.settings?.imprint || "Impressum"}</button>
+            <button type="button" onClick={() => window.open("https://www.bauabnahme.app/Datenschutz_BauAbnahme.pdf","_blank")} style={{ ...gBtn, fontSize:12, minHeight:32 }}>{tr.common?.settings?.privacy || "Datenschutz"}</button>
+            <button type="button" onClick={() => window.open("https://www.bauabnahme.app/AGB_BauAbnahme.pdf","_blank")} style={{ ...gBtn, fontSize:12, minHeight:32 }}>{tr.common?.settings?.terms || "AGB"}</button>
             <a href="mailto:support@bauabnahme.app" style={{ ...gBtn, textDecoration:"none", display:"inline-flex", color:GOLD, borderColor:GOLD, fontSize:12, minHeight:32 }}>support@bauabnahme.app</a>
           </div>
         </div>
