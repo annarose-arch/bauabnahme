@@ -110,6 +110,11 @@ const handleForgotPassword = async () => {
 
   const handleRegister = async () => {
     clear();
+    if (!document.getElementById("agb-check")?.checked) {
+  setErrorMsg(language === "FR" ? "Veuillez accepter les CGV." : language === "IT" ? "Accettare i termini." : language === "EN" ? "Please accept the Terms." : "Bitte AGB akzeptieren.");
+  return;
+}
+
     if (!companyName.trim()) { setErrorMsg("Firmenname ist erforderlich."); return; }
     if (!firstName.trim() || !lastName.trim()) { setErrorMsg("Vor- und Nachname sind erforderlich."); return; }
 if (selectedPlan === "pro") { window.location.href = billing === "yearly" ? "https://buy.stripe.com/3cI3cv18C8QafgNaYB9AA0c" : "https://buy.stripe.com/5kQeVdeZs6I20lTd6J9AA06"; }
@@ -405,6 +410,12 @@ setMode("login");
 
               {errorMsg && <p style={{ color: COLORS.error, fontSize: 14, marginBottom: 12, marginTop: 0 }}>{errorMsg}</p>}
 
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12, padding: "10px 12px", background: "rgba(212,168,83,0.08)", borderRadius: 8, border: "1px solid rgba(212,168,83,0.2)" }}>
+  <input type="checkbox" id="agb-check" style={{ marginTop: 3, accentColor: "#d4a853", width: 16, height: 16, flexShrink: 0 }} />
+  <label htmlFor="agb-check" style={{ fontSize: 12, color: "#888", lineHeight: 1.5, cursor: "pointer" }}>
+    {language === "FR" ? "J'accepte les" : language === "IT" ? "Accetto i" : language === "EN" ? "I accept the" : "Ich akzeptiere die"} <a href="https://www.bauabnahme.app" style={{ color: "#d4a853" }}>{language === "FR" ? "CGV" : language === "IT" ? "Termini" : language === "EN" ? "Terms & Conditions" : "AGB"}</a> {language === "FR" ? "et la" : language === "IT" ? "e la" : language === "EN" ? "and" : "und die"} <a href="https://www.bauabnahme.app" style={{ color: "#d4a853" }}>{language === "FR" ? "Politique de confidentialité" : language === "IT" ? "Privacy Policy" : language === "EN" ? "Privacy Policy" : "Datenschutzerklärung"}</a>
+  </label>
+</div>
               <button onClick={handleRegister} disabled={loading} style={{ width: "100%", minHeight: 48, borderRadius: 10, border: "none", background: COLORS.gold, color: "#111", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer", marginBottom: 12, opacity: loading ? 0.7 : 1 }}>
                 {loading ? "..." : tr.create}
               </button>
