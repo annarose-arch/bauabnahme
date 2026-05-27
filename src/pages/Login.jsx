@@ -111,7 +111,7 @@ const handleForgotPassword = async () => {
   const handleRegister = async () => {
     clear();
     if (!document.getElementById("agb-check")?.checked) {
-  setErrorMsg(language === "FR" ? "Veuillez accepter les CGV." : language === "IT" ? "Accettare i termini." : language === "EN" ? "Please accept the Terms." : "Bitte AGB akzeptieren.");
+  setErrorMsg(lang === "FR" ? "Veuillez accepter les CGV." : lang === "IT" ? "Accettare i termini." : lang === "EN" ? "Please accept the Terms." : "Bitte AGB akzeptieren.");
   return;
 }
 
