@@ -19,7 +19,7 @@
       ]
     },
     {
-      "source": "/(.*)",
+     "source": "/((?!api/|.*\\.pdf).*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
