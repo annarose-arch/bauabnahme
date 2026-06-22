@@ -243,6 +243,17 @@ return (
     </div>
   </section>
 
+  {/* FAQ - GEO */}
+  {t.faq && <section style={{ maxWidth: 720, margin: "0 auto", padding: "48px 24px" }}>
+    <h2 style={{ color: "#d4a853", fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: "center" }}>{t.faq_title}</h2>
+    {(t.faq||[]).map((item, i) => (
+      <div key={i} style={{ marginBottom: 20, borderBottom: "1px solid rgba(212,168,83,0.15)", paddingBottom: 20 }}>
+        <div style={{ color: "#f4efe6", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{item.q}</div>
+        <div style={{ color: "#aaa", fontSize: 14, lineHeight: 1.6 }}>{item.a}</div>
+      </div>
+    ))}
+  </section>}
+
   {/* Footer */}
   <footer style={{ padding: "32px 24px", borderTop: `1px solid ${BORDER}`, textAlign: "center", color: MUTED, fontSize: 13 }}>
     <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Bau<span style={{ color: GOLD }}>Abnahme</span></div>
